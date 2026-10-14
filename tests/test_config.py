@@ -26,7 +26,7 @@ def test_settings_defaults_and_types() -> None:
     assert isinstance(settings.DEVICE, str)
 
     # Default value assertions
-    assert settings.APP_NAME == "chartgen"
+    assert settings.APP_NAME == "music2chart"
     assert settings.APP_ENV == "development"
     assert settings.UPLOAD_DIR == Path("tmp/uploads")
     assert settings.OUTPUT_DIR == Path("tmp/output")
@@ -70,13 +70,13 @@ def test_directory_auto_creation(tmp_path: Path) -> None:
 
 def test_settings_environment_override(monkeypatch: pytest.MonkeyPatch) -> None:
     """Validate that environment variables properly override defaults."""
-    monkeypatch.setenv("APP_NAME", "custom_chartgen")
+    monkeypatch.setenv("APP_NAME", "custom_music2chart")
     monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.setenv("DEFAULT_RESOLUTION", "480")
     monkeypatch.setenv("DEVICE", "cpu")
 
     settings = Settings()
-    assert settings.APP_NAME == "custom_chartgen"
+    assert settings.APP_NAME == "custom_music2chart"
     assert settings.APP_ENV == "production"
     assert settings.DEFAULT_RESOLUTION == 480
     assert settings.DEVICE == "cpu"

@@ -5,11 +5,11 @@
 - **Task Dispatch**: Received subagent dispatch from parent `c32a8c2d-046d-4e36-96ca-60cf3fc9e81f` for Milestone 3 of Phase 4 (`ChordBuilder`).
 - **Target Specification in AGENTS.md §7.3**:
   ```text
-  7.3. Regras de Acordes (Chords)
-  - Notas simultâneas (mesmo tick ou dentro de tolerância de 12 ticks) formam acordes:
-    - Acordes válidos no Clone Hero: 2 trastes adjacentes ou com salto de 1 traste (ex: 0+1, 0+2, 1+2, 1+3, 2+3, 2+4, 3+4).
-    - Acordes de 3 notas permitidos: 0+1+2, 0+2+3, 1+2+3, etc.
-    - Proibição: Nunca gerar acordes de 4 ou 5 trastes simultâneos (fisicamente inviáveis para ergonomia do controle) e nunca gerar aberturas não-naturais como Verde + Laranja isolados em tempos rápidos.
+  7.3. Chord Rules
+  - Concurrent notes (identical tick or within a 12-tick tolerance) form chords:
+    - Valid chords in Clone Hero: 2 adjacent frets or a 1-fret gap (e.g., 0+1, 0+2, 1+2, 1+3, 2+3, 2+4, 3+4).
+    - Permitted 3-note chords: 0+1+2, 0+2+3, 1+2+3, etc.
+    - Prohibition: Never generate 4- or 5-fret simultaneous chords (physically unplayable on controller ergonomics) and never generate awkward wide stretches such as Green + Orange isolated at fast tempos.
   ```
 - **PROMPTS.md (Prompt 4.3)**:
   - Enforces power chords: `(0, 1), (0, 2), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4)`.
@@ -72,7 +72,7 @@
 ## 3. Caveats
 
 1. **Extended Triad (1, 3, 4)**: The dispatch lists 4 canonical triads: `(0, 1, 2)`, `(0, 2, 3)`, `(1, 2, 3)`, `(2, 3, 4)`. In guitar charting, `(1, 3, 4)` is the exact transposition of `(0, 2, 3)` up by 1 fret. The pseudo-code includes `(1, 3, 4)` in `EXTENDED_TRIADS` while preserving `CANONICAL_TRIADS` as the primary 4-tuple constant.
-2. **Tolerance Parameter**: While AGENTS.md §7.3 mentions onsets within 12 ticks forming chords, notes entering `ChordBuilder` have already passed through `NoteQuantizer` (which snaps onsets to 192 PPQ grid points) and `PitchToFretMapper`. Thus, grouping by exact identical `tick` is clean, robust, and matches Prompt 4.3 ("Agrupe notas com ticks idênticos"). An optional `tick_tolerance` parameter could be added if unquantized input is ever passed.
+2. **Tolerance Parameter**: While AGENTS.md §7.3 mentions onsets within 12 ticks forming chords, notes entering `ChordBuilder` have already passed through `NoteQuantizer` (which snaps onsets to 192 PPQ grid points) and `PitchToFretMapper`. Thus, grouping by exact identical `tick` is clean, robust, and matches Prompt 4.3 ("Group notes with identical ticks"). An optional `tick_tolerance` parameter could be added if unquantized input is ever passed.
 3. **Downstream HOPO Coupling**: `ChordBuilder` sets `is_hopo=False` on all output notes. Marking natural HOPOs or forcing strums on repeated chords is deferred to `HopoEngine` (Milestone 4).
 
 ---

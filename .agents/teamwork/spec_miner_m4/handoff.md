@@ -23,8 +23,8 @@
    - Lines 59–79: `SongTrack` defines `name: str`, `notes: list[ChartNote]`, `star_power: list[StarPowerPhrase]`.
 
 3. **Authoritative Requirements**:
-   - `AGENTS.md` §7.4: "O motor de Clone Hero ativa HOPO nativo se a distância entre notas consecutivas for menor ou igual a 65 ticks (aprox. semicolcheia em andamento moderado) E houver variação de traste. Se uma nota for repetida no mesmo traste (ex: Verde seguido de Verde), ela deve ser tocada com palheta (Strum)."
-   - `AGENTS.md` §7.5: "Notas curtas (duração inferior a 90 ticks) devem ter sustain_length = 0 (notas de impacto imediato). Notas sustentadas devem ter seu comprimento calculado subtraindo uma margem de liberação de 24 ticks antes da próxima nota."
+   - `AGENTS.md` §7.4: "The Clone Hero game engine natively activates HOPO if the distance between consecutive notes is <= 65 ticks (approx. 1/16 note at moderate tempo) AND there is fret variation. If a note repeats on the same fret (e.g., Green followed by Green), it must be strummed."
+   - `AGENTS.md` §7.5: "Short notes (duration under 90 ticks) must have sustain_length = 0 (immediate impact notes). Sustained notes must calculate their duration by subtracting a 24-tick release margin prior to the next note onset."
    - `ORIGINAL_REQUEST.md` R4: "Automatic Hammer-On / Pull-Off detection (intervals <= 65 ticks with fret variation, forcing strums on repeated frets) and sustain length calculation cutting a 24-tick release margin prior to consecutive notes."
    - `PROMPTS.md` Prompt 4.4:
      - `HopoEngine`: Evaluate notes chronologically; $\Delta \le 65$ and different fret $\implies$ HOPO; identical fret $\implies$ forced Strum.

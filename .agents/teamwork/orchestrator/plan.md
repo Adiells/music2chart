@@ -1,7 +1,7 @@
 # Execution Plan: Phase 4 Game Design and Note Mapping Engine
 
 ## Objective
-Implement Phase 4 of `chartgen`: the complete game design and note mapping engine translating raw MIDI `NoteEvent`s into musically playable, ergonomic 5-fret Clone Hero charts (`src/game_design/`).
+Implement Phase 4 of `music2chart`: the complete game design and note mapping engine translating raw MIDI `NoteEvent`s into musically playable, ergonomic 5-fret Clone Hero charts (`src/game_design/`).
 
 ## Milestones
 1. **Survey (Phase 0)**:

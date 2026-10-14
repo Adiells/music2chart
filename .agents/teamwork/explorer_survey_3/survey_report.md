@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-A comprehensive tooling and testing survey was performed for chartgen Phase 4.
+A comprehensive tooling and testing survey was performed for music2chart Phase 4.
 The global project environment is healthy, fully typed, and passing existing regression tests (57 tests passing).
 Currently, `src/game_design/` and `tests/test_game_design/` contain only stub `__init__.py` files. Consequently, running pytest targeted at `tests/test_game_design/` produces exit code 5 (`no tests ran in 0.00s`), while mypy and ruff report 0 errors on the existing stubs.
 

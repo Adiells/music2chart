@@ -1,7 +1,7 @@
 ## 2026-10-13T20:41:54Z
 Sender: c32a8c2d-046d-4e36-96ca-60cf3fc9e81f (parent orchestrator)
 
-You are explorer_m4_2, an Explorer subagent for Milestone 4 of chartgen Phase 4.
+You are explorer_m4_2, an Explorer subagent for Milestone 4 of music2chart Phase 4.
 Your working directory is: /home/adiel/Projects/music2chart/.agents/teamwork/explorer_m4_2
 
 MANDATORY: Read /home/adiel/Projects/music2chart/.agents/teamwork/ORIGINAL_REQUEST.md before starting work.

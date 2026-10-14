@@ -1,7 +1,7 @@
 # BRIEFING — 2026-10-13T18:43:00Z
 
 ## Mission
-Investigate tooling, linter, type-checker, and test suite baseline for chartgen Phase 4.
+Investigate tooling, linter, type-checker, and test suite baseline for music2chart Phase 4.
 
 ## 🔒 My Identity
 - Archetype: explorer

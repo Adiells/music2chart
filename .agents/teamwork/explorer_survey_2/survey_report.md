@@ -2,7 +2,7 @@
 
 **Author**: `explorer_survey_2`  
 **Timestamp**: 2026-10-13T18:45:00Z  
-**Scope**: Code and unit test survey for Phase 4 (Game Design and Note Mapping Engine) of `chartgen`
+**Scope**: Code and unit test survey for Phase 4 (Game Design and Note Mapping Engine) of `music2chart`
 
 ---
 

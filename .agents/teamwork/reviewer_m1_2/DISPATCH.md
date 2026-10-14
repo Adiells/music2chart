@@ -1,5 +1,5 @@
 ## 2026-10-13T19:10:55Z
-You are reviewer_m1_2, a Reviewer subagent for Milestone 1 of chartgen Phase 4.
+You are reviewer_m1_2, a Reviewer subagent for Milestone 1 of music2chart Phase 4.
 Your working directory is: /home/adiel/Projects/music2chart/.agents/teamwork/reviewer_m1_2
 
 MANDATORY: Read /home/adiel/Projects/music2chart/.agents/teamwork/ORIGINAL_REQUEST.md before starting work.

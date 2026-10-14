@@ -1,1 +1,1 @@
-"""Source package for chartgen."""
+"""Source package for music2chart."""

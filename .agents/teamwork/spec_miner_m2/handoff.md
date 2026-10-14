@@ -31,15 +31,15 @@
      > - Open Note: `pitch < 40` -> `FretType.OPEN` (7)
      > - Jump penalty: if `tick - prev_tick < 48` and `abs(fret - prev_fret) > 3`, clamp leap to `<= 3` frets."
    - `PROMPTS.md` Prompt 4.2 (Lines 196–215):
-     > "1. Crie src/game_design/pitch_to_fret.py contendo a classe `PitchToFretMapper`:
-     > - Implemente um algoritmo de janela adaptativa de pitch (dynamic sliding window) calculada por seções de 2 a 4 compassos.
-     > - Para cada janela, calcule os percentis de altura das notas ativas (mínimo, 25%, 50%, 75%, máximo)...
-     > - Mapeie o pitch contínuo para os 5 botões: Verde (0), Vermelho (1), Amarelo (2), Azul (3), Laranja (4).
-     > - Adicione regra para Open Note (7): notas de pitch muito baixo (< MIDI 40)...
-     > - Adicione restrição de suavidade de transição: penalize saltos impossíveis de mais de 3 trastes em intervalos menores que 48 ticks...
-     > 2. Escreva testes em tests/test_game_design/test_pitch_to_fret.py..."
+     > "1. Create src/game_design/pitch_to_fret.py containing the `PitchToFretMapper` class:
+     > - Implement an adaptive dynamic sliding window pitch projection algorithm calculated across 2 to 4 measure sections.
+     > - For each window, compute active note pitch percentiles (minimum, 25%, 50%, 75%, maximum)...
+     > - Map continuous pitch to the 5 fret buttons: Green (0), Red (1), Yellow (2), Blue (3), Orange (4).
+     > - Add Open Note (7) rule: very low pitch notes (< MIDI 40)...
+     > - Add transition smoothness constraint: penalize impossible jumps of >3 frets in intervals < 48 ticks...
+     > 2. Write tests in tests/test_game_design/test_pitch_to_fret.py..."
    - `AGENTS.md` Section 7.2:
-     > "Verde (0), Vermelho (1), Amarelo (2), Azul (3), Laranja (4), Aberta (7)... Janela Relativa: O mapeamento não deve ser estático (ex: dó não é sempre amarelo). Deve utilizar uma janela deslizante de tessitura (pitch window) de 1 a 2 compassos, mapeando os percentis de altura das notas ativas para os trastes [0, 4]. Isso garante que solos em registros altos usem os 5 botões de forma orgânica."
+     > "Green (0), Red (1), Yellow (2), Blue (3), Orange (4), Open (7)... Relative Window: Mapping must not be static (e.g., C4 is not permanently Yellow). It must use an adaptive sliding tessitura window of 1 to 2 measures, projecting the active pitch percentiles to frets [0, 4]. This ensures high-register guitar solos dynamically utilize all 5 frets naturally."
    - `src/models/chart.py` (Lines 7–36):
      > Defines `FretType` (GREEN=0, RED=1, YELLOW=2, BLUE=3, ORANGE=4, OPEN=7) and `ChartNote(tick: int, fret: FretType, sustain_length: int = 0, is_hopo: bool = False)`.
    - `src/game_design/quantizer.py` (Lines 20–38):

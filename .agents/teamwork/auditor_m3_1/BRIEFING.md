@@ -1,7 +1,7 @@
 # BRIEFING — 2026-10-13T20:31:00Z
 
 ## Mission
-Perform strict forensic audit of Milestone 3 chord_builder implementation and tests for chartgen Phase 4.
+Perform strict forensic audit of Milestone 3 chord_builder implementation and tests for music2chart Phase 4.
 
 ## 🔒 My Identity
 - Archetype: forensic_auditor

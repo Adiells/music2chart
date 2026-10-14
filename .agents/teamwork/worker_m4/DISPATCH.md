@@ -1,5 +1,5 @@
 ## 2026-10-13T20:53:49Z
-You are worker_m4 for Milestone 4 (HOPO, Strum & Sustain Duration Engine) in chartgen Phase 4.
+You are worker_m4 for Milestone 4 (HOPO, Strum & Sustain Duration Engine) in music2chart Phase 4.
 
 Your working directory is:
 /home/adiel/Projects/music2chart/.agents/teamwork/worker_m4

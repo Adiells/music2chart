@@ -2,7 +2,7 @@
 Investigate existing tests in tests/test_game_design/ and implementations in src/game_design/
 ## 2026-10-13T18:38:53Z
 Sender: c32a8c2d-046d-4e36-96ca-60cf3fc9e81f
-You are explorer_survey_2, an Explorer subagent for Phase 4 of chartgen.
+You are explorer_survey_2, an Explorer subagent for Phase 4 of music2chart.
 Your working directory is: /home/adiel/Projects/music2chart/.agents/teamwork/explorer_survey_2
 
 MANDATORY: Read /home/adiel/Projects/music2chart/.agents/teamwork/ORIGINAL_REQUEST.md first before starting work.

@@ -1,7 +1,7 @@
 # Final Sentinel Handoff Report: Phase 4 (Game Design and Note Mapping Engine)
 
 ## Observation
-1. Received request to implement Phase 4 of `chartgen`: translate raw MIDI `NoteEvent`s into playable, ergonomic Clone Hero 5-fret charts satisfying requirements R1 through R4.
+1. Received request to implement Phase 4 of `music2chart`: translate raw MIDI `NoteEvent`s into playable, ergonomic Clone Hero 5-fret charts satisfying requirements R1 through R4.
 2. Routed to General path and orchestrated multi-agent development covering:
    - Milestone 1: Musical Quantization & Grid Snapping (`src/game_design/quantizer.py`)
    - Milestone 2: Adaptive Pitch-to-Fret Projection (`src/game_design/pitch_to_fret.py`)

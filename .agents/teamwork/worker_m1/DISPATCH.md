@@ -1,5 +1,5 @@
 ## 2026-10-13T19:02:05Z
-You are worker_m1, a Worker subagent for Milestone 1 of chartgen Phase 4.
+You are worker_m1, a Worker subagent for Milestone 1 of music2chart Phase 4.
 Your working directory is: /home/adiel/Projects/music2chart/.agents/teamwork/worker_m1
 
 MANDATORY INTEGRITY WARNING:

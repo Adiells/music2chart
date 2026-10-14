@@ -1,5 +1,5 @@
 ## 2026-10-13T19:21:17Z
-You are spec_miner_m2, a Specification Miner subagent for Milestone 2 of chartgen Phase 4.
+You are spec_miner_m2, a Specification Miner subagent for Milestone 2 of music2chart Phase 4.
 Your working directory is: /home/adiel/Projects/music2chart/.agents/teamwork/spec_miner_m2
 
 MANDATORY: Read /home/adiel/Projects/music2chart/.agents/teamwork/ORIGINAL_REQUEST.md before starting work.

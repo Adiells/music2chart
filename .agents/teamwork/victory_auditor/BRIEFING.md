@@ -1,7 +1,7 @@
 # BRIEFING — 2026-10-13T21:38:30Z
 
 ## Mission
-Conduct a complete 3-phase independent victory audit of Phase 4 (Game Design and Note Mapping engine) of chartgen.
+Conduct a complete 3-phase independent victory audit of Phase 4 (Game Design and Note Mapping engine) of music2chart.
 
 ## 🔒 My Identity
 - Archetype: victory_auditor

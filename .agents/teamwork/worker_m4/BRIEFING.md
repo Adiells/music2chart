@@ -1,7 +1,7 @@
 # BRIEFING — 2026-10-13T21:08:00Z
 
 ## Mission
-Complete Milestone 4: HOPO, Strum & Sustain Duration Engine (and Star Power Generator) for chartgen Phase 4, ensuring full compliance with game design rules, specs, typing, formatting, and 100% passing tests.
+Complete Milestone 4: HOPO, Strum & Sustain Duration Engine (and Star Power Generator) for music2chart Phase 4, ensuring full compliance with game design rules, specs, typing, formatting, and 100% passing tests.
 
 ## 🔒 My Identity
 - Archetype: worker

@@ -1,6 +1,6 @@
 ## 2026-10-13T18:38:53Z
 
-You are explorer_survey_3, an Explorer subagent for Phase 4 of chartgen.
+You are explorer_survey_3, an Explorer subagent for Phase 4 of music2chart.
 Your working directory is: /home/adiel/Projects/music2chart/.agents/teamwork/explorer_survey_3
 
 MANDATORY: Read /home/adiel/Projects/music2chart/.agents/teamwork/ORIGINAL_REQUEST.md first before starting work.

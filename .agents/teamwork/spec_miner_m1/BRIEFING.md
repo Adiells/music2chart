@@ -1,7 +1,7 @@
 # BRIEFING — 2026-10-13T18:59:50Z
 
 ## Mission
-Extract and author a comprehensive test plan and concrete test cases for `tests/test_game_design/test_quantizer.py` for Milestone 1 of chartgen Phase 4.
+Extract and author a comprehensive test plan and concrete test cases for `tests/test_game_design/test_quantizer.py` for Milestone 1 of music2chart Phase 4.
 
 ## 🔒 My Identity
 - Archetype: Specification Miner

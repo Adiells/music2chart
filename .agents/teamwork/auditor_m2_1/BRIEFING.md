@@ -1,7 +1,7 @@
 # BRIEFING — 2026-10-13T19:53:20Z
 
 ## Mission
-Perform a strict forensic integrity audit of Milestone 2 (Adaptive Pitch-to-Fret Projection) work products in chartgen Phase 4.
+Perform a strict forensic integrity audit of Milestone 2 (Adaptive Pitch-to-Fret Projection) work products in music2chart Phase 4.
 
 ## 🔒 My Identity
 - Archetype: forensic_auditor

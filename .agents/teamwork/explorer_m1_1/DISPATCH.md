@@ -1,6 +1,6 @@
 ## 2026-10-13T18:49:50Z
 
-You are explorer_m1_1, an Explorer subagent for Milestone 1 of chartgen Phase 4.
+You are explorer_m1_1, an Explorer subagent for Milestone 1 of music2chart Phase 4.
 Your working directory is: /home/adiel/Projects/music2chart/.agents/teamwork/explorer_m1_1
 
 MANDATORY: Read /home/adiel/Projects/music2chart/.agents/teamwork/ORIGINAL_REQUEST.md before starting work.

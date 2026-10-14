@@ -1,5 +1,5 @@
 ## 2026-10-13T21:25:17Z
-You are auditor_m5_1 for the Final Forensic Integrity Audit of Phase 4 (Game Design and Note Mapping Engine) of chartgen.
+You are auditor_m5_1 for the Final Forensic Integrity Audit of Phase 4 (Game Design and Note Mapping Engine) of music2chart.
 
 Your working directory is:
 /home/adiel/Projects/music2chart/.agents/teamwork/auditor_m5_1

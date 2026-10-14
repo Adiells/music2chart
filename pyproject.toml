@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "chartgen"
+name = "music2chart"
 version = "0.1.0"
 description = "Automated high-fidelity chart generator for Clone Hero"
 readme = "README.md"

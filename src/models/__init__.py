@@ -1,4 +1,4 @@
-"""Data models and domain entities for chartgen."""
+"""Data models and domain entities for music2chart."""
 
 from src.models.audio import AudioMetadata, StemCollection
 from src.models.chart import ChartNote, FretType, SongTrack, StarPowerPhrase

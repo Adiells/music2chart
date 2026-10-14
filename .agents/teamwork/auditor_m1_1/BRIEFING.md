@@ -1,7 +1,7 @@
 # BRIEFING — 2026-10-13T19:14:30Z
 
 ## Mission
-Perform strict forensic audit on Milestone 1 (quantizer) deliverables of chartgen Phase 4 to verify integrity, genuine mathematical computation, absence of facade/hardcoded test shortcuts, and adherence to requirements.
+Perform strict forensic audit on Milestone 1 (quantizer) deliverables of music2chart Phase 4 to verify integrity, genuine mathematical computation, absence of facade/hardcoded test shortcuts, and adherence to requirements.
 
 ## 🔒 My Identity
 - Archetype: forensic_auditor

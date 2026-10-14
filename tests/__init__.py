@@ -1,1 +1,1 @@
-"""Test suite for chartgen."""
+"""Test suite for music2chart."""

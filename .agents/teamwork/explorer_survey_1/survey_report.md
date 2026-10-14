@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-This report establishes the complete architectural specifications, mathematical formulations, algorithmic requirements, and strict Python typing contracts for **Phase 4 (Game Design & Note Mapping Engine)** of `chartgen`.
+This report establishes the complete architectural specifications, mathematical formulations, algorithmic requirements, and strict Python typing contracts for **Phase 4 (Game Design & Note Mapping Engine)** of `music2chart`.
 
 Phase 4 bridges raw polyphonic audio/MIDI transcription events (`NoteEvent`) with playable, ergonomic Clone Hero charts (`ChartNote`), translating raw physical sound into intuitive rhythm game mechanics.
 

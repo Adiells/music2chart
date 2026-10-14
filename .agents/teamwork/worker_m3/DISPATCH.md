@@ -2,7 +2,7 @@
 Milestone 3 Implementation of ChordBuilder and Unit Tests
 ## 2026-10-13T20:13:32Z
 
-You are worker_m3, a Worker subagent for Milestone 3 of chartgen Phase 4.
+You are worker_m3, a Worker subagent for Milestone 3 of music2chart Phase 4.
 Your working directory is: /home/adiel/Projects/music2chart/.agents/teamwork/worker_m3
 
 MANDATORY INTEGRITY WARNING:

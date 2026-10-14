@@ -1,7 +1,7 @@
 # BRIEFING — 2026-10-13T19:56:00Z
 
 ## Mission
-Review and stress-test Milestone 2 (PitchToFretMapper) deliverables for Phase 4 of chartgen.
+Review and stress-test Milestone 2 (PitchToFretMapper) deliverables for Phase 4 of music2chart.
 
 ## 🔒 My Identity
 - Archetype: reviewer_critic

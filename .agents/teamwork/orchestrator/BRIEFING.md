@@ -1,7 +1,7 @@
 # BRIEFING — 2026-10-13T21:31:30Z
 
 ## Mission
-Implement the complete Game Design and Note Mapping engine (Phase 4 of chartgen) for Clone Hero charts: R1 (Quantizer), R2 (Pitch-to-Fret), R3 (Chord Builder), R4 (HOPO & Sustain Engine), satisfying 100% test coverage, regression suite, mypy, and ruff checks. [MISSION COMPLETE]
+Implement the complete Game Design and Note Mapping engine (Phase 4 of music2chart) for Clone Hero charts: R1 (Quantizer), R2 (Pitch-to-Fret), R3 (Chord Builder), R4 (HOPO & Sustain Engine), satisfying 100% test coverage, regression suite, mypy, and ruff checks. [MISSION COMPLETE]
 
 ## 🔒 My Identity
 - Archetype: orchestrator

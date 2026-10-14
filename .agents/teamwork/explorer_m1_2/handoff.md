@@ -23,12 +23,12 @@
      > - Tolerance: `tolerance_ticks: int = 16`  
      > - Deduplication: identical `(tick, pitch)` -> merged with `max(amplitude)` and `max(duration_ticks)`"
    - In `PROMPTS.md` (lines 178-194):
-     > "1. Crie src/game_design/quantizer.py com a classe `NoteQuantizer`:  
-     >    - Receba a lista de `NoteEvent` e o `TempoMap`.  
-     >    - Converta cada timestamp em segundos para o valor em ticks.  
+     > "1. Create src/game_design/quantizer.py with the `NoteQuantizer` class:  
+     >    - Accept a list of `NoteEvent` and the `TempoMap`.  
+     >    - Convert each timestamp in seconds to its corresponding tick value.  
      >    ...  
-     >    - Implemente algoritmo de snapping: se o tick calculado estiver a uma distância menor que `tolerance_ticks = 16` de um ponto de grade válido, mova-o para a grade.  
-     >    - Elimine notas duplicadas no mesmo tick com o mesmo pitch (mesclando amplitudes)."
+     >    - Implement snapping algorithm: if a calculated tick lies within `tolerance_ticks = 16` of a valid grid point, snap it to the grid.  
+     >    - Eliminate duplicate notes at the identical tick with the identical pitch (merging amplitudes)."
 
 2. **Existing Domain Models**:
    - `src/models/midi_events.py` (lines 6-26):
@@ -55,7 +55,7 @@
      > - Output: `list[ChartNote]` (updates `sustain_length`)  
      > - Rules: `< 90` ticks -> 0. `>= 90` ticks -> `duration - 24`. Next note collision clearance -> `next_tick - tick - 24`."
    - In `PROMPTS.md` (lines 241-244):
-     > "Calcule a duração da nota em ticks a partir do `end_time` do `NoteEvent`. Se a duração for < 90 ticks, defina `sustain_length = 0`. Se for sustentada, calcule `sustain_length = duracao_ticks - 24`..."
+     > "Calculate note duration in ticks from `NoteEvent.end_time`. If duration is < 90 ticks, set `sustain_length = 0`. If sustained, calculate `sustain_length = duration_ticks - 24`..."
 
 4. **Codebase Tooling & Regression**:
    - `.venv/bin/pytest tests/`: All 57 unit tests in test suite pass in 1.88s.

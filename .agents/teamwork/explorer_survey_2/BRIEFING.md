@@ -1,7 +1,7 @@
 # BRIEFING — 2026-10-13T18:50:00Z
 
 ## Mission
-Investigate existing code and unit tests in src/game_design and tests/test_game_design for Phase 4 of chartgen, detailing exact signatures and expected behaviors.
+Investigate existing code and unit tests in src/game_design and tests/test_game_design for Phase 4 of music2chart, detailing exact signatures and expected behaviors.
 
 ## 🔒 My Identity
 - Archetype: explorer

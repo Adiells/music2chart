@@ -16,7 +16,7 @@ Coordinate and monitor Phase 4 Game Design and Note Mapping engine implementatio
 - Clean up crons and subagents upon victory confirmation
 
 ## User Context
-- **Last user request**: Implement complete Game Design and Note Mapping engine (Phase 4 of chartgen) for Clone Hero charts (R1-R4) with tests, typing, and linting.
+- **Last user request**: Implement complete Game Design and Note Mapping engine (Phase 4 of music2chart) for Clone Hero charts (R1-R4) with tests, typing, and linting.
 - **Pending clarifications**: none
 - **Delivered results**:
   - Full game design engine in `src/game_design/`: `quantizer.py`, `pitch_to_fret.py`, `chord_builder.py`, `hopo_engine.py`, `sustain_processor.py`, `star_power_generator.py`, `__init__.py`.

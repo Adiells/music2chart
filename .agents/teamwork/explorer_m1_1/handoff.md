@@ -12,12 +12,12 @@
 
 1. **Subdivision Specifications**:
    - In `AGENTS.md` (lines 309-317):
-     > "7.1. Resolução e Snapping (192 PPQ)
-     > - Uma semínima (1 batida) = 192 ticks.
-     > - Colcheia (1/8) = 96 ticks.
-     > - Semicolcheia (1/16) = 48 ticks.
-     > - Tercina de colcheia (1/12) = 64 ticks.
-     > - Fusa (1/32) = 24 ticks."
+     > "7.1. Resolution and Snapping (192 PPQ)
+     > - Quarter note (1 beat) = 192 ticks.
+     > - Eighth note (1/8) = 96 ticks.
+     > - Sixteenth note (1/16) = 48 ticks.
+     > - Eighth note triplet (1/12) = 64 ticks.
+     > - Thirty-second note (1/32) = 24 ticks."
    - In `SCOPE.md` (lines 65-70):
      > "Interface Contracts:
      > `NoteQuantizer` (`src/game_design/quantizer.py`)
@@ -27,13 +27,13 @@
      > - Tolerance: `tolerance_ticks: int = 16`
      > - Deduplication: identical `(tick, pitch)` -> merged with `max(amplitude)` and `max(duration_ticks)`"
    - In `PROMPTS.md` (lines 183-191):
-     > "Defina os grids válidos de subdivisão musical para 192 ticks:
-     >  * Semínima: múltiplos de 192
-     >  * Colcheia (1/8): múltiplos de 96
-     >  * Tercina de colcheia (1/12): múltiplos de 64
-     >  * Semicolcheia (1/16): múltiplos de 48
-     >  * Sextina / Tercina de semicolcheia (1/24): múltiplos de 32
-     >  * Fusa (1/32): múltiplos de 24"
+     > "Define valid musical subdivision grids for 192 ticks:
+     >  * Quarter note: multiples of 192
+     >  * Eighth note (1/8): multiples of 96
+     >  * Eighth note triplet (1/12): multiples of 64
+     >  * Sixteenth note (1/16): multiples of 48
+     >  * Sixteenth note triplet / sextuplet (1/24): multiples of 32
+     >  * Thirty-second note (1/32): multiples of 24"
 
 2. **Existing Models & Contracts**:
    - `src/models/tempo.py` defines `TempoMap` with `resolution: int = 192`, `seconds_to_tick(seconds: float) -> int`, and `tick_to_seconds(tick: int) -> float`.

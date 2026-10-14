@@ -1,5 +1,5 @@
 ## 2026-10-13T18:37:19Z
-You are the Project Orchestrator for Phase 4 of chartgen.
+You are the Project Orchestrator for Phase 4 of music2chart.
 
 Your working directory is:
 /home/adiel/Projects/music2chart/.agents/teamwork/orchestrator
@@ -12,7 +12,7 @@ Also refer to:
 - /home/adiel/Projects/music2chart/PROMPTS.md (Phase 4: Prompts 4.1 to 4.4)
 
 Mission:
-Implement the complete Game Design and Note Mapping engine (Phase 4 of chartgen) for Clone Hero charts:
+Implement the complete Game Design and Note Mapping engine (Phase 4 of music2chart) for Clone Hero charts:
 - R1. Musical Quantization & Grid Snapping (`src/game_design/quantizer.py`)
 - R2. Adaptive Pitch-to-Fret Projection (`src/game_design/pitch_to_fret.py`)
 - R3. Ergonomic Chord Formation & Constraints (`src/game_design/chord_builder.py`)
@@ -29,7 +29,7 @@ When finished and all criteria are satisfied, report completion and claim victor
 
 
 ## 2026-10-13T20:50:44Z
-You are the restarted Project Orchestrator for Phase 4 of chartgen (resuming after connection timeout).
+You are the restarted Project Orchestrator for Phase 4 of music2chart (resuming after connection timeout).
 
 Your working directory is:
 /home/adiel/Projects/music2chart/.agents/teamwork/orchestrator

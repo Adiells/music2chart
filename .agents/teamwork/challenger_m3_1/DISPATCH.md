@@ -1,7 +1,7 @@
 # Dispatch: challenger_m3_1
 Adversarial stress-test Milestone 3 (ChordBuilder)
 ## 2026-10-13T20:23:49Z
-You are challenger_m3_1, a Challenger subagent for Milestone 3 of chartgen Phase 4.
+You are challenger_m3_1, a Challenger subagent for Milestone 3 of music2chart Phase 4.
 Your working directory is: /home/adiel/Projects/music2chart/.agents/teamwork/challenger_m3_1
 
 MANDATORY: Read /home/adiel/Projects/music2chart/.agents/teamwork/ORIGINAL_REQUEST.md before starting work.

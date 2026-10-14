@@ -40,7 +40,7 @@ The core responsibility of `PitchToFretMapper` is translating continuous/chromat
 |---|---|---|---|
 | **Phase Lag on Register Shifts** | High: window remains anchored to previous low-register riff, causing the first high notes to spike to Orange (4) immediately. | Low/Zero: anticipates the ascending phrase smoothly with symmetric forward context. | **Centered** |
 | **Track Boundaries** | Asymmetric: at $t = 0$, window contains only $[0, 0]$ (single note). | Symmetrically truncated at $t < 768$ (evaluates $[0, t + 768]$). | **Centered** |
-| **Offline Applicability** | Required only for real-time streaming. | Standard for offline DSP and batch MIDI processing (`chartgen`). | **Centered** |
+| **Offline Applicability** | Required only for real-time streaming. | Standard for offline DSP and batch MIDI processing (`music2chart`). | **Centered** |
 
 ### 2.3 Window Boundaries and Note Slicing
 For each note $i$ at tick $t_i = \text{notes}[i].tick$:

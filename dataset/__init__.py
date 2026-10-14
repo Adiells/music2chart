@@ -1,4 +1,4 @@
-"""Dataset utilities, scrapers, and evaluators for chartgen."""
+"""Dataset utilities, scrapers, and evaluators for music2chart."""
 
 from dataset.chart_parser import ChartParser
 from dataset.chorus_scraper import ChorusScraper

@@ -78,11 +78,11 @@ All 5 required verification commands were executed in `/home/adiel/Projects/musi
 
 1. **Natural HOPO & Strum Rule Conformance (R4.1, R4.2)**:
    - *Observation*: `HopoEngine.process()` computes `distance = tick - prev_tick`. For `distance <= 65` and `note.fret not in prev_frets`, it marks `is_hopo = True`. For `distance > 65`, `prev_tick is None`, `is_chord=True`, or `note.fret in prev_frets`, it marks `is_hopo = False`.
-   - *Logic*: This directly mirrors `AGENTS.md` §7.4 ("O motor de Clone Hero ativa HOPO nativo se a distância entre notas consecutivas for menor ou igual a 65 ticks E houver variação de traste. Se uma nota for repetida no mesmo traste, ela deve ser tocada com palheta (Strum)").
+   - *Logic*: This directly mirrors `AGENTS.md` §7.4 ("The Clone Hero game engine natively activates HOPO if the distance between consecutive notes is <= 65 ticks AND there is fret variation. If a note repeats on the same fret, it must be strummed").
    - *Verified by*: `test_hopo_consecutive_within_threshold_different_frets`, `test_hopo_exact_threshold_boundary_65` (True), `test_hopo_beyond_threshold_boundary_66` (False), `test_hopo_repeated_frets_within_threshold_forced_strum` (False), `test_hopo_chords_default_to_strum` (False), `test_hopo_single_note_first_is_strum` (False).
 2. **Sustain Margin, Cutoff & Collision Clamping (R4.3, R4.4)**:
    - *Observation*: `SustainProcessor.calculate_sustain_length()` enforces `0` for durations `< 90` ticks, `duration - 24` for durations `>= 90` ticks, and clamps to `max(0, next_note_distance - 24)`. In `process()`, notes sharing the exact same tick in a chord do not clamp each other. Terminal notes retain full duration.
-   - *Logic*: This directly implements `AGENTS.md` §7.5 ("Notas curtas (duração inferior a 90 ticks) devem ter sustain_length = 0... Notas sustentadas devem ter seu comprimento calculado subtraindo uma margem de liberação de 24 ticks antes da próxima nota").
+   - *Logic*: This directly implements `AGENTS.md` §7.5 ("Short notes (duration under 90 ticks) must have sustain_length = 0... Sustained notes must calculate their duration by subtracting a 24-tick release margin prior to the next note onset").
    - *Verified by*: `test_sustain_below_90_cutoff_zero` (0), `test_sustain_exact_threshold_90` (66), `test_sustain_quarter_note_192` (168), `test_sustain_next_note_overlap_clamping` (clamped to 168), `test_sustain_final_note_retains_full_duration` (476 on 500-tick note), `test_sustain_chords_simultaneous_notes` (chords don't clamp each other).
 3. **Star Power Periodic Cadence & Non-Overlap (R4.5)**:
    - *Observation*: `StarPowerGenerator.generate()` advances candidate pointers by `duration_ticks + interval_ticks` after placing a phrase with $\ge 4$ notes, skipping silent gaps.
@@ -93,7 +93,7 @@ All 5 required verification commands were executed in `/home/adiel/Projects/musi
    - *Logic*: Proves full interface compatibility across all Phase 4 modules with zero type errors and zero runtime exceptions.
 5. **Type Safety & Style Conformance**:
    - *Observation*: Zero occurrences of `Any` in `src/game_design/`. Mypy passes with 0 issues in strict mode. Ruff linter and formatter report 100% compliance.
-   - *Logic*: Adheres strictly to `AGENTS.md` §3 ("Não utilizar Any sem justificativa formal. Todas as funções públicas devem conter type hints completos e docstrings explicativas").
+   - *Logic*: Adheres strictly to `AGENTS.md` §3 ("Do not use Any without explicit formal justification. All public functions must contain full type hints and descriptive docstrings").
 
 ---
 

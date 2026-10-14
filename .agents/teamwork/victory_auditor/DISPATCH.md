@@ -1,5 +1,5 @@
 ## 2026-10-13T21:32:50Z
-You are the independent post-victory auditor for Phase 4 (Game Design and Note Mapping engine) of chartgen.
+You are the independent post-victory auditor for Phase 4 (Game Design and Note Mapping engine) of music2chart.
 
 Your working directory is:
 /home/adiel/Projects/music2chart/.agents/teamwork/victory_auditor

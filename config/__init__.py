@@ -1,1 +1,1 @@
-"""Configuration module for chartgen."""
+"""Configuration module for music2chart."""

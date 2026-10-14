@@ -12,30 +12,30 @@
 
 1. **Sliding Window & Game Design Specifications**:
    - In `AGENTS.md` (lines 328-339):
-     > "7.2. Projeção de Pitch para os 5 Trastes (Dificuldade Expert)
-     > - A guitarra de Clone Hero tem 5 botões ordenados por altura tonal:
-     >   - Verde (0): Notas mais graves da passagem (ex: Mi grave, notas de base).
-     >   - Vermelho (1): Médio-grave.
-     >   - Amarelo (2): Médio.
-     >   - Azul (3): Médio-agudo.
-     >   - Laranja (4): Agudos extremos e notas de solo no topo do braço.
-     >   - Aberta (7): Reservada para riffs graves com palm-mute acentuado ou notas de baixo soltas.
-     > - Janela Relativa: O mapeamento não deve ser estático (ex: dó não é sempre amarelo). Deve utilizar uma janela deslizante de tessitura (pitch window) de 1 a 2 compassos, mapeando os percentis de altura das notas ativas para os trastes [0, 4]. Isso garante que solos em registros altos usem os 5 botões de forma orgânica."
+     > "7.2. Pitch Projection to 5 Frets (Expert Difficulty)
+     > - The Clone Hero guitar features 5 buttons ordered by tonal pitch:
+     >   - Green (0): Lowest notes of the passage (e.g., low E string, rhythm base notes).
+     >   - Red (1): Mid-low.
+     >   - Yellow (2): Mid.
+     >   - Blue (3): Mid-high.
+     >   - Orange (4): Extreme highs and high-register solo notes.
+     >   - Open (7): Reserved for heavy sub-bass palm-muted riffs or open bass notes.
+     > - Relative Window: Mapping must not be static (e.g., C4 is not permanently Yellow). It must use an adaptive sliding tessitura window of 1 to 2 measures, projecting the active pitch percentiles to frets [0, 4]. This ensures high-register guitar solos dynamically utilize all 5 frets naturally."
    - In `PROMPTS.md` (lines 201-214):
-     > "1. Crie src/game_design/pitch_to_fret.py contendo a classe `PitchToFretMapper`:
-     >    - Implemente um algoritmo de janela adaptativa de pitch (dynamic sliding window) calculada por seções de 2 a 4 compassos.
-     >    - Para cada janela, calcule os percentis de altura das notas ativas (mínimo, 25%, 50%, 75%, máximo).
-     >    - Mapeie o pitch contínuo para os 5 botões:
-     >      * Percentil inferior / tônica grave -> Verde (0)
-     >      * Médio-grave -> Vermelho (1)
-     >      * Médio -> Amarelo (2)
-     >      * Médio-agudo -> Azul (3)
-     >      * Percentil superior / agudo extremo -> Laranja (4)
-     >    - Adicione regra para Open Note (7): notas de pitch muito baixo (< MIDI 40) que ocorram isoladas em passagens rítmicas rápidas devem ser mapeadas como Fret 7.
-     >    - Adicione restrição de suavidade de transição: penalize saltos impossíveis de mais de 3 trastes em intervalos menores que 48 ticks (evite pular de Verde para Laranja consecutivamente em semicolcheias).
-     > 2. Escreva testes em tests/test_game_design/test_pitch_to_fret.py cobrindo:
-     >    - Escala ascendente de guitarra (deve produzir 0 -> 1 -> 2 -> 3 -> 4 de forma fluida).
-     >    - Solo em registro agudo (as notas devem ocupar os trastes de forma relativa, sem ficarem presas apenas no Laranja)."
+     > "1. Create src/game_design/pitch_to_fret.py containing the `PitchToFretMapper` class:
+     >    - Implement an adaptive dynamic sliding window pitch projection algorithm calculated across 2 to 4 measure sections.
+     >    - For each window, compute active note pitch percentiles (minimum, 25%, 50%, 75%, maximum).
+     >    - Map continuous pitch to the 5 fret buttons:
+     >      * Lowest percentile / bass fundamental -> Green (0)
+     >      * Mid-low -> Red (1)
+     >      * Mid -> Yellow (2)
+     >      * Mid-high -> Blue (3)
+     >      * Upper percentile / extreme highs -> Orange (4)
+     >    - Add Open Note (7) rule: very low pitch notes (< MIDI 40) occurring isolated in fast rhythmic passages must be mapped as Fret 7.
+     >    - Add transition smoothness constraint: penalize impossible jumps of >3 frets in intervals < 48 ticks (prevent consecutive jumps from Green to Orange in sixteenth notes).
+     > 2. Write tests in tests/test_game_design/test_pitch_to_fret.py covering:
+     >    - Ascending guitar scale (must produce fluid 0 -> 1 -> 2 -> 3 -> 4 progression).
+     >    - High-register guitar solo (notes must populate frets relatively rather than clustering exclusively on Orange)."
    - In `SCOPE.md` (lines 72-78):
      > "### `PitchToFretMapper` (`src/game_design/pitch_to_fret.py`)
      > - Input: `notes: list[QuantizedNote]`

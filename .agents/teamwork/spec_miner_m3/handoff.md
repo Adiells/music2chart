@@ -32,20 +32,20 @@
 
 3. **Authoritative Specification Directives**:
    - `AGENTS.md` §7.3 specifies:
-     > "Notas simultâneas (mesmo tick ou dentro de tolerância de 12 ticks) formam acordes:  
-     > - Acordes válidos no Clone Hero: 2 trastes adjacentes ou com salto de 1 traste (ex: 0+1, 0+2, 1+2, 1+3, 2+3, 2+4, 3+4).  
-     > - Acordes de 3 notas permitidos: 0+1+2, 0+2+3, 1+2+3, etc.  
-     > - Proibição: Nunca gerar acordes de 4 ou 5 trastes simultâneos (fisicamente inviáveis para ergonomia do controle) e nunca gerar aberturas não-naturais como Verde + Laranja isolados em tempos rápidos."
+     > "Concurrent notes (identical tick or within a 12-tick tolerance) form chords:  
+     > - Valid chords in Clone Hero: 2 adjacent frets or a 1-fret gap (e.g., 0+1, 0+2, 1+2, 1+3, 2+3, 2+4, 3+4).  
+     > - Permitted 3-note chords: 0+1+2, 0+2+3, 1+2+3, etc.  
+     > - Prohibition: Never generate 4- or 5-fret simultaneous chords (physically unplayable on controller ergonomics) and never generate awkward wide stretches such as Green + Orange isolated at fast tempos."
    - `PROMPTS.md` Prompt 4.3 specifies:
-     > "1. Crie src/game_design/chord_builder.py contendo a classe `ChordBuilder`:  
-     >    - Agrupe notas com ticks idênticos (após quantização).  
-     >    - Se houver mais de uma nota no mesmo tick:  
-     >      * Limite o acorde a no máximo 2 ou 3 trastes simultâneos (Clone Hero / Guitar Hero standard).  
-     >      * Aplique os padrões canônicos de acordes:  
-     >        - Power chords (2 notas): Verde+Vermelho (0+1), Verde+Amarelo (0+2), Vermelho+Amarelo (1+2), Vermelho+Azul (1+3), Amarelo+Azul (2+3), Amarelo+Laranja (2+4), Azul+Laranja (3+4).  
-     >        - Acordes estendidos (3 notas): 0+1+2, 0+2+3, 1+2+3, 2+3+4.  
-     >      * Descarte notas redundantes do acorde que violariam a ergonomia ou criariam aberturas proibidas (como 0+4 simultâneo em alta velocidade).  
-     > 2. Escreva testes em tests/test_game_design/test_chord_builder.py injetando clusters polifônicos de 4 notas de piano/guitarra e validando se o ChordBuilder simplifica para um acorde válido de no máximo 3 trastes."
+     > "1. Create src/game_design/chord_builder.py containing the `ChordBuilder` class:  
+     >    - Group notes with identical ticks (post-quantization).  
+     >    - If more than one note occurs on the same tick:  
+     >      * Restrict chord to a maximum of 2 or 3 simultaneous frets (Clone Hero / Guitar Hero standard).  
+     >      * Apply canonical chord patterns:  
+     >        - Power chords (2 notes): Green+Red (0+1), Green+Yellow (0+2), Red+Yellow (1+2), Red+Blue (1+3), Yellow+Blue (2+3), Yellow+Orange (2+4), Blue+Orange (3+4).  
+     >        - Extended chords (3 notes): 0+1+2, 0+2+3, 1+2+3, 2+3+4.  
+     >      * Discard redundant chord notes that violate ergonomics or produce prohibited stretches (such as simultaneous 0+4 at high speed).  
+     > 2. Write tests in tests/test_game_design/test_chord_builder.py injecting polyphonic clusters of 4 piano/guitar notes and validating that ChordBuilder simplifies them to a valid chord with <= 3 frets."
    - `ORIGINAL_REQUEST.md` R3 and Dispatch prompt demand:
      > "1. Grouping simultaneous notes at identical ticks into chords.  
      >  2. 4-note and 5-note polyphonic clusters simplified to at most 3 frets ($\le 3$).  

@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for the chartgen test suite."""
+"""Shared pytest fixtures for the music2chart test suite."""
 
 import pytest
 
@@ -10,7 +10,7 @@ def realistic_chart_content() -> str:
 {
   Name = "Test Anthem"
   Artist = "Synthetics"
-  Charter = "chartgen AI"
+  Charter = "music2chart AI"
   Offset = 0
   Resolution = 192
   Player2 = bass

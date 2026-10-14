@@ -27,7 +27,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    APP_NAME: str = "chartgen"
+    APP_NAME: str = "music2chart"
     APP_ENV: str = "development"
     UPLOAD_DIR: Path = Path("tmp/uploads")
     OUTPUT_DIR: Path = Path("tmp/output")

@@ -1,6 +1,6 @@
 # Phase 4 Orchestrator Final Handoff Report: Game Design & Note Mapping Engine
 
-**Project**: chartgen  
+**Project**: music2chart  
 **Phase**: Phase 4 (Game Design and Note Mapping Engine)  
 **Status**: COMPLETE (All 5 Milestones Passed & Certified)  
 **Date**: 2026-10-13  
@@ -11,7 +11,7 @@
 
 ## 1. Executive Summary
 
-Phase 4 of `chartgen` has been fully implemented, rigorously stress-tested, and forensically audited with 100% consensus across all milestones. The Game Design engine translates raw audio transcription events (`NoteEvent`s) into musically playable, ergonomic 5-fret Clone Hero charts (`ChartNote`s).
+Phase 4 of `music2chart` has been fully implemented, rigorously stress-tested, and forensically audited with 100% consensus across all milestones. The Game Design engine translates raw audio transcription events (`NoteEvent`s) into musically playable, ergonomic 5-fret Clone Hero charts (`ChartNote`s).
 
 ### Milestone State
 | Milestone | Name | Scope / Deliverables | Status | Gate Verdict |

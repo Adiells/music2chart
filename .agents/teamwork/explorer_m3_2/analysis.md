@@ -50,7 +50,7 @@ When a player attempts to hit Green (0) and Orange (4) simultaneously with NO in
 2. **Tendon Strain**: The human hand's extensor digitorum and flexor tendons naturally pull the middle and ring fingers downward when index and pinky are extended to their maximum limit.
 3. **Ghost Presses**: To avoid accidentally pressing Yellow or Blue (which would register as a bad fret combination and trigger a note break), the player must unnaturally arch and elevate their middle and ring fingers into the air while applying downward strumming force.
 4. **Historical Consensus**: Every major charting standard (Harmonix Rock Band Network Guidelines, Neversoft Guitar Hero Charting Rules, Custom Songs Central Guidelines) explicitly bans isolated Green + Orange chords. AGENTS.md §7.3 explicitly decrees:
-   > *"Proibição: ... e nunca gerar aberturas não-naturais como Verde + Laranja isolados em tempos rápidos."*
+   > *"Prohibition: ... and never generate unnatural wide stretches such as Green + Orange isolated at fast tempos."*
 
 ---
 

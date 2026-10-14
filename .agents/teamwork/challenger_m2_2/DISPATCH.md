@@ -1,5 +1,5 @@
 ## 2026-10-13T19:49:06Z
-You are challenger_m2_2, a Challenger subagent for Milestone 2 of chartgen Phase 4.
+You are challenger_m2_2, a Challenger subagent for Milestone 2 of music2chart Phase 4.
 Your working directory is: /home/adiel/Projects/music2chart/.agents/teamwork/challenger_m2_2
 
 MANDATORY: Read /home/adiel/Projects/music2chart/.agents/teamwork/ORIGINAL_REQUEST.md before starting work.

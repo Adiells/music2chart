@@ -1,5 +1,5 @@
 ## 2026-10-13T21:22:16Z
-You are worker_m5 for Milestone 5 (Full Project Verification & Regression) in chartgen Phase 4.
+You are worker_m5 for Milestone 5 (Full Project Verification & Regression) in music2chart Phase 4.
 
 Your working directory is:
 /home/adiel/Projects/music2chart/.agents/teamwork/worker_m5

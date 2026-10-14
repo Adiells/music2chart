@@ -2,7 +2,7 @@
 
 ## Initial Request — 2026-10-13T18:36:09Z
 
-Implement the complete Game Design and Note Mapping engine (Phase 4 of chartgen) for Clone Hero charts, translating raw MIDI NoteEvents into musically playable, ergonomic 5-fret charts.
+Implement the complete Game Design and Note Mapping engine (Phase 4 of music2chart) for Clone Hero charts, translating raw MIDI NoteEvents into musically playable, ergonomic 5-fret charts.
 
 Working directory: /home/adiel/Projects/music2chart
 Integrity mode: development

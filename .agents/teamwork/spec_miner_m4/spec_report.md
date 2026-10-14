@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-This report delivers the authoritative specification, interface contracts, behavioral edge cases, and concrete runnable test suites for the three remaining Game Design components in Phase 4 of `chartgen`:
+This report delivers the authoritative specification, interface contracts, behavioral edge cases, and concrete runnable test suites for the three remaining Game Design components in Phase 4 of `music2chart`:
 1. **`HopoEngine`** (`src/game_design/hopo_engine.py`): Determines Hammer-On / Pull-Off playability states (`is_hopo=True`) on notes with delta intervals $\le 65$ ticks and pitch/fret transitions, while enforcing strumming (`is_hopo=False`) on the initial note, notes separated by $> 65$ ticks, chords, and consecutive identical frets.
 2. **`SustainProcessor`** (`src/game_design/sustain_processor.py`): Sets note tail durations (`sustain_length`), enforcing zero sustain for short notes ($< 90$ ticks), cutting a 24-tick release margin ($S = \text{duration} - 24$) for sustained notes ($\ge 90$ ticks), clamping before consecutive note onsets to ensure re-strum clearance, and preserving full duration on track terminal notes.
 3. **`StarPowerGenerator`** (`src/game_design/star_power_generator.py`): Periodically synthesizes `StarPowerPhrase` intervals (every ~16 to 32 measures) positioned strictly over dense, active note sections, ensuring no phrase overlaps, positive duration ticks, and grace handling of short or empty charts.

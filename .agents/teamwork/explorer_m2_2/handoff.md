@@ -56,8 +56,8 @@ Direct observations from source code, project specifications, and runtime tests:
      ```
    - `PROMPTS.md:209-210`:
      ```text
-     - Adicione regra para Open Note (7): notas de pitch muito baixo (< MIDI 40) que ocorram isoladas em passagens rítmicas rápidas devem ser mapeadas como Fret 7.
-     - Adicione restrição de suavidade de transição: penalize saltos impossíveis de mais de 3 trastes em intervalos menores que 48 ticks (evite pular de Verde para Laranja consecutivamente em semicolcheias).
+     - Add Open Note (7) rule: very low pitch notes (< MIDI 40) occurring isolated in fast rhythmic passages must be mapped as Fret 7.
+     - Add transition smoothness constraint: penalize impossible jumps of >3 frets in intervals < 48 ticks (prevent consecutive jumps from Green to Orange in sixteenth notes).
      ```
 
 3. **Runtime Test Suite**:
