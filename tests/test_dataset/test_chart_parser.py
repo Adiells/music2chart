@@ -13,7 +13,7 @@ def test_parse_realistic_chart_metadata(realistic_chart_content: str) -> None:
 
     assert metadata["Name"] == "Test Anthem"
     assert metadata["Artist"] == "Synthetics"
-    assert metadata["Charter"] == "chartgen AI"
+    assert metadata["Charter"] == "music2chart AI"
     assert tempo_map.resolution == 192
 
 
