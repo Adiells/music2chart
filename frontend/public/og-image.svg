@@ -1,0 +1,294 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Dark Chassis Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090A0D" />
+      <stop offset="50%" stop-color="#0E1015" />
+      <stop offset="100%" stop-color="#07080A" />
+    </linearGradient>
+
+    <linearGradient id="highwayGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#141720" stop-opacity="0.95" />
+      <stop offset="40%" stop-color="#1A1E29" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#0E1015" stop-opacity="0.2" />
+    </linearGradient>
+
+    <!-- Fret Glow Filters -->
+    <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowRed" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowYellow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowBlue" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowOrange" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="auraStarPower" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Fret Linear Gradients -->
+    <linearGradient id="gemGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4EFEA3" />
+      <stop offset="100%" stop-color="#00A34F" />
+    </linearGradient>
+    <linearGradient id="gemRed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF6B7D" />
+      <stop offset="100%" stop-color="#C4001B" />
+    </linearGradient>
+    <linearGradient id="gemYellow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFF266" />
+      <stop offset="100%" stop-color="#D4AA00" />
+    </linearGradient>
+    <linearGradient id="gemBlue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#54CFFF" />
+      <stop offset="100%" stop-color="#0077B6" />
+    </linearGradient>
+    <linearGradient id="gemOrange" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFB049" />
+      <stop offset="100%" stop-color="#CC6600" />
+    </linearGradient>
+    
+    <!-- Sustain Tail Gradients -->
+    <linearGradient id="tailGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00E575" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#00E575" stop-opacity="0.7" />
+    </linearGradient>
+    <linearGradient id="tailYellow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD600" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#FFD600" stop-opacity="0.7" />
+    </linearGradient>
+
+    <!-- Background Grid Pattern -->
+    <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#181B22" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1200" height="630" fill="url(#bgGrad)" />
+  <rect width="1200" height="630" fill="url(#gridPattern)" opacity="0.6" />
+
+  <!-- Chassis 1px Border & Outer Frame -->
+  <rect x="20" y="20" width="1160" height="590" fill="none" stroke="#252A36" stroke-width="2" />
+  <rect x="24" y="24" width="1152" height="582" fill="none" stroke="#15171F" stroke-width="1" />
+
+  <!-- Corner Screws -->
+  <g fill="#373D4B" stroke="#1A1C23" stroke-width="1">
+    <!-- Top-Left -->
+    <circle cx="38" cy="38" r="6" />
+    <line x1="34" y1="38" x2="42" y2="38" stroke="#121318" stroke-width="1.5" />
+    <!-- Top-Right -->
+    <circle cx="1162" cy="38" r="6" />
+    <line x1="1158" y1="36" x2="1166" y2="40" stroke="#121318" stroke-width="1.5" />
+    <!-- Bottom-Left -->
+    <circle cx="38" cy="592" r="6" />
+    <line x1="36" y1="588" x2="40" y2="596" stroke="#121318" stroke-width="1.5" />
+    <!-- Bottom-Right -->
+    <circle cx="1162" cy="592" r="6" />
+    <line x1="1158" y1="592" x2="1166" y2="592" stroke="#121318" stroke-width="1.5" />
+  </g>
+
+  <!-- Top Silk-screen Header Bar -->
+  <rect x="20" y="20" width="1160" height="44" fill="#111319" />
+  <line x1="20" y1="64" x2="1180" y2="64" stroke="#252A36" stroke-width="1" />
+
+  <text x="56" y="48" font-family="'JetBrains Mono', 'SF Mono', Consolas, monospace" font-size="12" font-weight="700" fill="#E6EDF3" letter-spacing="2">MUSIC2CHART</text>
+  <text x="180" y="48" font-family="'JetBrains Mono', 'SF Mono', Consolas, monospace" font-size="11" fill="#7D8590" letter-spacing="1.5">// M2C-01 AUDIO-TO-CHART WORKSTATION</text>
+
+  <!-- Status Indicators on Top Right -->
+  <g transform="translate(860, 40)">
+    <circle cx="0" cy="4" r="3.5" fill="#00E575" filter="url(#glowGreen)" />
+    <text x="12" y="8" font-family="'JetBrains Mono', monospace" font-size="10" fill="#7D8590" letter-spacing="1">PWR</text>
+
+    <circle cx="65" cy="4" r="3.5" fill="#FFD600" filter="url(#glowYellow)" />
+    <text x="77" y="8" font-family="'JetBrains Mono', monospace" font-size="10" fill="#7D8590" letter-spacing="1">192 PPQ</text>
+
+    <circle cx="160" cy="4" r="3.5" fill="#00B0FF" filter="url(#glowBlue)" />
+    <text x="172" y="8" font-family="'JetBrains Mono', monospace" font-size="10" fill="#7D8590" letter-spacing="1">DSP READY</text>
+  </g>
+
+  <!-- ============================================================== -->
+  <!-- 3D HIGHWAY PERSPECTIVE VISUALIZER (Right Side)                 -->
+  <!-- ============================================================== -->
+  <g transform="translate(680, 75)">
+    <!-- Perspective Horizon Glow -->
+    <ellipse cx="230" cy="70" rx="190" ry="25" fill="#00B0FF" opacity="0.12" filter="url(#auraStarPower)" />
+
+    <!-- Highway Bed (Trapezoid: vanishing at top, wide at strike line) -->
+    <polygon points="120,70 340,70 450,470 10,470" fill="url(#highwayGrad)" stroke="#262D3D" stroke-width="1" />
+
+    <!-- Highway Side Rails -->
+    <line x1="120" y1="70" x2="10" y2="470" stroke="#48536B" stroke-width="2.5" />
+    <line x1="340" y1="70" x2="450" y2="470" stroke="#48536B" stroke-width="2.5" />
+
+    <!-- Measure Wires (Grid Horizontal Bars) -->
+    <line x1="128" y1="110" x2="332" y2="110" stroke="#252A38" stroke-width="1" stroke-dasharray="3,3" />
+    <line x1="108" y1="160" x2="352" y2="160" stroke="#2D3344" stroke-width="1" />
+    <line x1="84" y1="225" x2="376" y2="225" stroke="#252A38" stroke-width="1" stroke-dasharray="4,4" />
+    <line x1="56" y1="305" x2="404" y2="305" stroke="#363E52" stroke-width="1.5" />
+    <line x1="24" y1="400" x2="436" y2="400" stroke="#252A38" stroke-width="1" stroke-dasharray="4,4" />
+
+    <!-- 5 Fret Lane Separator Lines -->
+    <line x1="164" y1="70" x2="98" y2="470" stroke="#222735" stroke-width="1.5" />
+    <line x1="208" y1="70" x2="186" y2="470" stroke="#222735" stroke-width="1.5" />
+    <line x1="252" y1="70" x2="274" y2="470" stroke="#222735" stroke-width="1.5" />
+    <line x1="296" y1="70" x2="362" y2="470" stroke="#222735" stroke-width="1.5" />
+
+    <!-- Strike Line (Bottom target bar) -->
+    <line x1="10" y1="470" x2="450" y2="470" stroke="#A4B1CD" stroke-width="3" />
+    <line x1="10" y1="473" x2="450" y2="473" stroke="#00E575" stroke-width="1" opacity="0.6" filter="url(#glowGreen)" />
+
+    <!-- Target Receptors (5 target rings at strike line) -->
+    <ellipse cx="54" cy="470" rx="34" ry="10" fill="none" stroke="#00E575" stroke-width="2" opacity="0.7" />
+    <ellipse cx="142" cy="470" rx="34" ry="10" fill="none" stroke="#FF334B" stroke-width="2" opacity="0.7" />
+    <ellipse cx="230" cy="470" rx="34" ry="10" fill="none" stroke="#FFD600" stroke-width="2" opacity="0.7" />
+    <ellipse cx="318" cy="470" rx="34" ry="10" fill="none" stroke="#00B0FF" stroke-width="2" opacity="0.7" />
+    <ellipse cx="406" cy="470" rx="34" ry="10" fill="none" stroke="#FF9100" stroke-width="2" opacity="0.7" />
+
+    <!-- Sustain Tail (Green Lane) -->
+    <polygon points="135,160 141,160 62,380 46,380" fill="url(#tailGreen)" />
+
+    <!-- Sustain Tail (Yellow Lane) -->
+    <polygon points="234,225 240,225 238,340 222,340" fill="url(#tailYellow)" />
+
+    <!-- Approaching Note Gems (Rendered along perspective) -->
+    <!-- Far Orange Note -->
+    <ellipse cx="310" cy="140" rx="14" ry="5" fill="url(#gemOrange)" filter="url(#glowOrange)" />
+    <!-- Far Blue Note -->
+    <ellipse cx="218" cy="175" rx="16" ry="6" fill="url(#gemBlue)" filter="url(#glowBlue)" />
+    <!-- Mid Yellow Note -->
+    <ellipse cx="230" cy="225" rx="20" ry="7" fill="url(#gemYellow)" filter="url(#glowYellow)" />
+    <!-- Mid Red Note -->
+    <ellipse cx="160" cy="280" rx="24" ry="8" fill="url(#gemRed)" filter="url(#glowRed)" />
+    <!-- Near Green Note -->
+    <ellipse cx="54" cy="380" rx="30" ry="10" fill="url(#gemGreen)" filter="url(#glowGreen)" />
+
+    <!-- Star Power Accent Note (Blue/Silver lightning gem) -->
+    <ellipse cx="330" cy="350" rx="28" ry="9" fill="#E0F7FF" filter="url(#auraStarPower)" stroke="#00B0FF" stroke-width="2" />
+  </g>
+
+  <!-- ============================================================== -->
+  <!-- LEFT COLUMN: TITLE, ARCHITECTURE & VALUE PROPOSITION           -->
+  <!-- ============================================================== -->
+  <g transform="translate(60, 105)">
+    <!-- Category Pill -->
+    <rect x="0" y="0" width="310" height="26" fill="#141822" stroke="#2B3245" rx="3" />
+    <circle cx="14" cy="13" r="4" fill="#00E575" filter="url(#glowGreen)" />
+    <text x="26" y="17" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#00E575" letter-spacing="1.5">OPEN-SOURCE AI AUDIO-TO-CHART</text>
+
+    <!-- Main Title -->
+    <text x="0" y="80" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="900" fill="#FFFFFF" letter-spacing="-1">
+      MUSIC<tspan fill="#00E575">2</tspan>CHART
+    </text>
+
+    <!-- Headline Tagline -->
+    <text x="0" y="118" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="600" fill="#C9D1D9" letter-spacing="0.5">
+      Playable Clone Hero &amp; YARG Charts from Any Song
+    </text>
+
+    <!-- Detailed Subtext -->
+    <text x="0" y="152" font-family="'JetBrains Mono', monospace" font-size="12" fill="#8B949E" letter-spacing="0.3">
+      AI stem separation, 192 PPQ quantization, 35ms chord fusion,
+    </text>
+    <text x="0" y="172" font-family="'JetBrains Mono', monospace" font-size="12" fill="#8B949E" letter-spacing="0.3">
+      and automated Expert HOPO heuristics. Zero manual charting.
+    </text>
+
+    <!-- 5 Fret Color Accent Strip -->
+    <g transform="translate(0, 202)">
+      <rect x="0" y="0" width="80" height="4" fill="#00E575" />
+      <rect x="85" y="0" width="80" height="4" fill="#FF334B" />
+      <rect x="170" y="0" width="80" height="4" fill="#FFD600" />
+      <rect x="255" y="0" width="80" height="4" fill="#00B0FF" />
+      <rect x="340" y="0" width="80" height="4" fill="#FF9100" />
+    </g>
+
+    <!-- Architecture Engine Feature Badges (2x2 Grid) -->
+    <g transform="translate(0, 230)">
+      <!-- Badge 1: Demucs v4 -->
+      <g transform="translate(0, 0)">
+        <rect x="0" y="0" width="245" height="46" fill="#111319" stroke="#252A36" rx="2" />
+        <circle cx="16" cy="23" r="3.5" fill="#FF9100" />
+        <text x="28" y="20" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#E6EDF3">DEMUCS v4 HTDEMUCS</text>
+        <text x="28" y="34" font-family="'JetBrains Mono', monospace" font-size="9" fill="#7D8590">Neural Guitar Stem Isolation</text>
+      </g>
+
+      <!-- Badge 2: Spotify Basic Pitch -->
+      <g transform="translate(260, 0)">
+        <rect x="0" y="0" width="245" height="46" fill="#111319" stroke="#252A36" rx="2" />
+        <circle cx="16" cy="23" r="3.5" fill="#00B0FF" />
+        <text x="28" y="20" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#E6EDF3">SPOTIFY BASIC PITCH</text>
+        <text x="28" y="34" font-family="'JetBrains Mono', monospace" font-size="9" fill="#7D8590">Polyphonic Audio-to-MIDI</text>
+      </g>
+
+      <!-- Badge 3: 192 PPQ Grid -->
+      <g transform="translate(0, 56)">
+        <rect x="0" y="0" width="245" height="46" fill="#111319" stroke="#252A36" rx="2" />
+        <circle cx="16" cy="23" r="3.5" fill="#FFD600" />
+        <text x="28" y="20" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#E6EDF3">192 PPQ SYNC TRACK</text>
+        <text x="28" y="34" font-family="'JetBrains Mono', monospace" font-size="9" fill="#7D8590">BeatNet Variable BPM Grid</text>
+      </g>
+
+      <!-- Badge 4: .sng & .chart -->
+      <g transform="translate(260, 56)">
+        <rect x="0" y="0" width="245" height="46" fill="#111319" stroke="#252A36" rx="2" />
+        <circle cx="16" cy="23" r="3.5" fill="#00E575" />
+        <text x="28" y="20" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#E6EDF3">SONGBINARY V1 (.SNG)</text>
+        <text x="28" y="34" font-family="'JetBrains Mono', monospace" font-size="9" fill="#7D8590">Instant Little-Endian Package</text>
+      </g>
+    </g>
+
+    <!-- Canonical Domain & GitHub Repositories Strip -->
+    <g transform="translate(0, 360)">
+      <rect x="0" y="0" width="505" height="36" fill="#0D0E13" stroke="#212631" rx="3" />
+      
+      <!-- Domain Link Badge -->
+      <circle cx="16" cy="18" r="3.5" fill="#00E575" />
+      <text x="28" y="22" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#58A6FF">music2chart.adiels.me</text>
+
+      <line x1="225" y1="8" x2="225" y2="28" stroke="#252A36" stroke-width="1" />
+
+      <!-- GitHub Repo Badge -->
+      <text x="240" y="22" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#C9D1D9">github.com/Adiells/music2chart</text>
+    </g>
+  </g>
+
+  <!-- Bottom Rack Footer Strip -->
+  <rect x="20" y="572" width="1160" height="38" fill="#101217" />
+  <line x1="20" y1="572" x2="1180" y2="572" stroke="#252A36" stroke-width="1" />
+
+  <text x="56" y="596" font-family="'JetBrains Mono', monospace" font-size="10" fill="#58A6FF" letter-spacing="1">STANDARDS: CLONE HERO 192 PPQ • SONGBINARY V1 • YARG COMPATIBLE</text>
+  <text x="750" y="596" font-family="'JetBrains Mono', monospace" font-size="10" fill="#7D8590" letter-spacing="1">100% FREE &amp; OPEN SOURCE • MIT LICENSE</text>
+  <text x="1060" y="596" font-family="'JetBrains Mono', monospace" font-size="10" fill="#00E575" letter-spacing="1">ONLINE v1.0</text>
+</svg>
