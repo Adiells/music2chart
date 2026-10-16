@@ -146,7 +146,9 @@ async function extractPeaksFromArrayBuffer(
   } catch {
     return null;
   } finally {
-    void ctx.close().catch(() => undefined);
+    if ('close' in ctx && typeof (ctx as { close?: () => Promise<void> }).close === 'function') {
+      void (ctx as AudioContext).close().catch(() => undefined);
+    }
   }
 }
 
