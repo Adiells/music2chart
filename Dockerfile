@@ -1,17 +1,6 @@
 # ==============================================================================
-# Stage 1: Build Frontend Assets (Vite + React 19 + TypeScript + Three.js)
-# ==============================================================================
-FROM node:20-alpine AS frontend-builder
-WORKDIR /build
-
-COPY frontend/package*.json ./
-RUN npm ci
-
-COPY frontend/ ./
-RUN npm run build
-
-# ==============================================================================
-# Stage 2: Runtime Container (Python 3.11 + PyTorch + FFmpeg + FastAPI)
+# Pure Backend Runtime Container (Python 3.11 + PyTorch + FFmpeg + FastAPI)
+# Frontend is served independently via GitHub Pages (music2chart.adiels.me).
 # ==============================================================================
 FROM python:3.11-slim AS runtime
 
@@ -45,9 +34,6 @@ COPY tests /app/tests
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir ".[dev]"
 
-# Copy compiled frontend SPA assets from builder stage
-COPY --from=frontend-builder /build/dist /app/frontend/dist
-
 # Create runtime directories for uploads, stems, and output containers
 RUN groupadd --gid 10001 appgroup && \
     useradd --uid 10001 --gid appgroup --shell /bin/bash --create-home appuser && \
@@ -56,6 +42,6 @@ RUN groupadd --gid 10001 appgroup && \
 
 EXPOSE 8000
 
-# Start asynchronous FastAPI REST service with uvicorn
+# Start asynchronous FastAPI REST service with uvicorn (respecting Cloud Run $PORT)
 USER appuser
-ENTRYPOINT ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn src.api.app:app --host 0.0.0.0 --port ${PORT:-8000}"]

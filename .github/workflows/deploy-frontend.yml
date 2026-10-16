@@ -44,7 +44,7 @@ jobs:
 
       - name: Build Application
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL || '' }}
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://music2chart-api-122453307762.us-central1.run.app' }}
         run: npm run build
 
       - name: Setup Pages
