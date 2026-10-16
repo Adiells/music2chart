@@ -10,9 +10,11 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from config.settings import get_settings
+from src.api.routes import preview_router
 from src.api.routes import router as chart_router
 from src.api.schemas import HealthResponse
 
@@ -29,7 +31,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("Application shutting down.")
 
 
-def create_app() -> FastAPI:
+def create_app(frontend_dist: Path | str | None = None) -> FastAPI:
     """Construct and configure FastAPI application instance."""
     settings = get_settings()
 
@@ -107,21 +109,51 @@ def create_app() -> FastAPI:
         )
 
     # -----------------------------------------------------------------------
-    # Web UI Route
+    # Web UI Route & Frontend Static Files
     # -----------------------------------------------------------------------
-    index_file = Path(__file__).parent / "static" / "index.html"
+    if frontend_dist is not None:
+        frontend_dist_dir = Path(frontend_dist)
+    else:
+        explicit_dist = Path("/home/adiel/Projects/music2chart/frontend/dist")
+        relative_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+        frontend_dist_dir = explicit_dist if explicit_dist.is_dir() else relative_dist
+
+    fallback_index_file = Path(__file__).parent / "static" / "index.html"
+
+    # Serve compiled frontend assets if available
+    if frontend_dist_dir.is_dir() and (frontend_dist_dir / "assets").is_dir():
+        app.mount(
+            "/assets",
+            StaticFiles(directory=str(frontend_dist_dir / "assets")),
+            name="frontend_assets",
+        )
+    else:
+        # Fallback route to serve assets if frontend/dist/assets is compiled dynamically
+        @app.get("/assets/{file_path:path}", include_in_schema=False)
+        async def serve_dynamic_assets(file_path: str) -> FileResponse:
+            target = frontend_dist_dir / "assets" / file_path
+            if frontend_dist_dir.is_dir() and target.is_file():
+                return FileResponse(target)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Asset '{file_path}' not found.",
+            )
 
     @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     async def serve_index() -> HTMLResponse:
         """Serve the interactive web interface with live progress tracking."""
-        if index_file.exists():
-            return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
+        frontend_index = frontend_dist_dir / "index.html"
+        if frontend_dist_dir.is_dir() and frontend_index.is_file():
+            return HTMLResponse(content=frontend_index.read_text(encoding="utf-8"))
+        if fallback_index_file.exists():
+            return HTMLResponse(content=fallback_index_file.read_text(encoding="utf-8"))
         return HTMLResponse("<h1>music2chart API</h1>")
 
     # -----------------------------------------------------------------------
     # Router Mounts
     # -----------------------------------------------------------------------
     app.include_router(chart_router)
+    app.include_router(preview_router)
 
     return app
 

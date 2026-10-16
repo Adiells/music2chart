@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.api.app import app
+from src.api.app import app, create_app
 from src.api.routes import TaskStatus, task_manager
 
 
@@ -249,16 +249,14 @@ async def test_cors_headers():
 
 @pytest.mark.asyncio
 async def test_serve_web_ui():
-    """Verify root / serves the interactive web interface with the progress bar."""
+    """Verify root / serves the interactive web interface with the progress bar or React root."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         res = await client.get("/")
         assert res.status_code == 200
         assert "text/html" in res.headers["content-type"]
         body = res.text
-        assert "music2chart" in body
-        assert 'id="progress-bar"' in body
-        assert 'id="stage-text"' in body
-        assert 'id="percent-text"' in body
+        assert "music2chart" in body.lower()
+        assert ('id="root"' in body) or ('id="progress-bar"' in body)
 
 
 @pytest.mark.asyncio
@@ -484,3 +482,100 @@ async def test_generate_chart_swagger_string_placeholders_sanitized(dummy_wav_by
         assert kwargs["artist"] == "Band"
         assert kwargs["preset"] is None
         assert kwargs["genre"] == "rock"
+
+
+@pytest.mark.asyncio
+async def test_preview_audio_success(tmp_path: Path):
+    """Verify GET /preview/{task_id}/audio returns song.ogg with media_type audio/ogg."""
+    task_id = "test-preview-audio-id"
+    pkg_dir = tmp_path / task_id
+    pkg_dir.mkdir(parents=True)
+    audio_file = pkg_dir / "song.ogg"
+    audio_file.write_bytes(b"OggS_fake_audio_stream_data")
+
+    task_manager.create_task(task_id, song_name="Preview Song", artist="Preview Artist")
+    task_manager.set_completed(task_id, output_files={"audio": audio_file, "package_dir": pkg_dir})
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # Test root /preview/{task_id}/audio
+        res = await client.get(f"/preview/{task_id}/audio")
+        assert res.status_code == 200
+        assert "audio/ogg" in res.headers["content-type"]
+        assert res.content == b"OggS_fake_audio_stream_data"
+
+        # Test API v1 chart route /api/v1/chart/preview/{task_id}/audio
+        res_v1 = await client.get(f"/api/v1/chart/preview/{task_id}/audio")
+        assert res_v1.status_code == 200
+        assert "audio/ogg" in res_v1.headers["content-type"]
+        assert res_v1.content == b"OggS_fake_audio_stream_data"
+
+
+@pytest.mark.asyncio
+async def test_preview_audio_task_not_found():
+    """Verify 404 is returned when task_id does not exist."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        res = await client.get("/preview/non-existent-task-id/audio")
+        assert res.status_code == 404
+        assert "not found" in res.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_preview_audio_task_not_completed():
+    """Verify 404 is returned when task is still pending or processing."""
+    task_id = "task-still-running"
+    task_manager.create_task(task_id, song_name="Track", artist="Artist")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        res = await client.get(f"/preview/{task_id}/audio")
+        assert res.status_code == 404
+        assert "not completed" in res.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_preview_audio_file_missing_when_completed(tmp_path: Path):
+    """Verify 404 is returned when task is completed but audio file is missing on disk."""
+    task_id = "task-missing-audio-file"
+    task_manager.create_task(task_id, song_name="Track", artist="Artist")
+    task_manager.set_completed(
+        task_id, output_files={"audio": tmp_path / "does_not_exist.ogg"}
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        res = await client.get(f"/preview/{task_id}/audio")
+        assert res.status_code == 404
+        assert "not found" in res.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_serve_web_ui_fallback_when_dist_missing(tmp_path: Path):
+    """Verify root / falls back to src/api/static/index.html when frontend/dist is absent."""
+    non_existent_dist = tmp_path / "non_existent_dist"
+    custom_app = create_app(frontend_dist=non_existent_dist)
+    async with AsyncClient(transport=ASGITransport(app=custom_app), base_url="http://test") as client:
+        res = await client.get("/")
+        assert res.status_code == 200
+        assert "text/html" in res.headers["content-type"]
+        body = res.text
+        assert "music2chart" in body.lower()
+        assert 'id="progress-bar"' in body
+
+
+@pytest.mark.asyncio
+async def test_serve_web_ui_compiled_frontend(tmp_path: Path):
+    """Verify root / and static assets are served from compiled frontend/dist."""
+    custom_dist = tmp_path / "custom_frontend_dist"
+    custom_dist.mkdir()
+    (custom_dist / "index.html").write_text("<!doctype html><html><body><div id=\"root\">CUSTOM SPA</div></body></html>")
+    assets_dir = custom_dist / "assets"
+    assets_dir.mkdir()
+    (assets_dir / "bundle.js").write_text("console.log('spa bundle');")
+
+    custom_app = create_app(frontend_dist=custom_dist)
+    async with AsyncClient(transport=ASGITransport(app=custom_app), base_url="http://test") as client:
+        res_root = await client.get("/")
+        assert res_root.status_code == 200
+        assert "CUSTOM SPA" in res_root.text
+
+        res_asset = await client.get("/assets/bundle.js")
+        assert res_asset.status_code == 200
+        assert "console.log('spa bundle');" in res_asset.text

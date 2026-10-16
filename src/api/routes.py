@@ -235,6 +235,7 @@ def run_pipeline_task(
 
 
 router = APIRouter(prefix="/api/v1/chart", tags=["Chart Generation"])
+preview_router = APIRouter(tags=["Chart Preview"])
 
 
 @router.post(
@@ -577,4 +578,58 @@ async def download_chart(
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=f"Invalid download format '{format}'. Supported formats: sng, chart, zip.",
+    )
+
+
+@router.get(
+    "/preview/{task_id}/audio",
+    summary="Stream or download preview audio for a completed task",
+)
+@preview_router.get(
+    "/preview/{task_id}/audio",
+    summary="Stream or download preview audio for a completed task",
+)
+async def preview_audio(task_id: str) -> FileResponse:
+    """Return the 'song.ogg' audio file from the completed task directory as a streamable FileResponse."""
+    record = task_manager.get_task(task_id)
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task '{task_id}' not found.",
+        )
+
+    if record.status != TaskStatus.COMPLETED:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task '{task_id}' is not completed (current status: {record.status.value}).",
+        )
+
+    audio_path: Path | None = None
+    if "audio" in record.output_files:
+        candidate = Path(record.output_files["audio"])
+        if candidate.is_file():
+            audio_path = candidate
+
+    if audio_path is None and "package_dir" in record.output_files:
+        candidate = Path(record.output_files["package_dir"]) / "song.ogg"
+        if candidate.is_file():
+            audio_path = candidate
+
+    if audio_path is None:
+        settings = get_settings()
+        candidate = settings.OUTPUT_DIR / task_id / "song.ogg"
+        if candidate.is_file():
+            audio_path = candidate
+
+    if audio_path is None or not audio_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Preview audio file 'song.ogg' not found for task '{task_id}'.",
+        )
+
+    return FileResponse(
+        path=audio_path,
+        media_type="audio/ogg",
+        filename="song.ogg",
+        content_disposition_type="inline",
     )
