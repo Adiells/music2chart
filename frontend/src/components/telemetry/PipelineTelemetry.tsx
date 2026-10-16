@@ -390,6 +390,7 @@ export function PipelineTelemetry({
       code="M-04"
       title="Pipeline Telemetry // SSE Stream"
       className={className}
+      bodyClassName="flex-1 flex flex-col justify-between gap-3"
       headerRight={
         <div className="flex items-center gap-3">
           <span className="silk-wide tabular-nums text-[9px]">
@@ -411,7 +412,7 @@ export function PipelineTelemetry({
         </div>
       }
     >
-      <div className="flex h-full flex-col justify-between gap-3.5">
+      <div className="flex flex-1 flex-col justify-between gap-2.5">
         {/* 5-Stage Hardware LED Matrix */}
         <ol
           aria-label="Pipeline Processing Stages"
@@ -509,7 +510,7 @@ export function PipelineTelemetry({
         </div>
 
         {/* Embedded CRT System Telemetry Log Terminal */}
-        <div className="flex flex-col gap-1.5 border border-hw-border bg-[#07080A] p-2.5 shadow-recess">
+        <div className="flex flex-1 flex-col justify-between gap-1.5 border border-hw-border bg-[#07080A] p-2.5 shadow-recess">
           <div className="flex items-center justify-between border-b border-hw-border/70 pb-1">
             <span className="silk-wide text-[8px] text-silk-neutral">
               SYSTEM TELEMETRY LOG // EVENTSTREAM
@@ -521,7 +522,7 @@ export function PipelineTelemetry({
 
           <div
             aria-live="polite"
-            className="flex min-h-[78px] flex-col justify-end gap-0.5 font-mono text-[9px] leading-4 tracking-silk text-silk-neutral"
+            className="flex min-h-[78px] flex-1 flex-col justify-end gap-0.5 font-mono text-[9px] leading-4 tracking-silk text-silk-neutral"
           >
             {logEntries.map((line, idx) => {
               const isLatest = idx === logEntries.length - 1;

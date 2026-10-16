@@ -316,11 +316,11 @@ export default function App() {
         <AboutPage onReturnToWorkstation={() => setActiveView('workstation')} />
       ) : (
         /* Dual-Chassis Studio Workstation Grid: Left Control Rack (5 cols) | Right 3D Highway & Audit Deck (7 cols) */
-        <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-12">
+        <div className="grid grid-cols-1 items-stretch gap-3.5 xl:grid-cols-12">
           {/* ================================================================ */}
           {/* LEFT COLUMN: HARDWARE CONTROL RACK (UPLOAD, PRESETS, CALIB, SSE) */}
           {/* ================================================================ */}
-          <div className="flex h-full flex-col justify-between gap-4 xl:col-span-5">
+          <div className="flex h-full flex-col gap-3 xl:col-span-5">
             {/* M-01: Audio Dropzone & Metadata Inputs */}
             <ModulePanel
               code="M-01"
@@ -351,6 +351,42 @@ export default function App() {
               </div>
             </ModulePanel>
 
+            {/* M-03: Expandable Calibration Bay (6 RotaryKnobs + 6 ToggleSwitches) */}
+            <CalibrationBay
+              value={calibration}
+              onChange={handleCalibrationChange}
+              defaultExpanded
+              disabled={isBusy}
+            />
+
+            {/* M-04: Real-time SSE Pipeline Telemetry */}
+            <PipelineTelemetry
+              taskId={activeTaskId}
+              submitting={submitting}
+              canGenerate={Boolean(audioFile)}
+              onGenerate={() => {
+                void handleGenerate();
+              }}
+              onRunDemo={handleRunDemo}
+              onAbort={handleAbort}
+              onCompleted={handleTelemetryCompleted}
+              className="flex-1 flex flex-col"
+            />
+
+            {submitError ? (
+              <div
+                role="alert"
+                className="border border-fret-red bg-[#1B0F13] px-3.5 py-2 font-mono text-[10px] uppercase tracking-silk text-fret-red"
+              >
+                UPLOAD / API ERROR // {submitError}
+              </div>
+            ) : null}
+          </div>
+
+          {/* ================================================================ */}
+          {/* RIGHT COLUMN: 3D THREE.JS HIGHWAY VISUALIZER, AUDIT & EXPORT     */}
+          {/* ================================================================ */}
+          <div className="flex h-full flex-col gap-3 xl:col-span-7">
             {/* M-02: Master Preset Rotary Selector & Difficulty Tier */}
             <ModulePanel
               code="M-02"
@@ -389,42 +425,6 @@ export default function App() {
               </div>
             </ModulePanel>
 
-            {/* M-03: Expandable Calibration Bay (6 RotaryKnobs + 6 ToggleSwitches) */}
-            <CalibrationBay
-              value={calibration}
-              onChange={handleCalibrationChange}
-              defaultExpanded
-              disabled={isBusy}
-            />
-
-            {/* M-04: Real-time SSE Pipeline Telemetry */}
-            <PipelineTelemetry
-              taskId={activeTaskId}
-              submitting={submitting}
-              canGenerate={Boolean(audioFile)}
-              onGenerate={() => {
-                void handleGenerate();
-              }}
-              onRunDemo={handleRunDemo}
-              onAbort={handleAbort}
-              onCompleted={handleTelemetryCompleted}
-              className="flex-1"
-            />
-
-            {submitError ? (
-              <div
-                role="alert"
-                className="border border-fret-red bg-[#1B0F13] px-3.5 py-2 font-mono text-[10px] uppercase tracking-silk text-fret-red"
-              >
-                UPLOAD / API ERROR // {submitError}
-              </div>
-            ) : null}
-          </div>
-
-          {/* ================================================================ */}
-          {/* RIGHT COLUMN: 3D THREE.JS HIGHWAY VISUALIZER, AUDIT & EXPORT     */}
-          {/* ================================================================ */}
-          <div className="flex h-full flex-col justify-between gap-3 xl:col-span-7">
             {/* V-01: Three.js 3D Inclined Highway & Transport (Compact 220px / Focus 320px) */}
             <HighwayScene
               chart={chart}
@@ -451,16 +451,16 @@ export default function App() {
             />
 
             {/* A-02 & A-04: Instantaneous BPM / Meter Display & Chart Audit Counters */}
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+            <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-12">
               <TempoDisplay
                 chart={chart}
                 currentTime={player.currentTime}
                 isPlaying={player.isPlaying}
-                className="lg:col-span-5"
+                className="h-full lg:col-span-5"
               />
               <StatsCard
                 stats={chart.stats}
-                className="lg:col-span-7"
+                className="h-full lg:col-span-7"
               />
             </div>
 

@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../lib/utils';
 import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
 
 export type ExportFormat = 'sng' | 'chart' | 'zip';
+
+const IDLE_STATUS_NOTE = 'READY FOR PACKAGE DISPATCH';
+/** Delay before the status readout reverts to idle after a download action. */
+const STATUS_RESET_MS = 3500;
 
 export interface ExportPanelProps {
   /** Completed backend task UUID. */
@@ -36,12 +40,30 @@ export function ExportPanel({
   className,
 }: ExportPanelProps) {
   const [activeFormat, setActiveFormat] = useState<ExportFormat | null>(null);
-  const [statusNote, setStatusNote] = useState<string>('READY FOR PACKAGE DISPATCH');
+  const [statusNote, setStatusNote] = useState<string>(IDLE_STATUS_NOTE);
+  const statusResetRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (statusResetRef.current !== null) window.clearTimeout(statusResetRef.current);
+    },
+    [],
+  );
 
   const hasBackendPackage = Boolean(completedTaskId && !completedTaskId.startsWith('demo-'));
 
+  /** Re-arms the idle-status timer so the readout reverts 3.5 s after the latest action. */
+  const scheduleStatusReset = (): void => {
+    if (statusResetRef.current !== null) window.clearTimeout(statusResetRef.current);
+    statusResetRef.current = window.setTimeout(() => {
+      statusResetRef.current = null;
+      setStatusNote(IDLE_STATUS_NOTE);
+    }, STATUS_RESET_MS);
+  };
+
   const handleDownload = (format: ExportFormat): void => {
     setActiveFormat(format);
+    scheduleStatusReset();
 
     if (hasBackendPackage && completedTaskId) {
       const url = `/api/v1/chart/download/${encodeURIComponent(completedTaskId)}?format=${format}`;

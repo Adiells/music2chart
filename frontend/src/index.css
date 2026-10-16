@@ -102,4 +102,12 @@
     user-select: none;
     -webkit-user-select: none;
   }
+  /* Scrollable strip without a visible native scrollbar (section marker rail). */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }

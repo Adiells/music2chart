@@ -105,9 +105,9 @@ export function NpsGraph({
           aria-hidden="true"
         >
           {/* Horizontal reference grid lines (25%, 50%, 75%) */}
-          <line x1="0" y1="25" x2={buckets.length * 6} y2="25" stroke="#1B1F28" strokeWidth="1" />
-          <line x1="0" y1="50" x2={buckets.length * 6} y2="50" stroke="#1B1F28" strokeWidth="1" />
-          <line x1="0" y1="75" x2={buckets.length * 6} y2="75" stroke="#1B1F28" strokeWidth="1" />
+          <line x1="0" y1="25" x2={Math.max(1, buckets.length) * 6} y2="25" stroke="#1B1F28" strokeWidth="1" />
+          <line x1="0" y1="50" x2={Math.max(1, buckets.length) * 6} y2="50" stroke="#1B1F28" strokeWidth="1" />
+          <line x1="0" y1="75" x2={Math.max(1, buckets.length) * 6} y2="75" stroke="#1B1F28" strokeWidth="1" />
 
           {buckets.map((b, i) => {
             const h = b.nps <= 0 ? 2 : Math.max(6, Math.round((b.nps / maxScale) * 92));

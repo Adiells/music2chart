@@ -48,7 +48,7 @@ export function ModulePanel({
         </>
       ) : null}
 
-      <header className="flex min-h-[34px] items-center justify-between gap-4 border-b border-hw-border px-7 py-2">
+      <header className="flex min-h-[34px] items-center justify-between gap-4 border-b border-hw-border px-5 py-2">
         <div className="flex items-center gap-3">
           {code ? <span className="silk-wide tabular-nums">{code}</span> : null}
           {code ? <span className="h-3 w-px bg-hw-border" aria-hidden="true" /> : null}
@@ -57,10 +57,10 @@ export function ModulePanel({
         {headerRight ? <div className="flex items-center gap-3">{headerRight}</div> : null}
       </header>
 
-      <div className={cn('flex-1 px-7 py-5', bodyClassName)}>{children}</div>
+      <div className={cn('px-5 py-3.5', bodyClassName)}>{children}</div>
 
       {footer ? (
-        <footer className="silk-wide border-t border-hw-border px-7 py-1.5 text-[9px]">{footer}</footer>
+        <footer className="silk-wide border-t border-hw-border px-5 py-1.5 text-[9px]">{footer}</footer>
       ) : null}
     </section>
   );

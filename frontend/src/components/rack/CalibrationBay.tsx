@@ -127,7 +127,7 @@ export function CalibrationBay({
       }
     >
       {expanded ? (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-3.5">
           {/* Upper Bank: 6 Analog Rotary Potentiometers */}
           <div>
             <div className="mb-3 flex items-center justify-between border-b border-hw-border pb-1.5">
@@ -226,7 +226,7 @@ export function CalibrationBay({
           </div>
 
           {/* Lower Bank: 6 Mechanical Bat-Handle Toggle Switches */}
-          <div className="border-t border-hw-border pt-4">
+          <div className="border-t border-hw-border pt-3">
             <div className="mb-3 flex items-center justify-between">
               <span className="silk-wide text-[9px]">6-CH HEURISTIC ROUTING MATRIX // CLONE HERO RULESET</span>
               <span className="silk-wide text-[9px]">192 PPQ STRICT SNAP</span>

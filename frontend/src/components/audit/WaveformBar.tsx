@@ -87,7 +87,7 @@ export function WaveformBar({
       </div>
 
       {/* Section Marker Pills from [Events] */}
-      <div className="flex flex-wrap items-center gap-1.5" role="navigation" aria-label="Chart Sections">
+      <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 no-scrollbar" role="navigation" aria-label="Chart Sections">
         {sections.map((sec, idx) => {
           const nextSec = sections[idx + 1];
           const isCurrent =
@@ -99,7 +99,7 @@ export function WaveformBar({
               type="button"
               onClick={() => onSeek(sec.timeSeconds)}
               className={cn(
-                'border px-2 py-0.5 font-mono text-[9px] uppercase tracking-silk transition-colors',
+                'shrink-0 whitespace-nowrap border px-2 py-0.5 font-mono text-[9px] uppercase tracking-silk transition-colors',
                 isCurrent
                   ? 'border-fret-green bg-[#102019] text-fret-green'
                   : 'border-hw-border bg-chassis text-silk-neutral hover:border-hw-screw hover:text-silk',

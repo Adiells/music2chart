@@ -14,6 +14,8 @@ export interface RackChassisProps {
   powered?: boolean;
   /** Extra hardware for the header's right side (status LEDs, links). */
   headerRight?: ReactNode;
+  /** Optional custom footer content; defaults to the industrial chassis telemetry bar. */
+  footer?: ReactNode;
   className?: string;
   children: ReactNode;
 }
@@ -44,6 +46,7 @@ export function RackChassis({
   serial = 'SN 0000-0001',
   powered = true,
   headerRight,
+  footer,
   className,
   children,
 }: RackChassisProps) {
@@ -60,12 +63,36 @@ export function RackChassis({
             </div>
             <div className="flex items-center gap-5">
               {headerRight}
-              <span className="silk-wide tabular-nums">{serial}</span>
+              <span className="silk-wide hidden xl:inline tabular-nums">{serial}</span>
               <LedIndicator color="green" on={powered} size="sm" label="PWR" />
             </div>
           </header>
 
-          <div className="flex-1 p-4 md:p-5">{children}</div>
+          <div className="flex-1 p-3 md:p-4">{children}</div>
+
+          <footer className="border-t border-hw-border bg-panel px-5 py-3">
+            {footer ?? (
+              <div className="flex flex-wrap items-center justify-between gap-4 font-mono text-[9px] uppercase tracking-silk text-silk-dim">
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-silk">MUSIC2CHART // DUAL-CHASSIS WORKSTATION</span>
+                  <span className="hidden sm:inline text-hw-screw">|</span>
+                  <span className="hidden sm:inline text-silk-neutral">STANDARDS: CLONE HERO 192 PPQ • SONGBINARY V1 (.SNG)</span>
+                </div>
+                <div className="hidden lg:flex items-center gap-3 text-silk-neutral">
+                  <span>CLOCK: 192 PPQ SYNC LOCKED</span>
+                  <span className="text-hw-screw">•</span>
+                  <span>LATENCY: 0 MS BUFFER</span>
+                  <span className="text-hw-screw">•</span>
+                  <span className="text-fret-green">DSP ENGINE ACTIVE</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="tabular-nums">FW 1.0.0 • REV 2026-1016</span>
+                  <span className="text-hw-screw">|</span>
+                  <LedIndicator color="green" on size="xs" label="ONLINE" />
+                </div>
+              </div>
+            )}
+          </footer>
         </div>
 
         <RackEar side="right" />

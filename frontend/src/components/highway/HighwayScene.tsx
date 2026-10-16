@@ -59,7 +59,7 @@ export function HighwayScene({
     false,
   ]);
   const [openHit, setOpenHit] = useState(false);
-  const [viewMode, setViewMode] = useState<'compact' | 'focus'>('compact');
+  const [viewMode, setViewMode] = useState<'compact' | 'focus'>('focus');
 
   useEffect(() => {
     chartRef.current = chart;
@@ -292,15 +292,21 @@ export function HighwayScene({
             <LedIndicator color="open" on={openHit} size="xs" label="OPEN" />
           </div>
           <span className="h-3 w-px bg-hw-border" aria-hidden="true" />
-          <PushButton
-            size="sm"
-            label={viewMode === 'focus' ? 'Compact View' : 'Focus View'}
-            sublabel={viewMode === 'focus' ? '220px' : '320px'}
-            led="blue"
-            ledOn={viewMode === 'focus'}
-            latched={viewMode === 'focus'}
-            onClick={() => setViewMode((m) => (m === 'compact' ? 'focus' : 'compact'))}
-          />
+          <div className="hidden xl:flex items-center gap-1.5 border border-hw-border bg-chassis px-2 py-0.5 font-mono text-[9px] uppercase tracking-silk text-starpower">
+            <span className="inline-block h-1.5 w-1.5 bg-starpower" aria-hidden="true" />
+            <span>STUDIO FOCUS VIEW</span>
+          </div>
+          <div className="xl:hidden">
+            <PushButton
+              size="sm"
+              label={viewMode === 'focus' ? 'Compact View' : 'Focus View'}
+              sublabel={viewMode === 'focus' ? '220px' : '320px'}
+              led="blue"
+              ledOn={viewMode === 'focus'}
+              latched={viewMode === 'focus'}
+              onClick={() => setViewMode((m) => (m === 'compact' ? 'focus' : 'compact'))}
+            />
+          </div>
         </div>
       </div>
 
@@ -309,6 +315,7 @@ export function HighwayScene({
         className={cn(
           'relative w-full overflow-hidden bg-[#090A0D] transition-[height] duration-150',
           viewMode === 'focus' ? 'h-[320px] sm:h-[340px]' : 'h-[220px] sm:h-[240px]',
+          'xl:h-[340px]',
         )}
       >
         <div ref={mountRef} className="h-full w-full" />
