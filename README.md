@@ -1,135 +1,145 @@
-# music2chart
+# Music2Chart
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.2+-ee4c2c.svg)](https://pytorch.org/)
-[![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](https://www.docker.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<div align="center">
 
-**music2chart** is an automated high-fidelity audio-to-chart pipeline that converts raw audio tracks (MP3, WAV, FLAC, OGG) into playable packages for **Clone Hero** in both `.chart` (industry-standard text format) and `.sng` (SongBinary v1 Little-Endian container) formats.
+[![Live Web App](https://img.shields.io/badge/Live_App-music2chart.adiels.me-00f5d4?style=for-the-badge&logo=googlechrome&logoColor=black)](https://music2chart.adiels.me/)
+[![GitHub Stars](https://img.shields.io/github/stars/Adiells/music2chart?style=for-the-badge&color=ffd166&logo=github)](https://github.com/Adiells/music2chart/stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-It exposes an asynchronous, containerized **FastAPI** REST interface powered by deep-learning stem separation, adaptive tempo tracking, polyphonic neural transcription, intelligent harmonic overtone suppression, and Expert-difficulty game design heuristics.
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch 2.2+](https://img.shields.io/badge/PyTorch-2.2+-EE4C2C.svg?style=flat-square&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED.svg?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Clone Hero & YARG](https://img.shields.io/badge/Compatible-Clone_Hero_%7C_YARG-9d4edd.svg?style=flat-square)](https://clonehero.net/)
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-ea4c89.svg?style=flat-square&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Adiells)
 
----
+**Automated high-fidelity audio-to-chart workstation for Clone Hero and YARG.**  
+Convert any audio track (MP3, WAV, FLAC, OGG) into tournament-grade `.chart` and `.sng` packages in seconds, powered by neural stem separation, 192 PPQ dynamic beat grids, and authentic Guitar Hero game design heuristics.
 
-## Table of Contents
+[🚀 **Try It Live**](#try-it-live) • [⚡ **Quickstart**](#quickstart) • [🧠 **Architecture**](#pipeline-architecture) • [🔧 **REST API**](#rest-api) • [💖 **Sponsor Compute**](#sponsoring-server-infrastructure)
 
-- [Pipeline Architecture](#pipeline-architecture)
-- [Key Features](#key-features)
-- [Directory Layout](#directory-layout)
-- [REST API Specification](#rest-api-specification)
-  - [Generate Chart](#1-generate-chart)
-  - [Task Status](#2-task-status)
-  - [Download Package](#3-download-package)
-  - [Health Check](#4-health-check)
-- [Python API Usage](#python-api-usage)
-- [Dataset & Benchmarking Tools](#dataset--benchmarking-tools)
-- [Installation & Setup](#installation--setup)
-- [Docker Deployment](#docker-deployment)
-- [Testing & Quality Assurance](#testing--quality-assurance)
+</div>
 
 ---
 
-## Pipeline Architecture
+<a id="try-it-live"></a>
+## ⚡ Try It Live
+
+No local installation, Python environment, or GPU needed. Run songs through the full audio-to-chart workstation directly in your web browser:
+
+👉 **[https://music2chart.adiels.me/](https://music2chart.adiels.me/)**
+
+- **Drag-and-Drop Ingestion**: Upload any MP3, WAV, FLAC, or OGG file up to 50MB.
+- **Interactive 3D Highway**: Preview notes on a real-time perspective highway before downloading.
+- **One-Click Deliverables**: Download `.sng` (SongBinary v1) files or `.chart` zip archives ready to drop into your `Clone Hero/Songs/` folder.
+- **Live Pipeline Telemetry**: Real-time progress bar powered by Server-Sent Events (SSE).
+
+---
+
+<a id="pipeline-architecture"></a>
+## 🧠 Pipeline Architecture
 
 ```
 [ Raw Audio: MP3 / WAV / FLAC / OGG ]
                     │
                     ▼
-[ Stem Separation: Demucs v4 (htdemucs) ] ───► Isolates Guitar, Bass, Drums, Other
+[ 1. Stem Separation: Meta Demucs v4 (htdemucs) ] ───► Isolates Lead Electric Guitar Stem
                     │
                     ▼
-[ Tempo Tracking & Beat Grid: Librosa / BeatNet ] ───► Dynamic BPM map (192 PPQ standard)
+[ 2. Tempo Tracking & Beat Grid: Librosa / BeatNet ] ───► Dynamic BPM Changes & 192 PPQ Resolution
                     │
                     ▼
-[ Polyphonic Transcription: Spotify Basic Pitch ] ───► Pitch (MIDI 0-127), Onsets, Durations
+[ 3. Neural Pitch Transcription: Spotify Basic Pitch ] ──► Frame-level Polyphonic MIDI (0–127)
                     │
                     ▼
-[ Harmonic Filtering & Grid Quantization ] ───► Removes distortion overtones & snaps to 192 PPQ
+[ 4. Harmonic Filtering & Overtone Suppression ] ────► Strips 2nd (+12st) & 3rd (+19st) Overtones
                     │
                     ▼
-[ Game Design Mapping Engine ] ───► 5-fret sliding tessitura, chord ergonomics, HOPOs, sustains
+[ 5. Game Design Mapping Engine (Expert Heuristics) ]
+    ├─ 35ms Chord Fusion Window (eliminates string-roll micro-staircases)
+    ├─ 192 PPQ Quantization (1/4=192, 1/8=96, 1/12=64, 1/16=48, 1/24=32, 1/32=24 ticks)
+    ├─ 5-Fret Sliding Tessitura Projection (Green → Orange)
+    ├─ Power Chord Ergonomics & Fast-Run Triad Collapsing
+    ├─ Natural HOPO Engine with Explicit N 5 0 Forcers
+    └─ Mandatory 24-Tick Re-Strum Sustain Release Margins
                     │
                     ▼
-[ Serialization: ChartWriter, IniWriter & SngPacker ] ───► notes.chart, song.ini, song.ogg, .sng
+[ 6. Dual Container Serialization ]
+    ├─ Strict notes.chart (milli-BPM SyncTrack, Events, ExpertSingle) + song.ini
+    └─ Little-Endian .sng v1 Container with 16-byte XOR Stream Masking
                     │
                     ▼
-[ FastAPI Async Server & Background Workers ] ───► REST endpoints for job polling and streaming
+[ 7. Asynchronous FastAPI Server & Web Workstation ] ──► Instant Web / REST / Docker Delivery
 ```
 
 ---
 
-## Key Features
+## 🔬 Key Engineering Highlights
 
-- **Stem Separation**: Powered by Meta's Demucs v4 (`htdemucs`) to cleanly isolate the lead electric guitar stem, with graceful fallback to stereo/mono mix for CPU environments.
-- **Micro-Timing & Beat Grid**: Extracts variable BPM maps and snaps musical events to standard **192 PPQ** (quarter = 192, 1/8 = 96, 1/12 triplet = 64, 1/16 = 48, 1/24 sextuplet = 32, 1/32 = 24 ticks).
-- **Distortion Harmonic Suppression**: Suppresses spurious 2nd harmonic (octave / +12 semitones) and 3rd harmonic (5th / +19 semitones) overtones generated by high-gain guitar amplifiers.
-- **Adaptive 5-Fret Tessitura Projection**: Dynamically projects notes across Green (0), Red (1), Yellow (2), Blue (3), and Orange (4) using a 2-to-4 measure sliding pitch window, ensuring solos fluidly utilize the full fretboard. Palm-muted sub-bass riffs are assigned Open notes (7).
-- **Ergonomic Chord Formation**: Canonical power chords (0+1, 0+2, 1+2, etc.) and extended 3-note triads (0+1+2, 1+2+3, etc.), preventing unplayable wide controller stretches.
-- **Natural HOPO Engine**: Automatically calculates Hammer-On / Pull-Off states for intervals $\le$ 65 ticks with fret variation, and forces strum mode for same-fret repetitions.
-- **Sustain Release Margins**: Cuts a mandatory 24-tick release margin prior to consecutive note onsets to ensure clean physical re-strums in the game engine.
-- **Star Power Allocation**: Automatically generates periodic Star Power phrases (`S 2 <length>`) every 16–32 measures during rhythmic sections.
-- **Dual Container Serialization**:
-  - Textual `.chart` with `[Song]`, `[SyncTrack]` (milli-BPM), `[Events]`, and `[ExpertSingle]`.
-  - Companion `song.ini` metadata file.
-  - Little-Endian `.sng` container (v1) with byte-level 16-byte pseudo-random XOR stream masking (`xor_key = xor_mask[i % 16] ^ (i & 0xFF)`).
+`music2chart` is designed from the ground up to solve the longstanding flaws of naive audio-to-chart converters:
+
+- **Meta Demucs v4 (`htdemucs`) Stem Isolation**: Eliminates transcription bleed by cleanly extracting the lead guitar track from dense mixes, with graceful fallback to stereo/mono mix in CPU environments.
+- **Spotify Basic Pitch Polyphonic Model**: State-of-the-art neural transcription delivering precise onset, offset, and velocity detection.
+- **Distortion Harmonic Suppression**: High-gain guitar amplifiers introduce strong 2nd harmonic (octave / +12 semitones) and 3rd harmonic (perfect 5th / +19 semitones) resonance. Our DSP filter identifies and removes these acoustic artifacts before mapping.
+- **35ms Chord Fusion Window**: Acoustic pick drags across guitar strings create 10–30ms inter-string onset delays. Without fusion, naive algorithms output unplayable 8-tick micro-staircases ("walls of notes"). We fuse onsets within 35ms into unified chord events.
+- **192 PPQ Strict Quantization**: Snaps onsets exclusively to musically valid subdivisions (192, 96, 64, 48, 32, 24 ticks) while maintaining a strict 24-tick minimum note spacing.
+- **Natural HOPO Engine with `N 5 0` Forcers**: Fast single-note runs ($\le$ 96 ticks) anchor on an initial strum, followed by explicit `<tick> = N 5 0` HOPO forcers on subsequent notes for effortless fret tapping. Same-fret repetitions automatically enforce physical strumming.
+- **24-Tick Sustain Release Margins**: Sustains subtract 24 ticks prior to subsequent onsets, ensuring the Clone Hero engine registers physical re-strums cleanly without note tail collision.
+- **Little-Endian `.sng` Container (v1)**: Generates native binary `.sng` packages complete with metadata, file indexing, and byte-level 16-byte pseudo-random XOR stream masking (`xor_key = xor_mask[i % 16] ^ (i & 0xFF)`).
 
 ---
 
-## Directory Layout
+<a id="quickstart"></a>
+## ⚡ Quickstart
 
+### Tier 1: Web Workstation (Zero Setup)
+Open [https://music2chart.adiels.me/](https://music2chart.adiels.me/) in your browser, drag and drop your song, and download the `.sng` file.
+
+---
+
+### Tier 2: Docker Compose (Recommended for Self-Hosting)
+Run the complete containerized stack (FastAPI backend + Vite web frontend + CUDA/PyTorch support):
+
+```bash
+# Clone the repository
+git clone https://github.com/Adiells/music2chart.git
+cd music2chart
+
+# Build and start services
+docker compose up --build -d
+
+# Check live logs
+docker compose logs -f
 ```
-music2chart/
-├── Dockerfile                         # Container build with Python 3.11, CUDA, FFmpeg
-├── docker-compose.yml                 # Service orchestrator & persistent volume caching
-├── pyproject.toml                     # Dependencies, pytest, and ruff linting configuration
-├── config/
-│   └── settings.py                    # Pydantic BaseSettings (directories, thresholds, devices)
-├── dataset/                           # Benchmarking & Ground Truth tooling
-│   ├── chorus_scraper.py              # Chorus Encore API client for verified community charts
-│   ├── chart_parser.py                # Bidirectional parser for human .chart files
-│   ├── feature_extractor.py           # Feature matrix extraction & IoU time-alignment
-│   └── evaluate_mapping.py            # F1-Score, Fret Accuracy & Chord Similarity evaluator
-├── src/
-│   ├── models/                        # Domain types (Audio, MidiEvents, TempoMap, Chart, SNG)
-│   ├── audio_processing/              # Demucs separator, TempoTracker, Basic Pitch, HarmonicFilter
-│   ├── game_design/                   # NoteQuantizer, PitchToFretMapper, ChordBuilder, HopoEngine
-│   ├── serialization/                 # ChartWriter, IniWriter, SngPacker (with XOR masking)
-│   ├── pipeline.py                    # Music2ChartPipeline end-to-end orchestrator facade
-│   └── api/                           # FastAPI app, schemas, and async REST routes
-└── tests/                             # Full test suite (245 tests, 91% coverage)
+The web workstation is now accessible at `http://localhost:8000` (or frontend dev server at `http://localhost:5173`).
+
+---
+
+### Tier 3: Local Python Environment
+
+```bash
+# Prerequisites: Python 3.11+ and FFmpeg installed on PATH
+git clone https://github.com/Adiells/music2chart.git
+cd music2chart
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# Install package and development tools
+pip install -e ".[dev]"
+
+# Launch the FastAPI server
+uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --reload
 ```
+Interactive API documentation will be available at `http://localhost:8000/docs`.
 
 ---
 
-## Web Interface & Real-Time Progress Bar
+<a id="rest-api"></a>
+### Tier 4: REST API (cURL / Automation)
 
-`music2chart` includes a modern, responsive web application served directly at the root URL:
-- **Web UI URL**: `http://localhost:8000/`
-- **Features**:
-  - Drag-and-drop audio uploader (.mp3, .wav, .ogg, .flac).
-  - Auto-detection of song title and artist from filename.
-  - Output packaging selector (`.sng`, `.chart` ZIP, or both).
-  - **Live Progress Bar**: Real-time progress bar (0%–100%) showing the active pipeline stage (e.g. *Analyzing tempo*, *Separating audio stems*, *Transcribing notes via Basic Pitch*, *Quantizing 192 PPQ*, *Forming chords*, *Packaging deliverables*).
-  - Direct one-click download buttons for generated packages (`.sng` / `.zip`).
-
----
-
-## REST API Specification
-
-Base URL: `http://localhost:8000/api/v1`
-
-### 1. Generate Chart
-Submit an audio file for background chart generation.
-
-- **Endpoint**: `POST /api/v1/chart/generate`
-- **Content-Type**: `multipart/form-data`
-- **Parameters**:
-  - `file` (UploadFile, required): Audio track (`.mp3`, `.wav`, `.flac`, `.ogg`).
-  - `song_name` (string, optional): Title of the song (defaults to filename).
-  - `artist` (string, optional): Artist name (defaults to `"Unknown Artist"`).
-  - `format` (string, optional): Output packaging (`"sng"`, `"chart"`, or `"both"` — default: `"both"`).
-
+#### 1. Submit Audio Track for Processing
 ```bash
 curl -X POST "http://localhost:8000/api/v1/chart/generate" \
   -F "file=@solitude.mp3" \
@@ -149,93 +159,25 @@ curl -X POST "http://localhost:8000/api/v1/chart/generate" \
 }
 ```
 
----
-
-### 2. Task Status
-Poll the progress of an asynchronous job.
-
-- **Endpoint**: `GET /api/v1/chart/status/{task_id}`
-
-```bash
-curl "http://localhost:8000/api/v1/chart/status/8f484ddf-9988-47a8-a53b-e3c3b03f0b24"
-```
-
-**Response (`200 OK`):**
-```json
-{
-  "task_id": "8f484ddf-9988-47a8-a53b-e3c3b03f0b24",
-  "status": "COMPLETED",
-  "progress": 1.0,
-  "stage": "Completed",
-  "error": null,
-  "available_formats": ["sng", "chart"],
-  "created_at": 1728945600.0,
-  "updated_at": 1728945642.0
-}
-```
-
-Status states: `PENDING` $\rightarrow$ `PROCESSING` $\rightarrow$ `COMPLETED` (or `FAILED`).
-
----
-
-### 3. Real-Time Progress Stream (SSE)
-Stream live progress events directly without polling intervals using Server-Sent Events.
-
-- **Endpoint**: `GET /api/v1/chart/stream/{task_id}`
-- **Content-Type**: `text/event-stream`
-
+#### 2. Stream Live Progress (Server-Sent Events)
 ```bash
 curl -N "http://localhost:8000/api/v1/chart/stream/8f484ddf-9988-47a8-a53b-e3c3b03f0b24"
 ```
 
-**SSE Stream Output:**
-```text
-data: {"task_id": "8f484ddf...", "status": "PROCESSING", "progress": 0.25, "stage": "Separating audio stems", "error": null}
-data: {"task_id": "8f484ddf...", "status": "PROCESSING", "progress": 0.45, "stage": "Transcribing notes via Spotify Basic Pitch", "error": null}
-data: {"task_id": "8f484ddf...", "status": "COMPLETED", "progress": 1.0, "stage": "Completed successfully", "result_files": {...}}
-```
-
----
-
-### 4. Download Package
-Stream the final chart deliverables once processing is `COMPLETED`.
-
-- **Endpoint**: `GET /api/v1/chart/download/{task_id}?format=sng`
-- **Query Parameter**:
-  - `format`: `"sng"` (binary container) or `"chart"` (zip archive containing `notes.chart`, `song.ini`, and `song.ogg`).
-
+#### 3. Download Generated Packages
 ```bash
 # Download .sng binary package
 curl -O -J "http://localhost:8000/api/v1/chart/download/8f484ddf-9988-47a8-a53b-e3c3b03f0b24?format=sng"
 
-# Download .zip bundle (.chart + song.ini + song.ogg)
+# Download .zip bundle (notes.chart + song.ini + song.ogg)
 curl -O -J "http://localhost:8000/api/v1/chart/download/8f484ddf-9988-47a8-a53b-e3c3b03f0b24?format=chart"
 ```
 
 ---
 
-### 4. Health Check
-- **Endpoint**: `GET /api/v1/health`
+## 🐍 Python API Usage
 
-```bash
-curl "http://localhost:8000/api/v1/health"
-```
-
-**Response (`200 OK`):**
-```json
-{
-  "status": "healthy",
-  "version": "0.1.0",
-  "environment": "production",
-  "device": "cuda"
-}
-```
-
----
-
-## Python API Usage
-
-The pipeline can also be run directly within Python scripts or notebooks:
+You can embed `music2chart` directly into your own Python pipelines or Jupyter/Colab notebooks:
 
 ```python
 from pathlib import Path
@@ -258,103 +200,58 @@ print(f"SNG container: {artifacts['sng']}")
 
 ---
 
-## Dataset & Benchmarking Tools
+## 📊 Dataset & Benchmarking Tools
 
-`music2chart` includes built-in tooling to evaluate generated charts against verified human-authored charts from the Chorus/Encore community:
+`music2chart` includes automated validation tools to compare AI charts against verified human-authored charts from the Chorus/Encore community:
 
-1. **Scrape Reference Charts**:
-   ```python
-   from dataset.chorus_scraper import ChorusScraper
+```python
+from dataset.chorus_scraper import ChorusScraper
+from dataset.evaluate_mapping import evaluate_chart_alignment
 
-   scraper = ChorusScraper()
-   charts = scraper.search_charts(query="Cliffs of Dover", instrument="guitar")
-   package_dir = scraper.download_chart_package(
-       charts[0]["id"], destination_dir=Path("dataset/downloads")
-   )
-   ```
+# 1. Download human-authored ground truth
+scraper = ChorusScraper()
+charts = scraper.search_charts(query="Cliffs of Dover", instrument="guitar")
+package_dir = scraper.download_chart_package(charts[0]["id"], destination_dir=Path("dataset/downloads"))
 
-2. **Benchmark Accuracy**:
-   ```python
-   from dataset.evaluate_mapping import evaluate_chart_alignment
-
-   # Computes Onset F1-Score, Fret Accuracy, and Chord Agreement (Jaccard similarity)
-   metrics = evaluate_chart_alignment(predicted_notes, ground_truth_notes, tempo_map)
-   print(f"Onset F1: {metrics['onset_f1']:.3f} | Fret Accuracy: {metrics['fret_accuracy']:.2%}")
-   ```
-
----
-
-## Installation & Setup
-
-### Prerequisites
-- Python 3.11+
-- [FFmpeg](https://ffmpeg.org/) installed and available on system PATH
-- Recommended: NVIDIA GPU with CUDA drivers for Demucs and Basic Pitch inference
-
-### Local Environment Setup
-```bash
-# Clone repository
-git clone https://github.com/your-username/music2chart.git
-cd music2chart
-
-# Create and activate virtual environment
-python -m venv .venv
-source .venv/bin/activate
-
-# Install dependencies (including development tools)
-pip install -e ".[dev]"
-# Or via uv:
-uv pip install -e ".[dev]"
-```
-
-### Running the API Server Locally
-```bash
-# Canonical path
-uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --reload
-
-# Or via convenient aliases
-uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-Interactive Swagger documentation is available at `http://localhost:8000/docs`.
-
----
-
-## Docker Deployment
-
-The service is fully containerized with CUDA/PyTorch support, FFmpeg, and model weight persistence:
-
-```bash
-# Build and start container
-docker compose up --build -d
-
-# Check service logs
-docker compose logs -f music2chart-api
-
-# Stop service
-docker compose down
+# 2. Evaluate Onset F1, Fret Accuracy & Chord Similarity
+metrics = evaluate_chart_alignment(predicted_notes, ground_truth_notes, tempo_map)
+print(f"Onset F1: {metrics['onset_f1']:.3f} | Fret Accuracy: {metrics['fret_accuracy']:.2%}")
 ```
 
 ---
 
-## Testing & Quality Assurance
+<a id="sponsoring-server-infrastructure"></a>
+## 💖 Sponsoring Server Infrastructure & GPU Upgrade
 
-The codebase is covered by an automated test suite verifying every component from digital signal processing to binary container serialization and REST API endpoints:
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor_on-GitHub_Sponsors-ea4c89?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Adiells)
 
-```bash
-# Run complete test suite (245 tests)
-pytest -v
+**music2chart** is and will always remain **100% free and open-source software** under the permissive MIT License.
 
-# Run with coverage report
-pytest --cov=src --cov-report=term-missing
+Currently, the public live demo at **[music2chart.adiels.me](https://music2chart.adiels.me/)** runs on serverless **Google Cloud Run CPU instances** (`4 vCPU`, `8 GiB RAM`, `us-central1`). Because state-of-the-art neural models (Meta Demucs v4 and Spotify Basic Pitch) run purely on CPU cores without hardware acceleration, processing a full track takes roughly 1–2 minutes.
 
-# Run linting and code formatting
-ruff check .
-ruff format --check src tests config dataset
-```
+**We do not have dedicated GPU instances yet.** The primary purpose of our GitHub Sponsors fund is to evolve our infrastructure:
+- 🚀 **Upgrade to Dedicated Cloud GPU instances (NVIDIA Tensor Core)** to slash chart generation times from ~90 seconds down to sub-15 seconds.
+- ⚡ **Eliminate concurrency bottlenecks and cold-start latency** for rhythm game charters worldwide.
+- 🌐 **Offset monthly Cloud Run and bandwidth costs** to guarantee zero paywalls and zero advertisements.
+
+If you find this tool helpful for your Clone Hero or YARG sessions, consider supporting the GPU upgrade fund:
+
+👉 **[Sponsor on GitHub Sponsors (`https://github.com/sponsors/Adiells`)](https://github.com/sponsors/Adiells)**
+
+Every contribution directly accelerates the milestone to bring real-time, GPU-accelerated charting to the entire community. Thank you!
 
 ---
 
-## License
+<a id="contributing"></a>
+## 🤝 Contributing
 
-This project is licensed under the MIT License — see `pyproject.toml` for metadata.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for local environment setup, architecture guidelines, test execution (`pytest`), and the Conventional Commits standard.
+
+Please also review our [Code of Conduct](CODE_OF_CONDUCT.md) and [Security Policy](SECURITY.md).
+
+---
+
+<a id="license"></a>
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE) — Copyright © 2026 Adiel Emilson.
