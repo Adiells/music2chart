@@ -657,6 +657,93 @@ export function AboutPage({ onReturnToWorkstation, className }: AboutPageProps) 
           </div>
         </ModulePanel>
       </div>
+
+      {/* ================================================================== */}
+      {/* MODULE 07: OPEN SOURCE & COMMUNITY INFRASTRUCTURE                 */}
+      {/* ================================================================== */}
+      <ModulePanel
+        code="DOC-07"
+        title="Open-Source Identity & Community Infrastructure"
+        headerRight={<LedIndicator color="orange" on size="xs" label="MIT LICENSE" />}
+        footer="FREE & OPEN-SOURCE SOFTWARE // POWERED BY COMMUNITY SPONSORSHIP // GOAL: DEDICATED GPU HARDWARE"
+      >
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="flex flex-col justify-between gap-2.5 border border-hw-border bg-chassis p-3.5 shadow-recess">
+            <div>
+              <div className="flex items-center justify-between border-b border-hw-border pb-2">
+                <span className="silk-wide text-[9px]">SOURCE CODE &amp; REPO</span>
+                <LedIndicator color="green" on size="xs" />
+              </div>
+              <h3 className="mt-2 font-mono text-xs font-bold uppercase tracking-silk text-silk">
+                GitHub Repository
+              </h3>
+              <p className="mt-2 font-mono text-[10px] leading-relaxed tracking-silk text-silk-neutral">
+                Complete codebase for backend AI pipelines (Demucs v4, Basic Pitch, BeatNet), game design heuristics,
+                and React/Three.js workstation. Licensed under the permissive MIT License.
+              </p>
+            </div>
+            <a
+              href="https://github.com/Adiells/music2chart"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center justify-center gap-2 border border-hw-border bg-panel py-2 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-silk hover:bg-module transition-colors"
+            >
+              <span>View on GitHub</span>
+              <span className="text-fret-green">↗</span>
+            </a>
+          </div>
+
+          <div className="flex flex-col justify-between gap-2.5 border border-hw-border bg-chassis p-3.5 shadow-recess">
+            <div>
+              <div className="flex items-center justify-between border-b border-hw-border pb-2">
+                <span className="silk-wide text-[9px]">INFRASTRUCTURE &amp; EVOLUTION</span>
+                <LedIndicator color="orange" on blink="slow" size="xs" />
+              </div>
+              <h3 className="mt-2 font-mono text-xs font-bold uppercase tracking-silk text-silk">
+                GPU Upgrade Fund
+              </h3>
+              <p className="mt-2 font-mono text-[10px] leading-relaxed tracking-silk text-silk-neutral">
+                Currently deployed on Google Cloud Run CPU (4 vCPU, 8 GiB RAM). Sponsorships directly fund our milestone
+                to upgrade to dedicated Cloud GPU instances (NVIDIA Tensor Core), unlocking instant sub-15s transcription for all charters.
+              </p>
+            </div>
+            <a
+              href="https://github.com/sponsors/Adiells"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center justify-center gap-2 border border-fret-yellow bg-[#26200F] py-2 font-mono text-[10px] font-semibold uppercase tracking-silk text-fret-yellow hover:bg-[#382F15] transition-colors"
+            >
+              <span>⚡ Sponsor on GitHub</span>
+              <span className="text-fret-yellow">↗</span>
+            </a>
+          </div>
+
+          <div className="flex flex-col justify-between gap-2.5 border border-hw-border bg-chassis p-3.5 shadow-recess">
+            <div>
+              <div className="flex items-center justify-between border-b border-hw-border pb-2">
+                <span className="silk-wide text-[9px]">COLLABORATION</span>
+                <LedIndicator color="blue" on size="xs" />
+              </div>
+              <h3 className="mt-2 font-mono text-xs font-bold uppercase tracking-silk text-silk">
+                Issues &amp; Contributions
+              </h3>
+              <p className="mt-2 font-mono text-[10px] leading-relaxed tracking-silk text-silk-neutral">
+                Contributions to the 192 PPQ mapping heuristics, audio DSP filters, and highway visualizer are warmly
+                welcomed. Report chart transcription bugs or propose feature requests on GitHub Issues.
+              </p>
+            </div>
+            <a
+              href="https://github.com/Adiells/music2chart/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center justify-center gap-2 border border-hw-border bg-panel py-2 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-silk hover:bg-module transition-colors"
+            >
+              <span>Open Issue / PR</span>
+              <span className="text-fret-blue">↗</span>
+            </a>
+          </div>
+        </div>
+      </ModulePanel>
     </div>
   );
 }

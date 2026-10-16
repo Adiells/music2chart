@@ -43,3 +43,6 @@ export type { ExportPanelProps, ExportFormat } from './export/ExportPanel';
 
 export { AboutPage } from './about/AboutPage';
 export type { AboutPageProps } from './about/AboutPage';
+
+export { SupportModal } from './support/SupportModal';
+export type { SupportModalProps } from './support/SupportModal';

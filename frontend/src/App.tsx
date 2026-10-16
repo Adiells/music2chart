@@ -14,6 +14,7 @@ import {
   RackChassis,
   RotarySelector,
   StatsCard,
+  SupportModal,
   TempoDisplay,
   WaveformBar,
 } from './components';
@@ -127,6 +128,7 @@ interface GenerateApiResponse {
 export default function App() {
   /* Navigation View State */
   const [activeView, setActiveView] = useState<ActiveView>('workstation');
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
 
   /* Left Rack State: Upload, Metadata, Preset, Calibration, and SSE Task */
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -309,6 +311,7 @@ export default function App() {
       brand="MUSIC2CHART"
       model="M2C-01 // DUAL-CHASSIS STUDIO WORKSTATION"
       serial="SN 2026-1016 / FW 1.0.0"
+      onOpenSupport={() => setIsSupportOpen(true)}
       headerRight={
         <div className="flex flex-wrap items-center gap-3">
           {/* Top Chassis View Selector */}
@@ -524,6 +527,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Cloud GPU Infrastructure & GitHub Support Modal */}
+      <SupportModal isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
     </RackChassis>
   );
 }
