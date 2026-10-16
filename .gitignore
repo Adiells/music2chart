@@ -68,3 +68,9 @@ Thumbs.db
 
 # Maestri runtime metadata
 .maestri/
+
+# Agent context, prompts, and teamwork metadata
+AGENTS.md
+PROMPTS.md
+CLAUDE.md
+.agents/
