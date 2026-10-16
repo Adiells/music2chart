@@ -96,3 +96,45 @@ def test_variable_tempo_detection() -> None:
     assert len(tempo_map.bpm_changes) >= 2
     assert tempo_map.bpm_changes[0].bpm == pytest.approx(120.0, abs=1.0)
     assert tempo_map.bpm_changes[1].bpm == pytest.approx(140.0, abs=1.0)
+
+
+def test_tempo_tracker_auto_calibrate_excessive_bpm() -> None:
+    """Validate that excessive BPM (> 160.0) is folded by halving when auto_calibrate_bpm is True."""
+    sr = 22050
+    audio = _create_pulse_train(bpm=180.0, duration_seconds=6.0, sample_rate=sr)
+
+    # 1. With auto_calibrate_bpm=True (default), 180 BPM folds to 90 BPM
+    tracker = TempoTracker()
+    detected_bpm = tracker.estimate_tempo(audio, sr)
+    assert detected_bpm == pytest.approx(90.0, abs=0.5)
+
+    tempo_map = tracker.build_tempo_map(audio, sr)
+    assert tempo_map.bpm_changes[0].bpm == pytest.approx(90.0, abs=0.5)
+
+
+def test_tempo_tracker_auto_calibrate_disabled() -> None:
+    """Validate that excessive BPM is preserved when auto_calibrate_bpm is False."""
+    sr = 22050
+    audio = _create_pulse_train(bpm=180.0, duration_seconds=6.0, sample_rate=sr)
+
+    tracker = TempoTracker(auto_calibrate_bpm=False)
+    detected_bpm = tracker.estimate_tempo(audio, sr)
+    assert detected_bpm == pytest.approx(180.0, abs=0.5)
+
+    tempo_map = tracker.build_tempo_map(audio, sr, auto_calibrate_bpm=False)
+    assert tempo_map.bpm_changes[0].bpm == pytest.approx(180.0, abs=0.5)
+
+
+def test_tempo_tracker_bpm_scale() -> None:
+    """Validate that bpm_scale correctly multiplies the detected tempo."""
+    sr = 22050
+    audio = _create_pulse_train(bpm=120.0, duration_seconds=6.0, sample_rate=sr)
+
+    tracker = TempoTracker(bpm_scale=0.5)
+    detected_bpm = tracker.estimate_tempo(audio, sr)
+    assert detected_bpm == pytest.approx(60.0, abs=0.5)
+
+    # Test override in build_tempo_map
+    tracker_standard = TempoTracker()
+    tempo_map = tracker_standard.build_tempo_map(audio, sr, bpm_scale=1.5)
+    assert tempo_map.bpm_changes[0].bpm == pytest.approx(180.0, abs=0.5)

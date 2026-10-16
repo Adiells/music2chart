@@ -8,7 +8,7 @@ from typing import Final
 
 from src.models.chart import ChartNote, FretType
 
-DEFAULT_MAX_FRETS: Final[int] = 3
+DEFAULT_MAX_FRETS: Final[int] = 2
 
 CANONICAL_POWER_CHORDS: Final[frozenset[tuple[int, int]]] = frozenset(
     {
@@ -36,10 +36,12 @@ class ChordBuilder:
     """Groups simultaneous notes into playable, ergonomic Clone Hero chords.
 
     Enforces physical playability constraints on 5-fret guitar controllers:
-    - Maximum simultaneous frets (default <= 3 frets).
-    - Elimination of unplayable (0, 4) Green + Orange stretches and generalized dyad clamping.
-    - Open Note exclusivity: Open notes (7) never coexist with fretted notes (0-4) at the same tick.
-    - Preservation of canonical power chords and canonical triads.
+    - Default maximum 2 simultaneous frets (canonical power chords).
+    - Permits 3-note triads only on accented beats with duration/sustain >= 96 ticks.
+    - Strictly prohibits 4-fret and 5-fret chords.
+    - Eliminates unplayable (0, 4) Green + Orange stretches via generalized dyad clamping.
+    - Open Note exclusivity: fretted notes take precedence by default (open_note_precedence=False).
+    - Fast-run single-note collapsing: chords in passages with spacing <= 48 ticks collapse to root note.
     - Deterministic sorting by (tick, fret) ascending.
     """
 
@@ -51,18 +53,30 @@ class ChordBuilder:
         self,
         max_frets: int = DEFAULT_MAX_FRETS,
         allow_wide_triads: bool = False,
-        open_note_precedence: bool = True,
+        open_note_precedence: bool = False,
         prefer_open: bool | None = None,
+        collapse_fast_runs: bool = True,
+        fast_run_tick_threshold: int = 48,
+        allow_triads_on_accents: bool = True,
+        min_triad_sustain_ticks: int = 96,
+        accent_tick_interval: int = 96,
     ) -> None:
         """Initialize ChordBuilder.
 
         Args:
-            max_frets: Maximum simultaneous frets allowed in a chord (range 1-5, default 3).
+            max_frets: Maximum simultaneous frets allowed in a chord (range 1-5, default 2).
             allow_wide_triads: If True, permits (0, 2, 4) Green-Yellow-Orange tri-color triads.
                 If False, simplifies (0, 2, 4) to canonical triad (0, 2, 3).
             open_note_precedence: If True, Open notes take precedence over concurrent fretted notes.
-                If False, fretted notes take precedence over concurrent Open notes.
+                If False (default), fretted notes take precedence over concurrent Open notes.
             prefer_open: Compatibility alias for open_note_precedence.
+            collapse_fast_runs: If True (default), collapses chords in fast runs (spacing <= threshold)
+                into the single dominant root note.
+            fast_run_tick_threshold: Maximum tick distance to qualify as a fast run (default 48 ticks / 1/16 note).
+            allow_triads_on_accents: If True (default), permits 3-note canonical triads on accented beats
+                with duration/sustain >= min_triad_sustain_ticks.
+            min_triad_sustain_ticks: Minimum sustain ticks required for a 3-note triad (default 96 ticks / 1/8 note).
+            accent_tick_interval: Subdivision interval for accented beats (default 96 ticks / 1/8 note).
 
         Raises:
             ValueError: If max_frets is not between 1 and 5.
@@ -76,6 +90,11 @@ class ChordBuilder:
         else:
             self.open_note_precedence = open_note_precedence
         self.prefer_open = self.open_note_precedence
+        self.collapse_fast_runs = collapse_fast_runs
+        self.fast_run_tick_threshold = fast_run_tick_threshold
+        self.allow_triads_on_accents = allow_triads_on_accents
+        self.min_triad_sustain_ticks = min_triad_sustain_ticks
+        self.accent_tick_interval = accent_tick_interval
 
     def _clamp_dyad(self, frets: list[int]) -> list[int]:
         """Apply generalized dyad clamping to 2-note chords.
@@ -136,8 +155,12 @@ class ChordBuilder:
 
         return frets[:3]
 
-    def _reduce_cluster(self, frets: list[int]) -> list[int]:
+    def _reduce_cluster(self, frets: list[int], max_f: int | None = None) -> list[int]:
         """Reduce a sorted list of unique frets (0-4) according to game design rules."""
+        limit = self.max_frets if max_f is None else max_f
+        # 4-fret and 5-fret chords are strictly prohibited
+        limit = min(limit, 3)
+
         k = len(frets)
         if k <= 1:
             return frets
@@ -149,10 +172,10 @@ class ChordBuilder:
         else:
             simplified = self._clamp_dyad(frets)
 
-        if len(simplified) > self.max_frets:
-            if self.max_frets == 1:
+        if len(simplified) > limit:
+            if limit == 1:
                 return [simplified[0]]
-            if self.max_frets == 2 and len(simplified) == 3:
+            if limit == 2 and len(simplified) == 3:
                 low = simplified[0]
                 if simplified[1] - low <= 2:
                     return [low, simplified[1]]
@@ -177,9 +200,11 @@ class ChordBuilder:
         for note in notes:
             tick_map[note.tick].append(note)
 
+        sorted_ticks = sorted(tick_map.keys())
+        num_ticks = len(sorted_ticks)
         result: list[ChartNote] = []
 
-        for tick in sorted(tick_map.keys()):
+        for i, tick in enumerate(sorted_ticks):
             chord_notes = tick_map[tick]
 
             open_notes = [n for n in chord_notes if n.fret == FretType.OPEN]
@@ -242,9 +267,51 @@ class ChordBuilder:
                 )
                 continue
 
-            chosen_frets = self._reduce_cluster(unique_frets)
+            # Fast-run single-note collapsing:
+            # During fast passages where inter-note spacing to previous or next note is <= fast_run_tick_threshold (<= 48 ticks),
+            # chords are strictly prohibited. Simultaneous notes are collapsed to the single dominant root note.
+            is_fast_run = False
+            if self.collapse_fast_runs and num_ticks > 1:
+                delta_prev = (tick - sorted_ticks[i - 1]) if i > 0 else float("inf")
+                delta_next = (sorted_ticks[i + 1] - tick) if i < num_ticks - 1 else float("inf")
+                if min(delta_prev, delta_next) <= self.fast_run_tick_threshold:
+                    is_fast_run = True
+
+            if is_fast_run:
+                # Collapse to single dominant root note (lowest fret)
+                root_fret = unique_frets[0]
+                cluster_max_sustain = max(sustain_by_fret.values())
+                cluster_any_hopo = any(hopo_by_fret.values())
+                result.append(
+                    ChartNote(
+                        tick=tick,
+                        fret=FretType(root_fret),
+                        sustain_length=max(sustain_by_fret[root_fret], cluster_max_sustain),
+                        is_hopo=hopo_by_fret[root_fret] or cluster_any_hopo,
+                    )
+                )
+                continue
+
             cluster_max_sustain = max(sustain_by_fret.values())
             cluster_any_hopo = any(hopo_by_fret.values())
+
+            # Determine effective maximum frets for this chord:
+            # Default max_frets is 2 (canonical power chords).
+            # Permit 3-note triads only on accented beats with duration / sustain length >= 96 ticks.
+            if self.max_frets == 1:
+                effective_max = 1
+            elif self.max_frets == 2:
+                is_accented = tick % self.accent_tick_interval == 0
+                is_sustained = cluster_max_sustain >= self.min_triad_sustain_ticks
+                if self.allow_triads_on_accents and is_accented and is_sustained:
+                    effective_max = 3
+                else:
+                    effective_max = 2
+            else:
+                # max_frets >= 3: clamped strictly to at most 3
+                effective_max = min(self.max_frets, 3)
+
+            chosen_frets = self._reduce_cluster(unique_frets, max_f=effective_max)
 
             for f in chosen_frets:
                 sustain = sustain_by_fret.get(f, cluster_max_sustain)

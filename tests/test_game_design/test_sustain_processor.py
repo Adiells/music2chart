@@ -399,3 +399,80 @@ def test_star_power_generator_cadence() -> None:
 
     for i in range(len(phrases) - 1):
         assert phrases[i].tick + phrases[i].length < phrases[i + 1].tick
+
+
+# ---------------------------------------------------------------------------
+# 3. New Sustain Features Tests (Lookup, Max Clamp, Configurable Thresholds)
+# ---------------------------------------------------------------------------
+
+
+def test_sustain_lookup_by_tick() -> None:
+    """Verify durations mapping lookup by integer tick."""
+    processor = SustainProcessor(min_sustain_ticks=90, release_margin=24)
+    notes = [
+        _make_note(tick=0, fret=FretType.GREEN, sustain_length=0),
+        _make_note(tick=384, fret=FretType.RED, sustain_length=0),
+    ]
+    durations = {0: 192, 384: 90}
+    result = processor.process(notes, durations=durations)
+    assert result[0].sustain_length == 168
+    assert result[1].sustain_length == 66
+
+
+def test_sustain_lookup_by_tick_and_fret() -> None:
+    """Verify durations mapping lookup by (tick, fret_val) tuple."""
+    processor = SustainProcessor(min_sustain_ticks=90, release_margin=24)
+    notes = [
+        _make_note(tick=0, fret=FretType.GREEN, sustain_length=0),
+        _make_note(tick=0, fret=FretType.RED, sustain_length=0),
+    ]
+    durations = {(0, 0): 192, (0, 1): 120}
+    result = processor.process(notes, durations=durations)
+    assert result[0].sustain_length == 168
+    assert result[1].sustain_length == 96
+
+
+def test_sustain_lookup_defaults_to_note_sustain_length() -> None:
+    """Verify missing keys in durations mapping fall back to note.sustain_length."""
+    processor = SustainProcessor(min_sustain_ticks=90, release_margin=24)
+    notes = [
+        _make_note(tick=0, fret=FretType.GREEN, sustain_length=192),
+        _make_note(tick=384, fret=FretType.RED, sustain_length=120),
+    ]
+    # Empty mapping or missing keys
+    durations = {999: 500}
+    result = processor.process(notes, durations=durations)
+    assert result[0].sustain_length == 168  # 192 - 24
+    assert result[1].sustain_length == 96  # 120 - 24
+
+
+def test_max_sustain_ticks_clamping() -> None:
+    """Verify max_sustain_ticks clamps very long sustain durations."""
+    processor = SustainProcessor(min_sustain_ticks=90, release_margin=24, max_sustain_ticks=100)
+    notes = [
+        _make_note(tick=0, fret=FretType.GREEN, sustain_length=384),
+        _make_note(tick=1000, fret=FretType.RED, sustain_length=110),
+    ]
+    result = processor.process(notes)
+    # Note 0: 384 - 24 = 360, clamped by max_sustain_ticks=100 -> 100
+    assert result[0].sustain_length == 100
+    # Note 1: 110 - 24 = 86 <= 100 -> 86
+    assert result[1].sustain_length == 86
+
+
+def test_max_sustain_ticks_negative_raises() -> None:
+    """Verify negative max_sustain_ticks raises ValueError."""
+    with pytest.raises(ValueError, match="max_sustain_ticks"):
+        SustainProcessor(max_sustain_ticks=-1)
+
+
+def test_configurable_min_sustain_and_release_margin() -> None:
+    """Verify configurable min_sustain_ticks (e.g. 72) and release_margin (24)."""
+    processor = SustainProcessor(min_sustain_ticks=72, release_margin=24)
+    notes = [
+        _make_note(tick=0, fret=FretType.GREEN, sustain_length=70),  # < 72 -> 0
+        _make_note(tick=200, fret=FretType.RED, sustain_length=72),  # >= 72 -> 72 - 24 = 48
+    ]
+    result = processor.process(notes)
+    assert result[0].sustain_length == 0
+    assert result[1].sustain_length == 48

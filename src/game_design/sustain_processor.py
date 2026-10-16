@@ -26,6 +26,7 @@ class SustainProcessor:
         min_sustain_ticks: int = DEFAULT_MIN_SUSTAIN,
         release_margin: int | None = None,
         release_margin_ticks: int | None = None,
+        max_sustain_ticks: int | None = None,
     ) -> None:
         """Initialize SustainProcessor.
 
@@ -33,9 +34,10 @@ class SustainProcessor:
             min_sustain_ticks: Duration threshold below which sustain is 0 (default 90).
             release_margin: Margin in ticks subtracted before release/next note (default 24).
             release_margin_ticks: Alias for release_margin.
+            max_sustain_ticks: Optional maximum clamp for sustain length in ticks (default None).
 
         Raises:
-            ValueError: If min_sustain_ticks < 0 or release_margin < 0.
+            ValueError: If min_sustain_ticks < 0, release_margin < 0, or max_sustain_ticks < 0.
         """
         margin = (
             release_margin
@@ -50,10 +52,13 @@ class SustainProcessor:
             raise ValueError(f"min_sustain_ticks must be non-negative, got {min_sustain_ticks}")
         if margin < 0:
             raise ValueError(f"release_margin must be non-negative, got {margin}")
+        if max_sustain_ticks is not None and max_sustain_ticks < 0:
+            raise ValueError(f"max_sustain_ticks must be non-negative, got {max_sustain_ticks}")
 
         self.min_sustain_ticks = min_sustain_ticks
         self.release_margin = margin
         self.release_margin_ticks = margin
+        self.max_sustain_ticks = max_sustain_ticks
 
     def calculate_sustain_length(
         self,
@@ -71,7 +76,11 @@ class SustainProcessor:
             max_allowed = max(0, next_note_distance - self.release_margin)
             sustain = min(sustain, max_allowed)
 
-        return max(0, sustain)
+        sustain = max(0, sustain)
+        if self.max_sustain_ticks is not None:
+            sustain = min(sustain, self.max_sustain_ticks)
+
+        return sustain
 
     def process(
         self,
@@ -100,9 +109,12 @@ class SustainProcessor:
                     raw_dur = durations[i] if i < len(durations) else note.sustain_length
                 elif dur_dict is not None:
                     fret_val = note.fret.value if hasattr(note.fret, "value") else int(note.fret)
-                    raw_dur = dur_dict.get(
-                        (note.tick, fret_val), dur_dict.get(note.tick, note.sustain_length)
-                    )
+                    if (note.tick, fret_val) in dur_dict:
+                        raw_dur = dur_dict[(note.tick, fret_val)]
+                    elif note.tick in dur_dict:
+                        raw_dur = dur_dict[note.tick]
+                    else:
+                        raw_dur = note.sustain_length
                 else:
                     raw_dur = note.sustain_length
             else:

@@ -153,9 +153,15 @@ def test_quantize_thirty_second_notes(quantizer: NoteQuantizer, tempo_map_120: T
 
 
 def test_quantize_outside_tolerance_remains_unsnapped(tempo_map_120: TempoMap) -> None:
-    """Validate that deviations > 16 ticks remain unsnapped at their raw tick position."""
-    # When quantizing against quarter notes only (192)
-    quarter_quantizer = NoteQuantizer(subdivisions=[192], tolerance_ticks=16)
+    """Validate that deviations > 16 ticks remain unsnapped at their raw tick position when strict_snap=False."""
+    # When quantizing against quarter notes only (192) with strict_snap=False, min_spacing_ticks=0, chord_fusion_window_s=0
+    quarter_quantizer = NoteQuantizer(
+        subdivisions=[192],
+        tolerance_ticks=16,
+        strict_snap=False,
+        min_spacing_ticks=0,
+        chord_fusion_window_s=0.0,
+    )
 
     # Note at tick 192 + 16 = 208 -> dist is 16 -> snapped to 192
     note_boundary_in = _make_note(start_tick=192, jitter_ticks=16, tempo_map=tempo_map_120)
@@ -173,8 +179,14 @@ def test_quantize_outside_tolerance_remains_unsnapped(tempo_map_120: TempoMap) -
 
 
 def test_quantize_custom_tolerance(tempo_map_120: TempoMap) -> None:
-    """Validate custom tolerance parameter (e.g. tolerance_ticks=8)."""
-    tight_quantizer = NoteQuantizer(subdivisions=[24], tolerance_ticks=8)
+    """Validate custom tolerance parameter (e.g. tolerance_ticks=8) with strict_snap=False."""
+    tight_quantizer = NoteQuantizer(
+        subdivisions=[24],
+        tolerance_ticks=8,
+        strict_snap=False,
+        min_spacing_ticks=0,
+        chord_fusion_window_s=0.0,
+    )
 
     # Note at tick 24 - 8 = 16 -> dist 8 <= 8 -> snapped to 24
     note_in = _make_note(start_tick=24, jitter_ticks=-8, tempo_map=tempo_map_120)
@@ -184,6 +196,123 @@ def test_quantize_custom_tolerance(tempo_map_120: TempoMap) -> None:
     result = tight_quantizer.quantize([note_out, note_in], tempo_map_120)
     assert result[0].tick == 14  # Unsnapped
     assert result[1].tick == 24  # Snapped
+
+
+def test_strict_grid_snapping_eliminates_unsnapped_ticks(
+    quantizer: NoteQuantizer, tempo_map_120: TempoMap
+) -> None:
+    """Prompt 7.1: Verify default strict grid snapping snaps raw ticks to active subdivisions."""
+    assert quantizer.strict_snap is True
+
+    # Notes with raw tick positions that would fall outside traditional tolerance
+    notes = [
+        _make_note(
+            start_tick=0, jitter_ticks=20, tempo_map=tempo_map_120
+        ),  # tick 20 -> closest is 24
+        _make_note(
+            start_tick=48, jitter_ticks=10, tempo_map=tempo_map_120
+        ),  # tick 58 -> closest is 64 (diff 6)
+        _make_note(
+            start_tick=96, jitter_ticks=-20, tempo_map=tempo_map_120
+        ),  # tick 76 -> closest is 72 (diff 4)
+        _make_note(
+            start_tick=192, jitter_ticks=22, tempo_map=tempo_map_120
+        ),  # tick 214 -> closest is 216 (diff 2)
+    ]
+
+    result = quantizer.quantize(notes, tempo_map_120)
+    valid_subdivs = {24, 32, 48, 64, 72, 96, 120, 128, 144, 160, 168, 192, 216}
+
+    for note in result:
+        # Every note must strictly lie on a valid subdivision point
+        assert any(note.tick % s == 0 for s in quantizer.subdivisions)
+        assert note.tick in valid_subdivs
+
+
+def test_chord_fusion_window_35ms(quantizer: NoteQuantizer, tempo_map_120: TempoMap) -> None:
+    """Prompt 7.1: Verify onsets within 35ms sliding window fuse into exact same onset tick."""
+    # At 120 BPM, 1 tick = 2.604ms. 35ms = ~13.4 ticks.
+    # Note 1: at t = 0.0s (tick 0), pitch 60
+    # Note 2: at t = 0.015s (tick 5.76, 15ms later), pitch 64
+    # Note 3: at t = 0.030s (tick 11.52, 30ms later), pitch 67
+    n1 = NoteEvent(start_time=0.0, end_time=0.4, pitch=60, amplitude=0.8)
+    n2 = NoteEvent(start_time=0.015, end_time=0.4, pitch=64, amplitude=0.85)
+    n3 = NoteEvent(start_time=0.030, end_time=0.4, pitch=67, amplitude=0.9)
+
+    fused = quantizer.fuse_chord_onsets([n1, n2, n3])
+    # All 3 notes must have identical start_time (cluster anchor = 0.0)
+    assert len(fused) == 3
+    assert fused[0].start_time == 0.0
+    assert fused[1].start_time == 0.0
+    assert fused[2].start_time == 0.0
+
+    # Quantize to 192 PPQ grid
+    result = quantizer.quantize([n1, n2, n3], tempo_map_120)
+    assert len(result) == 3
+    assert all(n.tick == 0 for n in result)
+    assert {n.pitch for n in result} == {60, 64, 67}
+
+
+def test_chord_fusion_outside_window_remains_distinct(
+    quantizer: NoteQuantizer, tempo_map_120: TempoMap
+) -> None:
+    """Prompt 7.1: Verify onsets separated by > 35ms remain distinct."""
+    # Note 1 at 0.0s, Note 2 at 0.050s (50ms > 35ms window)
+    n1 = NoteEvent(start_time=0.0, end_time=0.4, pitch=60, amplitude=0.8)
+    n2 = NoteEvent(start_time=0.050, end_time=0.45, pitch=64, amplitude=0.85)
+
+    fused = quantizer.fuse_chord_onsets([n1, n2])
+    assert fused[0].start_time == 0.0
+    assert fused[1].start_time == 0.050
+
+
+def test_minimum_note_spacing_filter(tempo_map_120: TempoMap) -> None:
+    """Prompt 7.1: Enforce minimum note spacing of 24 ticks (1/32 note), filtering micro-jitters."""
+    quantizer = NoteQuantizer(tolerance_ticks=4, min_spacing_ticks=24)
+
+    # Legitimate note at tick 48 (1/16 note, amp 0.9).
+    # Noise micro-jitter at tick 64 (1/12 triplet note, amp 0.3).
+    # Time delta: 16 ticks = 41.6ms > 35ms (not fused by chord fusion).
+    # Grid distance: 64 - 48 = 16 ticks < 24 ticks (unplayable micro-spacing artifact).
+    n_primary = NoteEvent(
+        start_time=tempo_map_120.tick_to_seconds(48),
+        end_time=tempo_map_120.tick_to_seconds(96),
+        pitch=60,
+        amplitude=0.9,
+    )
+    n_noise = NoteEvent(
+        start_time=tempo_map_120.tick_to_seconds(64),
+        end_time=tempo_map_120.tick_to_seconds(96),
+        pitch=62,
+        amplitude=0.3,
+    )
+    # Next legitimate note at tick 96 (96 - 48 = 48 >= 24 ticks)
+    n_next = NoteEvent(
+        start_time=tempo_map_120.tick_to_seconds(96),
+        end_time=tempo_map_120.tick_to_seconds(144),
+        pitch=64,
+        amplitude=0.85,
+    )
+
+    result = quantizer.quantize([n_primary, n_noise, n_next], tempo_map_120)
+    # The noise artifact at sub-24 spacing is filtered
+    assert len(result) == 2
+    assert [n.tick for n in result] == [48, 96]
+    assert [n.pitch for n in result] == [60, 64]
+
+
+def test_minimum_note_spacing_preserves_chords(
+    quantizer: NoteQuantizer, tempo_map_120: TempoMap
+) -> None:
+    """Prompt 7.1: Verify notes at the exact same tick (chords) are not eliminated by spacing filter."""
+    c1 = _make_note(start_tick=96, pitch=60, amplitude=0.8, tempo_map=tempo_map_120)
+    c2 = _make_note(start_tick=96, pitch=64, amplitude=0.8, tempo_map=tempo_map_120)
+    next_note = _make_note(start_tick=144, pitch=67, amplitude=0.8, tempo_map=tempo_map_120)
+
+    result = quantizer.quantize([c1, c2, next_note], tempo_map_120)
+    assert len(result) == 3
+    # Two notes at tick 96 (chord) and one at tick 144
+    assert [n.tick for n in result] == [96, 96, 144]
 
 
 def test_tie_breaking_rules(quantizer: NoteQuantizer) -> None:
@@ -349,3 +478,112 @@ def test_note_quantizer_validation() -> None:
     quantizer = NoteQuantizer()
     with pytest.raises(ValueError):
         quantizer.snap_tick(192, tolerance_ticks=-2)
+
+
+# ---------------------------------------------------------------------------
+# 11. Ghost Note Filtering & Sustain-Hold / Re-Trigger Merging Tests
+# ---------------------------------------------------------------------------
+
+
+def test_min_amplitude_filtering(tempo_map_120: TempoMap) -> None:
+    """Verify notes below min_amplitude threshold are filtered out."""
+    quantizer = NoteQuantizer(min_amplitude=0.5)
+    notes = [
+        NoteEvent(start_time=0.0, end_time=0.5, pitch=60, amplitude=0.8),  # >= 0.5 -> kept
+        NoteEvent(
+            start_time=0.5, end_time=1.0, pitch=64, amplitude=0.3
+        ),  # < 0.5 -> ghost note dropped
+        NoteEvent(start_time=1.0, end_time=1.5, pitch=67, amplitude=0.6),  # >= 0.5 -> kept
+    ]
+    result = quantizer.quantize(notes, tempo_map_120)
+    assert len(result) == 2
+    assert [n.pitch for n in result] == [60, 67]
+
+
+def test_min_amplitude_validation() -> None:
+    """Verify invalid min_amplitude values raise ValueError."""
+    with pytest.raises(ValueError, match="min_amplitude"):
+        NoteQuantizer(min_amplitude=-0.1)
+    with pytest.raises(ValueError, match="min_amplitude"):
+        NoteQuantizer(min_amplitude=1.5)
+
+
+def test_retrigger_merge_overlapping_notes() -> None:
+    """Verify consecutive overlapping notes on the same pitch merge into a prolonged note."""
+    quantizer = NoteQuantizer()
+    notes = [
+        NoteEvent(start_time=0.0, end_time=1.0, pitch=60, amplitude=0.7),
+        NoteEvent(start_time=0.8, end_time=1.8, pitch=60, amplitude=0.9),  # Overlapping pitch 60
+    ]
+    merged = quantizer.merge_retrigger_notes(notes)
+    assert len(merged) == 1
+    assert merged[0].start_time == 0.0
+    assert merged[0].end_time == 1.8
+    assert merged[0].pitch == 60
+    assert merged[0].amplitude == 0.9
+
+
+def test_retrigger_merge_near_contiguous_notes(tempo_map_120: TempoMap) -> None:
+    """Verify notes with a near-contiguous micro-gap (<= 0.1s / 48 ticks) merge into a prolonged note."""
+    quantizer = NoteQuantizer(retrigger_merge_gap_s=0.1)
+    notes = [
+        NoteEvent(start_time=0.0, end_time=0.5, pitch=60, amplitude=0.8),
+        # Gap: 0.55 - 0.5 = 0.05s <= 0.1s
+        NoteEvent(start_time=0.55, end_time=1.2, pitch=60, amplitude=0.85),
+    ]
+    merged = quantizer.merge_retrigger_notes(notes, tempo_map=tempo_map_120)
+    assert len(merged) == 1
+    assert merged[0].start_time == 0.0
+    assert merged[0].end_time == 1.2
+    assert merged[0].pitch == 60
+
+
+def test_retrigger_merge_distinct_pitches_preserved() -> None:
+    """Verify consecutive notes on different pitches do not merge."""
+    quantizer = NoteQuantizer()
+    notes = [
+        NoteEvent(start_time=0.0, end_time=1.0, pitch=60, amplitude=0.8),
+        NoteEvent(start_time=0.5, end_time=1.5, pitch=64, amplitude=0.8),
+    ]
+    merged = quantizer.merge_retrigger_notes(notes)
+    assert len(merged) == 2
+    assert [n.pitch for n in merged] == [60, 64]
+
+
+def test_quantize_with_merge_retrigger_enabled(tempo_map_120: TempoMap) -> None:
+    """Verify quantize with merge_retrigger=True merges chopped re-triggers into a single prolonged note."""
+    quantizer = NoteQuantizer(merge_retrigger=True)
+    # Ringing chord chopped into two micro-fragments
+    notes = [
+        NoteEvent(start_time=0.0, end_time=0.48, pitch=60, amplitude=0.8),
+        NoteEvent(start_time=0.50, end_time=1.0, pitch=60, amplitude=0.85),
+    ]
+    result = quantizer.quantize(notes, tempo_map_120)
+    assert len(result) == 1
+    assert result[0].tick == 0
+    # Combined duration in ticks should span ~1.0s (384 ticks at 120 BPM)
+    assert result[0].duration_ticks >= 380
+
+
+def test_configurable_chord_fusion_and_spacing() -> None:
+    """Verify configurable chord_fusion_window_s and min_spacing_ticks."""
+    q = NoteQuantizer(chord_fusion_window_s=0.05, min_spacing_ticks=32)
+    assert q.chord_fusion_window_s == 0.05
+    assert q.min_spacing_ticks == 32
+
+
+def test_quantize_excessive_min_amplitude_fallback(tempo_map_120: TempoMap) -> None:
+    """Verify quantizer falls back to top notes instead of returning an empty list when min_amplitude is too high."""
+    q = NoteQuantizer(min_amplitude=0.99)
+    notes = [
+        NoteEvent(start_time=0.0, end_time=0.5, pitch=60, amplitude=0.4),
+        NoteEvent(start_time=0.5, end_time=1.0, pitch=62, amplitude=0.6),
+        NoteEvent(start_time=1.0, end_time=1.5, pitch=64, amplitude=0.5),
+        NoteEvent(start_time=1.5, end_time=2.0, pitch=65, amplitude=0.3),
+    ]
+    result = q.quantize(notes, tempo_map_120)
+    # Must never be empty
+    assert len(result) > 0
+    # Top amplitude notes should be preserved
+    pitches = {n.pitch for n in result}
+    assert 62 in pitches  # Highest amplitude (0.6) must be preserved

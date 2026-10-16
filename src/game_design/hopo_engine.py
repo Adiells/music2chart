@@ -17,19 +17,28 @@ class HopoEngine:
     """Calculates HOPO states and strum enforcement based on Clone Hero rules."""
 
     DEFAULT_HOPO_THRESHOLD: Final[int] = HOPO_TICK_THRESHOLD
+    DEFAULT_RUN_THRESHOLD: Final[int] = 96  # 1/8 note run threshold for explicit HOPO force
 
-    def __init__(self, hopo_threshold: int = DEFAULT_HOPO_THRESHOLD) -> None:
+    def __init__(
+        self,
+        hopo_threshold: int = DEFAULT_HOPO_THRESHOLD,
+        run_threshold: int = DEFAULT_RUN_THRESHOLD,
+    ) -> None:
         """Initialize HopoEngine.
 
         Args:
             hopo_threshold: Maximum delta tick spacing for natural HOPO (default 65).
+            run_threshold: Maximum delta tick spacing for melodic run HOPO forcing (default 96).
 
         Raises:
-            ValueError: If hopo_threshold < 0.
+            ValueError: If hopo_threshold < 0 or run_threshold < 0.
         """
         if hopo_threshold < 0:
             raise ValueError(f"hopo_threshold must be non-negative, got {hopo_threshold}")
+        if run_threshold < 0:
+            raise ValueError(f"run_threshold must be non-negative, got {run_threshold}")
         self.hopo_threshold = hopo_threshold
+        self.run_threshold = run_threshold
 
     def process(self, notes: Sequence[ChartNote]) -> list[ChartNote]:
         """Evaluate and assign is_hopo flags for all notes in chronological order.
@@ -94,34 +103,106 @@ class HopoEngine:
         return processed_notes
 
     def add_force_modifiers(self, notes: Sequence[ChartNote]) -> list[ChartNote]:
-        """Add explicit HOPO_FORCE (5) or STRUM_FORCE (6) modifier notes where helpful."""
-        processed = self.process(notes)
-        output: list[ChartNote] = []
+        """Add explicit HOPO_FORCE (5) or STRUM_FORCE (6) modifier notes where helpful.
 
-        # Group by tick
+        Detects melodic single-note runs with inter-note distance <= run_threshold (96 ticks)
+        and fret variation:
+        - Note 1 of the run is a Strum anchor (is_hopo=False, no modifier).
+        - Notes 2..N in the run receive an explicit HOPO_FORCE modifier note (tick=note.tick,
+          fret=FretType.HOPO_FORCE, sustain_length=0).
+        - Repeated consecutive frets within the rapid window receive an explicit STRUM_FORCE
+          modifier note (tick=note.tick, fret=FretType.STRUM_FORCE, sustain_length=0).
+        - Chords default to Strum and break melodic single-note runs.
+        """
+        if not notes:
+            return []
+
+        sorted_notes = sorted(notes)
         tick_groups: dict[int, list[ChartNote]] = defaultdict(list)
-        for note in processed:
-            tick_groups[note.tick].append(note)
+        for note in sorted_notes:
+            if note.fret not in (FretType.HOPO_FORCE, FretType.STRUM_FORCE):
+                tick_groups[note.tick].append(note)
 
         sorted_ticks = sorted(tick_groups.keys())
+        output: list[ChartNote] = []
+
         prev_tick: int | None = None
-        prev_frets: set[FretType] = set()
+        prev_fret: FretType | None = None
 
         for tick in sorted_ticks:
             group = tick_groups[tick]
-            output.extend(group)
+            is_single_note = len(group) == 1
 
-            # If a fast consecutive note on identical fret exists, emit STRUM_FORCE (6)
-            if (
-                prev_tick is not None
-                and len(group) == 1
-                and (tick - prev_tick) <= self.hopo_threshold
-            ):
-                if group[0].fret in prev_frets:
-                    output.append(ChartNote(tick=tick, fret=FretType.STRUM_FORCE, sustain_length=0))
+            if is_single_note:
+                note = group[0]
+                if prev_tick is not None and prev_fret is not None:
+                    delta = tick - prev_tick
+                    if delta <= self.run_threshold:
+                        if note.fret != prev_fret:
+                            # Melodic run note 2..N: emit note and HOPO_FORCE modifier
+                            output.append(
+                                ChartNote(
+                                    tick=tick,
+                                    fret=note.fret,
+                                    sustain_length=note.sustain_length,
+                                    is_hopo=True,
+                                )
+                            )
+                            output.append(
+                                ChartNote(
+                                    tick=tick,
+                                    fret=FretType.HOPO_FORCE,
+                                    sustain_length=0,
+                                )
+                            )
+                            prev_tick = tick
+                            prev_fret = note.fret
+                            continue
+                        else:
+                            # Repeated consecutive fret in rapid window: emit note and STRUM_FORCE modifier
+                            output.append(
+                                ChartNote(
+                                    tick=tick,
+                                    fret=note.fret,
+                                    sustain_length=note.sustain_length,
+                                    is_hopo=False,
+                                )
+                            )
+                            output.append(
+                                ChartNote(
+                                    tick=tick,
+                                    fret=FretType.STRUM_FORCE,
+                                    sustain_length=0,
+                                )
+                            )
+                            prev_tick = tick
+                            prev_fret = note.fret
+                            continue
 
-            prev_tick = tick
-            prev_frets = {n.fret for n in group}
+                # First note of run or gap > run_threshold: Strum anchor
+                output.append(
+                    ChartNote(
+                        tick=tick,
+                        fret=note.fret,
+                        sustain_length=note.sustain_length,
+                        is_hopo=False,
+                    )
+                )
+                prev_tick = tick
+                prev_fret = note.fret
+            else:
+                # Chord: strummed, breaks melodic single-note run
+                for note in group:
+                    output.append(
+                        ChartNote(
+                            tick=tick,
+                            fret=note.fret,
+                            sustain_length=note.sustain_length,
+                            is_hopo=False,
+                        )
+                    )
+                prev_tick = tick
+                prev_fret = None
 
         output.sort()
         return output

@@ -31,9 +31,29 @@ class PitchTranscriber:
         )
         self._predict_fn: Any = None
 
+    def _configure_tf_gpu(self) -> None:
+        """Enable dynamic GPU memory growth to prevent TensorFlow from pre-allocating all VRAM."""
+        try:
+            import tensorflow as tf
+
+            gpus = tf.config.list_physical_devices("GPU")
+            if gpus:
+                for gpu in gpus:
+                    try:
+                        tf.config.experimental.set_memory_growth(gpu, True)
+                        logger.info("TensorFlow GPU memory growth enabled for %s", gpu)
+                    except RuntimeError as exc:
+                        # Memory growth must be configured before physical devices are initialized
+                        logger.debug(
+                            "TensorFlow GPU memory growth already set or deferred: %s", exc
+                        )
+        except Exception as exc:
+            logger.debug("TensorFlow GPU configuration check skipped: %s", exc)
+
     def _get_predict_fn(self) -> Any:
         """Lazy loader for basic_pitch inference predict function."""
         if self._predict_fn is None:
+            self._configure_tf_gpu()
             try:
                 from basic_pitch.inference import predict
 

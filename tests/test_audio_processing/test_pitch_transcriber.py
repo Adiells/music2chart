@@ -64,3 +64,47 @@ def test_pitch_transcriber_no_engine_raises(
 
     with pytest.raises(RuntimeError, match="not available"):
         transcriber.transcribe(dummy_guitar_audio)
+
+
+def test_configure_tf_gpu_handles_no_gpus(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify _configure_tf_gpu runs safely when no physical GPUs are present."""
+    mock_tf = MagicMock()
+    mock_tf.config.list_physical_devices.return_value = []
+    monkeypatch.setitem(__import__("sys").modules, "tensorflow", mock_tf)
+
+    transcriber = PitchTranscriber()
+    transcriber._configure_tf_gpu()
+    mock_tf.config.list_physical_devices.assert_called_once_with("GPU")
+    mock_tf.config.experimental.set_memory_growth.assert_not_called()
+
+
+def test_configure_tf_gpu_enables_memory_growth(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify _configure_tf_gpu calls set_memory_growth for all detected GPUs."""
+    mock_tf = MagicMock()
+    gpu0 = MagicMock(name="GPU:0")
+    gpu1 = MagicMock(name="GPU:1")
+    mock_tf.config.list_physical_devices.return_value = [gpu0, gpu1]
+    monkeypatch.setitem(__import__("sys").modules, "tensorflow", mock_tf)
+
+    transcriber = PitchTranscriber()
+    transcriber._configure_tf_gpu()
+    mock_tf.config.list_physical_devices.assert_called_once_with("GPU")
+    assert mock_tf.config.experimental.set_memory_growth.call_count == 2
+    mock_tf.config.experimental.set_memory_growth.assert_any_call(gpu0, True)
+    mock_tf.config.experimental.set_memory_growth.assert_any_call(gpu1, True)
+
+
+def test_configure_tf_gpu_handles_runtime_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify _configure_tf_gpu gracefully handles already initialized physical devices."""
+    mock_tf = MagicMock()
+    gpu0 = MagicMock(name="GPU:0")
+    mock_tf.config.list_physical_devices.return_value = [gpu0]
+    mock_tf.config.experimental.set_memory_growth.side_effect = RuntimeError(
+        "Physical devices cannot be modified after being initialized"
+    )
+    monkeypatch.setitem(__import__("sys").modules, "tensorflow", mock_tf)
+
+    transcriber = PitchTranscriber()
+    # Should not raise exception
+    transcriber._configure_tf_gpu()
+    mock_tf.config.experimental.set_memory_growth.assert_called_once_with(gpu0, True)

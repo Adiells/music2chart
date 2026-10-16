@@ -376,6 +376,65 @@ def test_add_force_modifiers() -> None:
     assert FretType.STRUM_FORCE in frets_at_48
 
 
+def test_melodic_run_hopo_forcing() -> None:
+    """Prompt 7.3: In melodic runs (<= 96 ticks), note 1 is Strum anchor, notes 2..N get HOPO_FORCE."""
+    notes = [
+        ChartNote(tick=0, fret=FretType.GREEN),
+        ChartNote(tick=48, fret=FretType.RED),
+        ChartNote(tick=96, fret=FretType.YELLOW),
+        ChartNote(tick=144, fret=FretType.BLUE),
+        ChartNote(tick=192, fret=FretType.ORANGE),
+    ]
+
+    engine = HopoEngine(run_threshold=96)
+    result = engine.add_force_modifiers(notes)
+
+    # Note 1 at tick 0: Strum anchor, no HOPO_FORCE
+    assert FretType.HOPO_FORCE not in [n.fret for n in result if n.tick == 0]
+
+    # Notes 2..5 at ticks 48, 96, 144, 192: each must have HOPO_FORCE
+    for t in [48, 96, 144, 192]:
+        frets_at_t = [n.fret for n in result if n.tick == t]
+        assert FretType.HOPO_FORCE in frets_at_t
+
+
+def test_melodic_run_repeated_fret_strum_forcing() -> None:
+    """Prompt 7.3: Repeated consecutive frets in rapid window emit STRUM_FORCE modifier."""
+    notes = [
+        ChartNote(tick=0, fret=FretType.GREEN),
+        ChartNote(tick=48, fret=FretType.RED),
+        ChartNote(tick=96, fret=FretType.RED),  # Repeated fret -> STRUM_FORCE
+        ChartNote(tick=144, fret=FretType.YELLOW),  # Next note in run -> HOPO_FORCE
+    ]
+
+    engine = HopoEngine(run_threshold=96)
+    result = engine.add_force_modifiers(notes)
+
+    # Tick 48: Red note 2 in run -> HOPO_FORCE
+    assert FretType.HOPO_FORCE in [n.fret for n in result if n.tick == 48]
+    # Tick 96: Repeated Red -> STRUM_FORCE
+    assert FretType.STRUM_FORCE in [n.fret for n in result if n.tick == 96]
+    assert FretType.HOPO_FORCE not in [n.fret for n in result if n.tick == 96]
+    # Tick 144: Yellow note 2 after strum anchor -> HOPO_FORCE
+    assert FretType.HOPO_FORCE in [n.fret for n in result if n.tick == 144]
+
+
+def test_gap_breaks_melodic_run() -> None:
+    """Prompt 7.3: Distance > 96 ticks breaks run; following note is Strum anchor (no modifier)."""
+    notes = [
+        ChartNote(tick=0, fret=FretType.GREEN),
+        ChartNote(tick=48, fret=FretType.RED),  # HOPO_FORCE
+        ChartNote(tick=240, fret=FretType.YELLOW),  # 240 - 48 = 192 > 96 -> Strum anchor
+    ]
+
+    engine = HopoEngine(run_threshold=96)
+    result = engine.add_force_modifiers(notes)
+
+    assert FretType.HOPO_FORCE in [n.fret for n in result if n.tick == 48]
+    assert FretType.HOPO_FORCE not in [n.fret for n in result if n.tick == 240]
+    assert FretType.STRUM_FORCE not in [n.fret for n in result if n.tick == 240]
+
+
 # ---------------------------------------------------------------------------
 # End-to-End Game Design Pipeline Integration Test
 # ---------------------------------------------------------------------------

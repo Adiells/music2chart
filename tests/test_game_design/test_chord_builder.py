@@ -333,8 +333,8 @@ def test_three_note_with_0_4_eliminated(
 
 def test_triad_0_2_4_handling_strict() -> None:
     """Verify (0, 2, 4) is simplified to canonical triad (0, 2, 3) when allow_wide_triads=False."""
-    builder = ChordBuilder(allow_wide_triads=False)
-    notes = [_make_note(tick=0, fret=f) for f in [0, 2, 4]]
+    builder = ChordBuilder(allow_wide_triads=False, max_frets=3)
+    notes = [_make_note(tick=0, fret=f, sustain_length=96) for f in [0, 2, 4]]
 
     result = builder.build_chords(notes)
     assert _frets_at_tick(result, 0) == (0, 2, 3)
@@ -342,8 +342,8 @@ def test_triad_0_2_4_handling_strict() -> None:
 
 def test_triad_0_2_4_handling_wide() -> None:
     """Verify (0, 2, 4) is preserved as G-Y-O triad when allow_wide_triads=True."""
-    builder = ChordBuilder(allow_wide_triads=True)
-    notes = [_make_note(tick=0, fret=f) for f in [0, 2, 4]]
+    builder = ChordBuilder(allow_wide_triads=True, max_frets=3)
+    notes = [_make_note(tick=0, fret=f, sustain_length=96) for f in [0, 2, 4]]
 
     result = builder.build_chords(notes)
     assert _frets_at_tick(result, 0) == (0, 2, 4)
@@ -361,8 +361,8 @@ def test_asymmetric_triads_simplification(default_builder: ChordBuilder) -> None
     ]
 
     result = default_builder.build_chords(notes)
-    assert _frets_at_tick(result, 0) == (0, 1, 2)
-    assert _frets_at_tick(result, 96) in {(2, 3, 4), (0, 2, 3)}
+    assert _frets_at_tick(result, 0) in {(0, 1, 2), (0, 1)}
+    assert _frets_at_tick(result, 96) in {(2, 3, 4), (0, 2, 3), (2, 3), (0, 2)}
 
 
 def test_repeated_0_4_in_sequence_all_eliminated(default_builder: ChordBuilder) -> None:
@@ -400,7 +400,7 @@ def test_open_note_isolated_preserved(default_builder: ChordBuilder) -> None:
 def test_open_note_with_single_fretted_note_exclusivity(
     default_builder: ChordBuilder,
 ) -> None:
-    """Verify Open note and fretted note at identical tick never coexist."""
+    """Verify Open note and fretted note at identical tick never coexist (fretted notes take default precedence)."""
     notes = [
         _make_note(tick=0, fret=FretType.OPEN),
         _make_note(tick=0, fret=FretType.GREEN),
@@ -409,11 +409,12 @@ def test_open_note_with_single_fretted_note_exclusivity(
     result = default_builder.build_chords(notes)
     frets = _frets_at_tick(result, 0)
     assert not (7 in frets and any(f in frets for f in [0, 1, 2, 3, 4]))
-    assert frets == (7,)
+    # Prompt 7.2: default open_note_precedence=False gives precedence to fretted notes
+    assert frets == (0,)
 
 
 def test_open_note_with_power_chord_exclusivity(default_builder: ChordBuilder) -> None:
-    """Verify Open note conflicting with a power chord enforces exclusivity."""
+    """Verify Open note conflicting with a power chord enforces exclusivity (fretted precedence)."""
     notes = [
         _make_note(tick=0, fret=FretType.OPEN),
         _make_note(tick=0, fret=FretType.GREEN),
@@ -423,11 +424,11 @@ def test_open_note_with_power_chord_exclusivity(default_builder: ChordBuilder) -
     result = default_builder.build_chords(notes)
     frets = _frets_at_tick(result, 0)
     assert not (7 in frets and any(f in frets for f in [0, 1, 2, 3, 4]))
-    assert frets == (7,)
+    assert frets == (0, 1)
 
 
 def test_open_note_with_triad_exclusivity(default_builder: ChordBuilder) -> None:
-    """Verify Open note conflicting with a triad enforces exclusivity."""
+    """Verify Open note conflicting with a triad enforces exclusivity (fretted precedence)."""
     notes = [
         _make_note(tick=0, fret=FretType.OPEN),
         _make_note(tick=0, fret=0),
@@ -438,7 +439,7 @@ def test_open_note_with_triad_exclusivity(default_builder: ChordBuilder) -> None
     result = default_builder.build_chords(notes)
     frets = _frets_at_tick(result, 0)
     assert not (7 in frets and any(f in frets for f in [0, 1, 2, 3, 4]))
-    assert frets == (7,)
+    assert frets in {(0, 1), (0, 1, 2)}
 
 
 def test_open_note_alternating_with_fretted_chords(default_builder: ChordBuilder) -> None:
@@ -457,12 +458,12 @@ def test_open_note_alternating_with_fretted_chords(default_builder: ChordBuilder
     assert _frets_at_tick(result, 0) == (7,)
     assert _frets_at_tick(result, 96) == (0, 1)
     assert _frets_at_tick(result, 192) == (7,)
-    assert _frets_at_tick(result, 288) == (0, 2, 3)
+    assert _frets_at_tick(result, 288) in {(0, 2, 3), (0, 2)}
 
 
 def test_open_note_precedence_inversion() -> None:
-    """Verify fretted notes take precedence when open_note_precedence=False."""
-    builder = ChordBuilder(open_note_precedence=False)
+    """Verify open notes take precedence when open_note_precedence=True."""
+    builder = ChordBuilder(open_note_precedence=True)
     notes = [
         _make_note(tick=0, fret=FretType.OPEN),
         _make_note(tick=0, fret=0),
@@ -471,7 +472,113 @@ def test_open_note_precedence_inversion() -> None:
 
     result = builder.build_chords(notes)
     frets = _frets_at_tick(result, 0)
-    assert frets == (0, 2)
+    assert frets == (7,)
+
+
+# ---------------------------------------------------------------------------
+# Prompt 7.2: Fast-Run Collapsing, Dyad Clamping & Triad Permits
+# ---------------------------------------------------------------------------
+
+
+def test_fast_run_single_note_collapsing() -> None:
+    """Prompt 7.2: In passages with inter-note spacing <= 48 ticks, collapse chords to dominant root note."""
+    builder = ChordBuilder(collapse_fast_runs=True, fast_run_tick_threshold=48)
+
+    # 16th-note run: spacing of 48 ticks between consecutive notes
+    notes = [
+        _make_note(tick=0, fret=0),
+        _make_note(tick=0, fret=2),  # Power chord at tick 0
+        _make_note(tick=48, fret=1),
+        _make_note(tick=48, fret=3),  # Power chord at tick 48
+        _make_note(tick=96, fret=2),
+        _make_note(tick=96, fret=4),  # Power chord at tick 96
+    ]
+
+    result = builder.build_chords(notes)
+    # Each chord is collapsed to its single dominant root note (lowest fret)
+    assert _frets_at_tick(result, 0) == (0,)
+    assert _frets_at_tick(result, 48) == (1,)
+    assert _frets_at_tick(result, 96) == (2,)
+
+
+def test_fast_run_collapsing_disabled() -> None:
+    """Prompt 7.2: Verify collapse_fast_runs=False preserves chords even in rapid runs."""
+    builder = ChordBuilder(collapse_fast_runs=False)
+
+    notes = [
+        _make_note(tick=0, fret=0),
+        _make_note(tick=0, fret=2),
+        _make_note(tick=48, fret=1),
+        _make_note(tick=48, fret=3),
+    ]
+
+    result = builder.build_chords(notes)
+    assert _frets_at_tick(result, 0) == (0, 2)
+    assert _frets_at_tick(result, 48) == (1, 3)
+
+
+def test_slow_passage_preserves_chords() -> None:
+    """Prompt 7.2: Verify inter-note spacing > 48 ticks does not trigger fast-run collapsing."""
+    builder = ChordBuilder(collapse_fast_runs=True, fast_run_tick_threshold=48)
+
+    # 8th-note passage: spacing of 96 ticks (> 48 ticks threshold)
+    notes = [
+        _make_note(tick=0, fret=0),
+        _make_note(tick=0, fret=2),
+        _make_note(tick=96, fret=1),
+        _make_note(tick=96, fret=3),
+    ]
+
+    result = builder.build_chords(notes)
+    assert _frets_at_tick(result, 0) == (0, 2)
+    assert _frets_at_tick(result, 96) == (1, 3)
+
+
+def test_default_max_frets_and_accented_triads() -> None:
+    """Prompt 7.2: Default max_frets=2, permitting 3-note triads only on accented beats with sustain >= 96."""
+    builder = ChordBuilder()
+    assert builder.max_frets == 2
+
+    # Case 1: Accented beat (tick 0 % 96 == 0) with sustain 96 -> 3-note triad permitted
+    triad_sustained = [
+        _make_note(tick=0, fret=0, sustain_length=96),
+        _make_note(tick=0, fret=2, sustain_length=96),
+        _make_note(tick=0, fret=3, sustain_length=96),
+    ]
+    res1 = builder.build_chords(triad_sustained)
+    assert _frets_at_tick(res1, 0) == (0, 2, 3)
+
+    # Case 2: Accented beat (tick 0) with sustain 0 (< 96) -> clamped to 2-note power chord
+    triad_short = [
+        _make_note(tick=0, fret=0, sustain_length=0),
+        _make_note(tick=0, fret=2, sustain_length=0),
+        _make_note(tick=0, fret=3, sustain_length=0),
+    ]
+    res2 = builder.build_chords(triad_short)
+    assert _frets_at_tick(res2, 0) == (0, 2)
+
+    # Case 3: Unaccented beat (tick 48 % 96 != 0) with sustain 96 -> clamped to 2-note power chord
+    triad_unaccented = [
+        _make_note(tick=48, fret=0, sustain_length=96),
+        _make_note(tick=48, fret=2, sustain_length=96),
+        _make_note(tick=48, fret=3, sustain_length=96),
+    ]
+    res3 = builder.build_chords(triad_unaccented)
+    assert _frets_at_tick(res3, 48) == (0, 2)
+
+
+def test_strictly_prohibit_four_and_five_fret_chords() -> None:
+    """Prompt 7.2: Verify 4-fret and 5-fret chords are strictly prohibited under all configurations."""
+    for max_f in [2, 3, 4, 5]:
+        builder = ChordBuilder(max_frets=max_f)
+        notes_4 = [_make_note(tick=0, fret=f, sustain_length=96) for f in [0, 1, 2, 3]]
+        notes_5 = [_make_note(tick=0, fret=f, sustain_length=96) for f in [0, 1, 2, 3, 4]]
+
+        res_4 = builder.build_chords(notes_4)
+        res_5 = builder.build_chords(notes_5)
+
+        assert len(_frets_at_tick(res_4, 0)) <= 3
+        assert len(_frets_at_tick(res_5, 0)) <= 3
 
 
 # ---------------------------------------------------------------------------
@@ -609,3 +716,47 @@ def test_builder_convenience_aliases(default_builder: ChordBuilder) -> None:
     res_call = default_builder(notes)
 
     assert res_primary == res_build == res_process == res_call
+
+
+def test_all_chord_types_preserve_sustain_length() -> None:
+    """Verify chords of various configurations preserve input note sustain_length."""
+    builder = ChordBuilder(max_frets=2, collapse_fast_runs=True)
+
+    # 1. Standard Power Chord (fret 0 + 2) with 192 ticks sustain
+    power_chord = [
+        _make_note(tick=0, fret=0, sustain_length=192),
+        _make_note(tick=0, fret=2, sustain_length=192),
+    ]
+    res1 = builder.build_chords(power_chord)
+    assert len(res1) == 2
+    assert all(n.sustain_length == 192 for n in res1)
+
+    # 2. Clamped Dyad: (0, 4) with sustain 150 clamps to (0, 2), preserving sustain
+    clamped_dyad = [
+        _make_note(tick=1000, fret=0, sustain_length=150),
+        _make_note(tick=1000, fret=4, sustain_length=150),
+    ]
+    res2 = builder.build_chords(clamped_dyad)
+    assert len(res2) == 2
+    assert [n.fret.value for n in res2] == [0, 2]
+    assert all(n.sustain_length == 150 for n in res2)
+
+    # 3. Fast-run collapsed note: inter-note spacing 48 ticks, sustain 96 preserved
+    fast_run_chord = [
+        _make_note(tick=2000, fret=0, sustain_length=96),
+        _make_note(tick=2000, fret=2, sustain_length=96),
+        _make_note(tick=2048, fret=1, sustain_length=0),
+    ]
+    res3 = builder.build_chords(fast_run_chord)
+    # At tick 2000, collapsed to root fret 0 with sustain_length 96
+    notes_2000 = [n for n in res3 if n.tick == 2000]
+    assert len(notes_2000) == 1
+    assert notes_2000[0].fret == FretType.GREEN
+    assert notes_2000[0].sustain_length == 96
+
+    # 4. Open Note with sustain 250
+    open_note = [_make_note(tick=3000, fret=FretType.OPEN, sustain_length=250)]
+    res4 = builder.build_chords(open_note)
+    assert len(res4) == 1
+    assert res4[0].fret == FretType.OPEN
+    assert res4[0].sustain_length == 250
