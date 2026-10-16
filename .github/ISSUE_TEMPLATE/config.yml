@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/Adiells/music2chart/discussions
+    about: Ask questions, share chart creations, and discuss game engine compatibility.
+  - name: Live Web Workstation
+    url: https://music2chart.adiels.me/
+    about: Try the online converter directly without local installation.

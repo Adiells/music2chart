@@ -1,0 +1,88 @@
+name: 🐛 Bug Report
+description: Report unexpected behavior, chart rendering artifacts, or processing errors.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue! Please ensure you have searched existing issues before submitting.
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the problem clearly.
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Execution Environment
+      description: Where did this issue occur?
+      options:
+        - "Live Web Workstation (music2chart.adiels.me)"
+        - "Local Docker Compose"
+        - "Local Python Environment"
+        - "Direct REST API (cURL / script)"
+        - "Other"
+    validations:
+      required: true
+  - type: dropdown
+    id: target-engine
+    attributes:
+      label: Target Rhythm Game / Engine
+      description: Which game or chart viewer encountered the issue?
+      options:
+        - "Clone Hero (v1.0+)"
+        - "YARG (Yet Another Rhythm Game)"
+        - "Moonscraper Chart Editor"
+        - "Custom / In-house parser"
+        - "N/A (API / Processing failure before download)"
+    validations:
+      required: false
+  - type: input
+    id: audio-specs
+    attributes:
+      label: Audio File Specifications
+      description: What format and sample rate was the input audio? (e.g., MP3 320kbps, WAV 44.1kHz 16-bit, FLAC)
+      placeholder: "e.g., MP3 320kbps, 44.1kHz, 3m45s"
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this behavior?
+      placeholder: |
+        1. Upload audio file 'example.mp3'
+        2. Set packaging to '.sng'
+        3. Launch Clone Hero and scan songs
+        4. See note misalignment / failure
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened instead?
+      placeholder: Notes should align to 192 PPQ grid with proper HOPO markers.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs or Error Output
+      description: Paste any server tracebacks, browser console errors, or chart snippets.
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: checkboxes
+    attributes:
+      label: Checklist
+      options:
+        - label: I have verified this is not a duplicate of an existing issue.
+          required: true
+        - label: I have provided sufficient context or reproduction steps.
+          required: true

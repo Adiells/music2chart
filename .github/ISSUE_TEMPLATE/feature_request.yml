@@ -1,0 +1,55 @@
+name: 🚀 Feature Request
+description: Suggest an idea or enhancement for music2chart.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping shape the future of music2chart!
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Summary
+      description: What would you like to see added or improved?
+      placeholder: Describe the desired capability or enhancement.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area / Component
+      description: Which part of the system does this feature relate to?
+      options:
+        - "Stem Separation (Demucs / Audio Isolation)"
+        - "Pitch Transcription & Beat Tracking (Basic Pitch / Librosa / BeatNet)"
+        - "Game Design Heuristics (192 PPQ Quantization, Chords, HOPOs, Sustains)"
+        - "Chart & Container Serialization (.chart, .sng v1, song.ini)"
+        - "Web UI & Highway 3D Visualization"
+        - "REST API & Docker Deployment"
+        - "Other"
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Problem or Motivation
+      description: What problem does this solve, or what use case does it unlock?
+      placeholder: Explain why this feature is valuable for charters and rhythm game players.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Considered Alternatives
+      description: Any alternative solutions or workarounds you have considered?
+      placeholder: Mention other tools, manual workflows, or configurations.
+    validations:
+      required: false
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be interested in submitting a Pull Request for this feature.
+          required: false
