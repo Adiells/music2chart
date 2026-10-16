@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -48,6 +48,33 @@ class Settings(BaseSettings):
     DEFAULT_AUTO_CALIBRATE_BPM: bool = True
     DEFAULT_MERGE_SUSTAINED_NOTES: bool = True
     DEVICE: str = Field(default_factory=_get_default_device)
+
+    # Security, concurrency, and retention configuration
+    MAX_UPLOAD_SIZE_BYTES: int = 100 * 1024 * 1024  # 100 MB
+    MAX_AUDIO_DURATION_SECONDS: float = 900.0  # 15 minutes
+    MAX_CONCURRENT_TASKS: int = 1  # Maximum concurrent heavy pipeline tasks
+    TASK_QUEUE_CAPACITY: int = 10  # Queue capacity before HTTP 429
+    TASK_TTL_SECONDS: int = 7200  # 2 hours task retention
+    CLEANUP_INTERVAL_SECONDS: int = 300  # Background cleanup every 5 minutes
+    ALLOWED_ORIGINS: list[str] = Field(
+        default_factory=lambda: [
+            "http://localhost:5173",
+            "http://localhost:8000",
+            "http://localhost:3000",
+            "https://music2chart.adiel.me",
+        ]
+    )
+    RATE_LIMIT_GENERATE: str = "10/minute"
+    ENABLE_AUTO_STEM_CLEANUP: bool = True  # Clean intermediate stems after packaging
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def _parse_allowed_origins(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        if isinstance(v, (list, tuple, set)):
+            return [str(origin).strip() for origin in v]
+        return [str(origin).strip() for origin in list(v)] if v is not None else []
 
     def ensure_directories(self) -> None:
         """Create working and storage directories if they do not exist."""

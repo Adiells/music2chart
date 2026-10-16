@@ -405,23 +405,133 @@ class SngPacker:
     def unpack(cls, sng_path: Path | str, output_dir: Path | str) -> SngPackage:
         """Unpack a .sng container to the filesystem, restoring exact original files.
 
+        Validates all file paths against directory traversal attacks before writing.
+
         Args:
             sng_path: Path to the .sng file to unpack.
             output_dir: Target directory where unpacked files are created.
 
         Returns:
             The parsed SngPackage object with metadata and files.
+
+        Raises:
+            ValueError: If any file path in the package attempts directory traversal.
         """
         pkg = cls.read(sng_path)
-        out = Path(output_dir)
+        out = Path(output_dir).resolve()
         out.mkdir(parents=True, exist_ok=True)
 
         for entry in pkg.files:
-            file_path = out / entry.file_name
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            file_path.write_bytes(entry.contents)
+            clean_name = entry.file_name.replace("\\", "/").lstrip("/")
+            target = (out / clean_name).resolve()
+            if not target.is_relative_to(out):
+                raise ValueError(f"Malicious path in SNG container: {entry.file_name}")
+
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(entry.contents)
 
         return pkg
 
     unpack_dir = unpack
     unpack_files = unpack
+
+    @classmethod
+    def verify_container(cls, sng_path: Path | str) -> bool:
+        """Validate header, version, file offsets, mask, and required files of .sng container.
+
+        Args:
+            sng_path: Path to the .sng file.
+
+        Returns:
+            True if container is valid, intact, and contains required chart files; False otherwise.
+        """
+        try:
+            path = Path(sng_path)
+            if not path.is_file():
+                return False
+
+            data = path.read_bytes()
+            min_header_size = len(SNG_IDENTIFIER) + 4 + XOR_MASK_SIZE + 8 + 8 + 8
+            if len(data) < min_header_size:
+                return False
+
+            offset = 0
+            ident = data[offset : offset + 6]
+            offset += 6
+            if ident != SNG_IDENTIFIER:
+                return False
+
+            (version,) = struct.unpack_from("<I", data, offset)
+            offset += 4
+            if version != SNG_VERSION:
+                return False
+
+            xor_mask = data[offset : offset + XOR_MASK_SIZE]
+            offset += XOR_MASK_SIZE
+            if len(xor_mask) != XOR_MASK_SIZE:
+                return False
+
+            # Read Metadata section length
+            (metadata_len,) = struct.unpack_from("<Q", data, offset)
+            offset += 8
+            meta_end = offset + metadata_len
+            if meta_end > len(data):
+                return False
+
+            offset = meta_end
+
+            # Read FileIndex section
+            (file_index_len,) = struct.unpack_from("<Q", data, offset)
+            offset += 8
+            index_end = offset + file_index_len
+            if index_end > len(data):
+                return False
+
+            (file_count,) = struct.unpack_from("<Q", data, offset)
+            offset += 8
+
+            file_names: list[str] = []
+            file_bounds: list[tuple[int, int]] = []
+            dummy_base = Path("/dummy/base").resolve()
+
+            for _ in range(file_count):
+                (name_len,) = struct.unpack_from("<B", data, offset)
+                offset += 1
+                name = data[offset : offset + name_len].decode("utf-8")
+                offset += name_len
+
+                clean_name = name.replace("\\", "/").lstrip("/")
+                if not (dummy_base / clean_name).resolve().is_relative_to(dummy_base):
+                    return False
+
+                (file_len, file_offset) = struct.unpack_from("<QQ", data, offset)
+                offset += 16
+
+                file_names.append(clean_name.lower())
+                file_bounds.append((file_offset, file_len))
+
+            offset = index_end
+
+            # Read Binary Data section
+            (binary_section_len,) = struct.unpack_from("<Q", data, offset)
+            offset += 8
+            binary_start = offset
+            binary_end = binary_start + binary_section_len
+            if binary_end != len(data):
+                return False
+
+            # Validate each file's bounds
+            for f_offset, f_len in file_bounds:
+                if f_offset + f_len > binary_section_len:
+                    return False
+
+            # Check presence of essential files: notes.chart, song.ini, and audio file
+            has_chart = any(fn.endswith("notes.chart") or fn == "notes.chart" for fn in file_names)
+            has_ini = any(fn.endswith("song.ini") or fn == "song.ini" for fn in file_names)
+            has_audio = any(
+                fn.endswith((".ogg", ".wav", ".mp3", ".opus")) for fn in file_names
+            )
+
+            return has_chart and has_ini and has_audio
+        except Exception:
+            return False

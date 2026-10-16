@@ -5,7 +5,24 @@ import { playMechanicalClick } from '../../lib/mechanicalClick';
 import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
 
+const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB (104,857,600 bytes)
+
 const ALLOWED_EXTENSIONS = ['.mp3', '.wav', '.flac', '.ogg'] as const;
+
+const ALLOWED_MIME_TYPES = [
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/wav',
+  'audio/x-wav',
+  'audio/wave',
+  'audio/vnd.wave',
+  'audio/flac',
+  'audio/x-flac',
+  'audio/ogg',
+  'application/ogg',
+  'audio/opus',
+  'audio/vorbis',
+] as const;
 
 export interface DerivedTrackMeta {
   songName: string;
@@ -68,13 +85,40 @@ export function AudioDropzone({
 
     const ext = getExtension(candidate.name);
     if (!ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])) {
-      setErrorMsg(`INVALID FORMAT (${ext || 'UNKNOWN'}) — REQUIRED: MP3 / WAV / FLAC / OGG`);
+      setErrorMsg(
+        `INVALID EXTENSION (${ext || 'UNKNOWN'}) — ALLOWED AUDIO FORMATS: .MP3, .WAV, .FLAC, .OGG`
+      );
+      if (inputRef.current) inputRef.current.value = '';
+      onFileSelect(null);
+      playMechanicalClick(1400, 0.28);
+      return;
+    }
+
+    const cleanMime = candidate.type.split(';')[0].trim().toLowerCase();
+    if (cleanMime && !ALLOWED_MIME_TYPES.includes(cleanMime as (typeof ALLOWED_MIME_TYPES)[number])) {
+      setErrorMsg(
+        `UNSUPPORTED MIME TYPE (${cleanMime}) — ONLY MP3, WAV, FLAC, AND OGG AUDIO ARE ACCEPTED`
+      );
+      if (inputRef.current) inputRef.current.value = '';
+      onFileSelect(null);
       playMechanicalClick(1400, 0.28);
       return;
     }
 
     if (candidate.size === 0) {
-      setErrorMsg('EMPTY AUDIO STREAM (0 BYTES)');
+      setErrorMsg('EMPTY AUDIO STREAM (0 BYTES) — PLEASE SELECT A VALID AUDIO FILE');
+      if (inputRef.current) inputRef.current.value = '';
+      onFileSelect(null);
+      playMechanicalClick(1400, 0.28);
+      return;
+    }
+
+    if (candidate.size > MAX_FILE_SIZE_BYTES) {
+      setErrorMsg(
+        `FILE SIZE (${formatByteSize(candidate.size)}) EXCEEDS 100 MB LIMIT — MAXIMUM ALLOWED IS 100 MB`
+      );
+      if (inputRef.current) inputRef.current.value = '';
+      onFileSelect(null);
       playMechanicalClick(1400, 0.28);
       return;
     }
@@ -173,7 +217,7 @@ export function AudioDropzone({
         <input
           ref={inputRef}
           type="file"
-          accept=".mp3,.wav,.flac,.ogg,audio/mpeg,audio/wav,audio/flac,audio/ogg"
+          accept=".mp3,.wav,.flac,.ogg,audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/wave,audio/flac,audio/x-flac,audio/ogg,application/ogg"
           onChange={handleInputChange}
           disabled={disabled}
           className="hidden"
@@ -232,7 +276,7 @@ export function AudioDropzone({
               DRAG &amp; DROP AUDIO MASTER OR CLICK TO LOAD
             </div>
             <div className="silk-wide text-[9px]">
-              ACCEPTED CONTAINERS: .MP3 / .WAV / .FLAC / .OGG (44.1–48 KHZ)
+              ACCEPTED CONTAINERS: .MP3 / .WAV / .FLAC / .OGG (MAX 100 MB)
             </div>
           </div>
         )}

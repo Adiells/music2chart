@@ -91,5 +91,6 @@ module = [
     "scipy.*",
     "basic_pitch.*",
     "demucs.*",
+    "tensorflow.*",
 ]
 ignore_missing_imports = true

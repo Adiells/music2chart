@@ -2,19 +2,20 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from config.settings import get_settings
-from src.api.routes import preview_router
+from src.api.routes import preview_router, task_manager
 from src.api.routes import router as chart_router
 from src.api.schemas import HealthResponse
 
@@ -23,12 +24,43 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Application lifespan context: initialize storage and resources."""
+    """Application lifespan context: initialize storage, background cleanup, and resources."""
     settings = get_settings()
     settings.ensure_directories()
     logger.info("Application starting up: %s (env=%s)", settings.APP_NAME, settings.APP_ENV)
-    yield
-    logger.info("Application shutting down.")
+
+    stop_event = asyncio.Event()
+
+    async def periodic_cleanup() -> None:
+        while not stop_event.is_set():
+            try:
+                await asyncio.wait_for(
+                    stop_event.wait(), timeout=float(settings.CLEANUP_INTERVAL_SECONDS)
+                )
+                break
+            except TimeoutError:
+                try:
+                    expired = task_manager.cleanup_expired_tasks(
+                        ttl_seconds=float(settings.TASK_TTL_SECONDS)
+                    )
+                    if expired:
+                        logger.info(
+                            "Periodic cleanup purged %d expired task(s): %s", len(expired), expired
+                        )
+                except Exception as exc:
+                    logger.warning("Error during periodic task cleanup: %s", exc)
+
+    cleanup_task = asyncio.create_task(periodic_cleanup())
+    try:
+        yield
+    finally:
+        logger.info("Application shutting down.")
+        stop_event.set()
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
 
 
 def create_app(frontend_dist: Path | str | None = None) -> FastAPI:
@@ -50,13 +82,29 @@ def create_app(frontend_dist: Path | str | None = None) -> FastAPI:
     # -----------------------------------------------------------------------
     # CORS Middleware
     # -----------------------------------------------------------------------
+    origins = settings.ALLOWED_ORIGINS
+    allow_creds = "*" not in origins
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
+        allow_origins=origins,
+        allow_credentials=allow_creds,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # -----------------------------------------------------------------------
+    # Security Headers Middleware
+    # -----------------------------------------------------------------------
+    @app.middleware("http")
+    async def add_security_headers(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
 
     # -----------------------------------------------------------------------
     # Global Exception Handlers
@@ -131,7 +179,14 @@ def create_app(frontend_dist: Path | str | None = None) -> FastAPI:
         # Fallback route to serve assets if frontend/dist/assets is compiled dynamically
         @app.get("/assets/{file_path:path}", include_in_schema=False)
         async def serve_dynamic_assets(file_path: str) -> FileResponse:
-            target = frontend_dist_dir / "assets" / file_path
+            assets_dir = (frontend_dist_dir / "assets").resolve()
+            clean_path = file_path.replace("\\", "/").lstrip("/")
+            target = (assets_dir / clean_path).resolve()
+            if not target.is_relative_to(assets_dir):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied.",
+                )
             if frontend_dist_dir.is_dir() and target.is_file():
                 return FileResponse(target)
             raise HTTPException(

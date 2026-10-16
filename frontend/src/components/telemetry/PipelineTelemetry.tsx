@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { getApiUrl } from '../../lib/api';
 import { clamp, cn } from '../../lib/utils';
 import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
@@ -274,7 +275,7 @@ export function PipelineTelemetry({
     // Live Backend SSE Stream: /api/v1/chart/stream/{task_id}
     let finished = false;
     let pollTimer: number | null = null;
-    const streamUrl = `/api/v1/chart/stream/${encodeURIComponent(taskId)}`;
+    const streamUrl = getApiUrl(`/api/v1/chart/stream/${encodeURIComponent(taskId)}`);
     const es = new EventSource(streamUrl);
 
     const handlePayload = (payload: SseTelemetryPayload): void => {
@@ -329,8 +330,19 @@ export function PipelineTelemetry({
       // Fallback status polling if SSE stream drops
       pollTimer = window.setInterval(async () => {
         try {
-          const res = await fetch(`/api/v1/chart/status/${encodeURIComponent(taskId)}`);
-          if (!res.ok) return;
+          const res = await fetch(getApiUrl(`/api/v1/chart/status/${encodeURIComponent(taskId)}`));
+          if (!res.ok) {
+            if (res.status === 429) {
+              handlePayload({
+                task_id: taskId,
+                status: 'FAILED',
+                progress: 0,
+                stage: 'TOO MANY REQUESTS',
+                error: 'Too Many Requests (HTTP 429): Servidor sobrecarregado ou fila cheia.',
+              });
+            }
+            return;
+          }
           const data = (await res.json()) as SseTelemetryPayload;
           handlePayload(data);
         } catch {

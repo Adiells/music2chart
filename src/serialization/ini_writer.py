@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from src.models.sng import SngMetadata
+from src.utils.security import sanitize_ini_key, sanitize_ini_value
 
 STANDARD_INI_KEYS = [
     "name",
@@ -55,19 +56,27 @@ class IniWriter:
         if "charter" not in combined:
             combined["charter"] = "music2chart AI"
 
+        # Sanitize all keys and values to prevent newline or section injection
+        sanitized_combined: dict[str, str] = {}
+        for k, v in combined.items():
+            clean_k = sanitize_ini_key(k)
+            clean_v = sanitize_ini_value(v)
+            if clean_k and clean_v:
+                sanitized_combined[clean_k] = clean_v
+
         lines: list[str] = ["[Song]"]
 
         # First output standard keys in canonical order
         handled_keys: set[str] = set()
         for key in STANDARD_INI_KEYS:
-            if key in combined:
-                lines.append(f"{key} = {combined[key]}")
+            if key in sanitized_combined:
+                lines.append(f"{key} = {sanitized_combined[key]}")
                 handled_keys.add(key)
 
         # Next output any extra keys sorted alphabetically
-        for key in sorted(combined.keys()):
+        for key in sorted(sanitized_combined.keys()):
             if key not in handled_keys:
-                lines.append(f"{key} = {combined[key]}")
+                lines.append(f"{key} = {sanitized_combined[key]}")
 
         return "\n".join(lines) + "\n"
 

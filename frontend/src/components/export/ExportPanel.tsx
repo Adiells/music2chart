@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { getApiUrl } from '../../lib/api';
 import { cn } from '../../lib/utils';
 import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
@@ -66,7 +67,7 @@ export function ExportPanel({
     scheduleStatusReset();
 
     if (hasBackendPackage && completedTaskId) {
-      const url = `/api/v1/chart/download/${encodeURIComponent(completedTaskId)}?format=${format}`;
+      const url = getApiUrl(`/api/v1/chart/download/${encodeURIComponent(completedTaskId)}?format=${format}`);
       setStatusNote(`DISPATCHING .${format.toUpperCase()} STREAM // TASK ${completedTaskId.slice(0, 8).toUpperCase()}`);
       triggerBrowserDownload(url);
       window.setTimeout(() => setActiveFormat(null), 900);

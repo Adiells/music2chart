@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { getApiUrl } from '../lib/api';
 import { clamp } from '../lib/utils';
 
 export const RELEASE_MARGIN_TICKS = 24;
@@ -981,9 +982,12 @@ export function useChartParser(completedTaskId: string | null): UseChartParserRe
 
     const fetchChart = async (): Promise<void> => {
       try {
-        const url = `/api/v1/chart/download/${encodeURIComponent(completedTaskId)}?format=chart`;
+        const url = getApiUrl(`/api/v1/chart/download/${encodeURIComponent(completedTaskId)}?format=chart`);
         const res = await fetch(url);
         if (!res.ok) {
+          if (res.status === 429) {
+            throw new Error('Too Many Requests (HTTP 429): Servidor sobrecarregado ao descarregar notes.chart.');
+          }
           throw new Error(`HTTP ${res.status} fetching notes.chart`);
         }
         const text = await res.text();

@@ -454,5 +454,14 @@ class Music2ChartPipeline:
             SngPacker.pack_dir(input_dir=pkg_dir, output_sng_path=sng_path)
             result_paths["sng"] = sng_path
 
+        # Clean up intermediate stems if enabled to prevent disk exhaustion
+        if self.settings.ENABLE_AUTO_STEM_CLEANUP:
+            if stems_dir.exists():
+                try:
+                    shutil.rmtree(stems_dir, ignore_errors=True)
+                    logger.info("Cleaned up intermediate stems directory: %s", stems_dir)
+                except Exception as exc:
+                    logger.debug("Failed to remove stems directory %s: %s", stems_dir, exc)
+
         report(1.0, "Completed successfully")
         return result_paths

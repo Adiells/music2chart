@@ -25,6 +25,7 @@ import type {
 } from './components';
 import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { useChartParser } from './hooks/useChartParser';
+import { getApiUrl } from './lib/api';
 
 type PresetId = 'standard' | 'strict_rhythm' | 'dynamic_solo' | 'melodic' | 'chord_heavy';
 type ActiveView = 'workstation' | 'about';
@@ -194,6 +195,16 @@ export default function App() {
 
   const handleGenerate = useCallback(async (): Promise<void> => {
     if (!audioFile || submitting) return;
+
+    // Client-side guard against oversized payloads (>100MB) before starting upload
+    const MAX_UPLOAD_SIZE = 100 * 1024 * 1024; // 100 MB
+    if (audioFile.size > MAX_UPLOAD_SIZE) {
+      setSubmitError(
+        'Payload Too Large: O arquivo excede o limite de 100 MB. Por favor, selecione um arquivo de áudio menor.'
+      );
+      return;
+    }
+
     setSubmitting(true);
     setSubmitError(null);
     player.pause();
@@ -226,14 +237,43 @@ export default function App() {
       form.append('auto_calibrate_bpm', String(calibration.autoCalibrateBpm));
       form.append('merge_sustained_notes', String(calibration.mergeSustainedNotes));
 
-      const response = await fetch('/api/v1/chart/generate', {
+      const response = await fetch(getApiUrl('/api/v1/chart/generate'), {
         method: 'POST',
         body: form,
       });
 
       if (!response.ok) {
-        const errBody = (await response.json().catch(() => null)) as { detail?: string } | null;
-        throw new Error(errBody?.detail || `HTTP ${response.status} submitting audio`);
+        let errorDetail = '';
+        try {
+          const errBody = (await response.json()) as { detail?: string | { msg?: string }[] };
+          if (typeof errBody?.detail === 'string') {
+            errorDetail = errBody.detail;
+          } else if (Array.isArray(errBody?.detail)) {
+            errorDetail = errBody.detail
+              .map((d) => (typeof d === 'string' ? d : d.msg || JSON.stringify(d)))
+              .join('; ');
+          }
+        } catch {
+          // Response body was not JSON or could not be parsed
+        }
+
+        if (response.status === 413) {
+          throw new Error(
+            `Payload Too Large (HTTP 413): ${
+              errorDetail || 'Arquivo excede o limite de 100 MB do servidor. Por favor, selecione um arquivo menor.'
+            }`
+          );
+        }
+
+        if (response.status === 429) {
+          throw new Error(
+            `Too Many Requests (HTTP 429): ${
+              errorDetail || 'Servidor sobrecarregado ou fila de processamento cheia. Aguarde alguns instantes e tente novamente.'
+            }`
+          );
+        }
+
+        throw new Error(errorDetail || `HTTP ${response.status} submitting audio`);
       }
 
       const data = (await response.json()) as GenerateApiResponse;
@@ -333,7 +373,7 @@ export default function App() {
                   label={audioFile ? 'SOURCE IN' : 'STANDBY'}
                 />
               }
-              footer="FORMATS: MP3 / WAV / FLAC / OGG -> DEMUCS v4 + BASIC PITCH"
+              footer="FORMATS: MP3 / WAV / FLAC / OGG (MAX 100MB) -> DEMUCS v4 + BASIC PITCH"
             >
               <div className="flex flex-col gap-4">
                 <AudioDropzone

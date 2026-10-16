@@ -10,6 +10,7 @@ services:
     environment:
       - APP_NAME=music2chart
       - APP_ENV=production
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:8000}
       - DEMUCS_MODEL_NAME=htdemucs
       - BASIC_PITCH_ONSET_THRESHOLD=0.5
       - BASIC_PITCH_FRAME_THRESHOLD=0.3
@@ -17,10 +18,19 @@ services:
       - DEFAULT_RESOLUTION=192
     volumes:
       # Persistent cache for Torch and Demucs model weights
-      - torch_cache:/root/.cache/torch
-      - demucs_cache:/root/.cache/demucs
-      # Working storage mounts for local inspection and persistence
-      - ./tmp:/app/tmp
+      - torch_cache_appuser:/home/appuser/.cache/torch
+      - demucs_cache_appuser:/home/appuser/.cache/demucs
+      # Dedicated working storage volume, initialized with image ownership.
+      - app_tmp:/app/tmp
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          memory: 4G
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")'"]
@@ -30,7 +40,9 @@ services:
       start_period: 15s
 
 volumes:
-  torch_cache:
+  app_tmp:
     driver: local
-  demucs_cache:
+  torch_cache_appuser:
+    driver: local
+  demucs_cache_appuser:
     driver: local

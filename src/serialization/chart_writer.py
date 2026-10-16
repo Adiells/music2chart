@@ -12,6 +12,7 @@ from src.models import (
     SongTrack,
     TempoMap,
 )
+from src.utils.security import sanitize_string
 
 
 class ChartWriter:
@@ -67,27 +68,37 @@ class ChartWriter:
         # -------------------------------------------------------------------
         # 1. [Song] Section
         # -------------------------------------------------------------------
+        clean_song_name = sanitize_string(song_name)
+        clean_artist = sanitize_string(artist)
+        clean_charter = sanitize_string(charter)
+        clean_genre = sanitize_string(genre)
+        clean_player2 = sanitize_string(player2)
+        clean_media_type = sanitize_string(media_type)
+        clean_music_stream = sanitize_string(music_stream)
+
         lines.append("[Song]")
         lines.append("{")
-        lines.append(f'  Name = "{song_name}"')
-        lines.append(f'  Artist = "{artist}"')
-        lines.append(f'  Charter = "{charter}"')
+        lines.append(f'  Name = "{clean_song_name}"')
+        lines.append(f'  Artist = "{clean_artist}"')
+        lines.append(f'  Charter = "{clean_charter}"')
         lines.append(f"  Offset = {offset}")
         lines.append(f"  Resolution = {res}")
-        lines.append(f"  Player2 = {player2}")
+        lines.append(f"  Player2 = {clean_player2}")
         lines.append(f"  Difficulty = {difficulty}")
         lines.append(f"  PreviewStart = {preview_start}")
         lines.append(f"  PreviewEnd = {preview_end}")
-        lines.append(f'  Genre = "{genre}"')
-        lines.append(f'  MediaType = "{media_type}"')
-        lines.append(f'  MusicStream = "{music_stream}"')
+        lines.append(f'  Genre = "{clean_genre}"')
+        lines.append(f'  MediaType = "{clean_media_type}"')
+        lines.append(f'  MusicStream = "{clean_music_stream}"')
 
         if extra_song_properties:
             for k, v in extra_song_properties.items():
+                clean_k = sanitize_string(str(k))
                 if isinstance(v, (int, float)):
-                    lines.append(f"  {k} = {v}")
+                    lines.append(f"  {clean_k} = {v}")
                 else:
-                    lines.append(f'  {k} = "{v}"')
+                    clean_v = sanitize_string(str(v))
+                    lines.append(f'  {clean_k} = "{clean_v}"')
 
         lines.append("}")
 
@@ -128,7 +139,7 @@ class ChartWriter:
         if events is not None and len(events) > 0:
             sorted_events = sorted(events, key=lambda ev: ev[0])
             for tick, ev_name in sorted_events:
-                clean_name = ev_name.strip('"')
+                clean_name = sanitize_string(ev_name.strip('"'))
                 lines.append(f'  {tick} = E "{clean_name}"')
         else:
             lines.append('  0 = E "section Intro"')

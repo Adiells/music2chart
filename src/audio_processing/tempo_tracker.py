@@ -35,8 +35,8 @@ class TempoTracker:
         if audio_data.ndim == 2:
             # Check shape: (channels, samples) or (samples, channels)
             if audio_data.shape[0] in (1, 2) and audio_data.shape[1] > audio_data.shape[0]:
-                return np.mean(audio_data, axis=0, dtype=np.float32)
-            return np.mean(audio_data, axis=1, dtype=np.float32)
+                return np.asarray(np.mean(audio_data, axis=0, dtype=np.float32))
+            return np.asarray(np.mean(audio_data, axis=1, dtype=np.float32))
         return np.squeeze(audio_data).astype(np.float32)
 
     def detect_intro_offset(

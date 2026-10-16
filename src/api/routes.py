@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import re
+import shutil
 import threading
 import time
 import zipfile
@@ -34,6 +35,7 @@ from src.api.schemas import (
     TaskStatus,
     TaskStatusResponse,
 )
+from src.utils.security import probe_audio_duration, validate_audio_magic_bytes
 
 if TYPE_CHECKING:
     from src.pipeline import Music2ChartPipeline
@@ -121,6 +123,64 @@ class TaskManager:
                 record.error = error
                 record.updated_at = time.time()
 
+    def get_active_task_count(self) -> int:
+        """Return total count of tasks currently PENDING or PROCESSING."""
+        with self._lock:
+            return sum(
+                1
+                for task in self._tasks.values()
+                if task.status in (TaskStatus.PENDING, TaskStatus.PROCESSING)
+            )
+
+    def get_pending_task_count(self) -> int:
+        """Return count of tasks currently waiting in queue (PENDING)."""
+        with self._lock:
+            return sum(1 for task in self._tasks.values() if task.status == TaskStatus.PENDING)
+
+    def cleanup_expired_tasks(self, ttl_seconds: float = 7200.0) -> list[str]:
+        """Remove tasks older than ttl_seconds and delete their files from disk."""
+        now = time.time()
+        expired_ids: list[str] = []
+        records_to_clean: list[TaskRecord] = []
+
+        with self._lock:
+            for task_id, record in list(self._tasks.items()):
+                if (now - record.updated_at) > ttl_seconds:
+                    expired_ids.append(task_id)
+                    records_to_clean.append(record)
+                    del self._tasks[task_id]
+
+        settings = get_settings()
+        for record in records_to_clean:
+            tid = record.task_id
+            # 1. Delete upload task dir
+            upload_task_dir = settings.UPLOAD_DIR / tid
+            if upload_task_dir.exists():
+                shutil.rmtree(upload_task_dir, ignore_errors=True)
+
+            # 2. Delete stems task dir
+            stems_task_dir = settings.STEMS_DIR / tid
+            if stems_task_dir.exists():
+                shutil.rmtree(stems_task_dir, ignore_errors=True)
+
+            # 3. Delete output task dir
+            output_task_dir = settings.OUTPUT_DIR / tid
+            if output_task_dir.exists():
+                shutil.rmtree(output_task_dir, ignore_errors=True)
+
+            # 4. Clean recorded output files
+            for p in record.output_files.values():
+                path = Path(p)
+                try:
+                    if path.is_file():
+                        path.unlink(missing_ok=True)
+                    elif path.is_dir():
+                        shutil.rmtree(path, ignore_errors=True)
+                except Exception:
+                    pass
+
+        return expired_ids
+
     def clear(self) -> None:
         """Clear all tasks (primarily for unit test isolation)."""
         with self._lock:
@@ -128,6 +188,21 @@ class TaskManager:
 
 
 task_manager = TaskManager()
+
+_semaphore_lock = threading.Lock()
+_pipeline_semaphore: threading.Semaphore | None = None
+_current_max_concurrent: int = 0
+
+
+def get_pipeline_semaphore() -> threading.Semaphore:
+    """Return the global pipeline concurrency semaphore."""
+    global _pipeline_semaphore, _current_max_concurrent
+    settings = get_settings()
+    with _semaphore_lock:
+        if _pipeline_semaphore is None or _current_max_concurrent != settings.MAX_CONCURRENT_TASKS:
+            _current_max_concurrent = settings.MAX_CONCURRENT_TASKS
+            _pipeline_semaphore = threading.Semaphore(_current_max_concurrent)
+        return _pipeline_semaphore
 
 
 def _format_terminal_progress_bar(progress: float, stage: str, length: int = 20) -> str:
@@ -179,59 +254,67 @@ def run_pipeline_task(
     auto_calibrate_bpm: bool | None = None,
     merge_sustained_notes: bool | None = None,
 ) -> None:
-    """Execute pipeline in worker threadpool with real-time progress updates."""
-    initial_stage = "Initializing pipeline"
-    task_manager.update_task(
-        task_id,
-        status=TaskStatus.PROCESSING,
-        progress=0.05,
-        stage=initial_stage,
-    )
-    logger.info("Task %s %s", task_id[:8], _format_terminal_progress_bar(0.05, initial_stage))
-    if pipeline is not None:
-        pipe = pipeline
-    else:
-        from src.pipeline import Music2ChartPipeline
-
-        pipe = Music2ChartPipeline()
-
-    def on_progress(p: float, step: str) -> None:
-        task_manager.update_task(task_id, progress=p, stage=step)
-        logger.info("Task %s %s", task_id[:8], _format_terminal_progress_bar(p, step))
-
-    try:
-        results = pipe.process_song(
-            audio_path=audio_path,
-            song_name=song_name,
-            artist=artist,
-            output_format=output_format,
-            progress_callback=on_progress,
-            max_frets=max_frets,
-            hopo_threshold=hopo_threshold,
-            disable_open_notes=disable_open_notes,
-            collapse_fast_runs=collapse_fast_runs,
-            consistent_patterns=consistent_patterns,
-            difficulty=difficulty,
-            genre=genre,
-            preset=preset,
-            creativity=creativity,
-            min_amplitude=min_amplitude,
-            min_sustain_ticks=min_sustain_ticks,
-            release_margin=release_margin,
-            chord_fusion_window_s=chord_fusion_window_s,
-            bpm_scale=bpm_scale,
-            auto_calibrate_bpm=auto_calibrate_bpm,
-            merge_sustained_notes=merge_sustained_notes,
+    """Execute pipeline in worker threadpool with real-time progress updates and concurrency control."""
+    sem = get_pipeline_semaphore()
+    with sem:
+        initial_stage = "Initializing pipeline"
+        task_manager.update_task(
+            task_id,
+            status=TaskStatus.PROCESSING,
+            progress=0.05,
+            stage=initial_stage,
         )
-        task_manager.set_completed(task_id, output_files=results)
-        logger.info(
-            "Task %s %s",
-            task_id[:8],
-            _format_terminal_progress_bar(1.0, "Completed successfully"),
-        )
-    except Exception as exc:
-        logger.exception("Pipeline execution failed for task %s: %s", task_id, exc)
-        task_manager.set_failed(task_id, error=str(exc))
+        logger.info("Task %s %s", task_id[:8], _format_terminal_progress_bar(0.05, initial_stage))
+        if pipeline is not None:
+            pipe = pipeline
+        else:
+            from src.pipeline import Music2ChartPipeline
+
+            pipe = Music2ChartPipeline()
+
+        def on_progress(p: float, step: str) -> None:
+            task_manager.update_task(task_id, progress=p, stage=step)
+            logger.info("Task %s %s", task_id[:8], _format_terminal_progress_bar(p, step))
+
+        try:
+            results = pipe.process_song(
+                audio_path=audio_path,
+                song_name=song_name,
+                artist=artist,
+                output_format=output_format,
+                progress_callback=on_progress,
+                max_frets=max_frets,
+                hopo_threshold=hopo_threshold,
+                disable_open_notes=disable_open_notes,
+                collapse_fast_runs=collapse_fast_runs,
+                consistent_patterns=consistent_patterns,
+                difficulty=difficulty,
+                genre=genre,
+                preset=preset,
+                creativity=creativity,
+                min_amplitude=min_amplitude,
+                min_sustain_ticks=min_sustain_ticks,
+                release_margin=release_margin,
+                chord_fusion_window_s=chord_fusion_window_s,
+                bpm_scale=bpm_scale,
+                auto_calibrate_bpm=auto_calibrate_bpm,
+                merge_sustained_notes=merge_sustained_notes,
+            )
+            task_manager.set_completed(task_id, output_files=results)
+            logger.info(
+                "Task %s %s",
+                task_id[:8],
+                _format_terminal_progress_bar(1.0, "Completed successfully"),
+            )
+        except Exception as exc:
+            logger.exception("Pipeline execution failed for task %s: %s", task_id, exc)
+            task_manager.set_failed(task_id, error=str(exc))
+        finally:
+            settings = get_settings()
+            if settings.ENABLE_AUTO_STEM_CLEANUP:
+                task_stems = settings.STEMS_DIR / task_id
+                if task_stems.exists():
+                    shutil.rmtree(task_stems, ignore_errors=True)
 
 
 router = APIRouter(prefix="/api/v1/chart", tags=["Chart Generation"])
@@ -338,29 +421,118 @@ async def generate_chart(
     clean_min_amplitude = min(0.5, min_amplitude) if min_amplitude is not None else None
 
     settings = get_settings()
+
+    # 1. Check queue capacity before accepting upload
+    active_tasks = task_manager.get_active_task_count()
+    if active_tasks >= (settings.MAX_CONCURRENT_TASKS + settings.TASK_QUEUE_CAPACITY):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                f"Server is at full capacity (queue limit of {settings.TASK_QUEUE_CAPACITY} reached). "
+                "Please try again later."
+            ),
+        )
+
     import uuid
 
     task_id = str(uuid.uuid4())
     upload_dir = settings.UPLOAD_DIR / task_id
     upload_dir.mkdir(parents=True, exist_ok=True)
-    destination = upload_dir / file.filename
+    # Secure filename decoupling: avoid storing unvalidated user filenames directly
+    destination = upload_dir / f"audio_input{file_ext}"
 
-    # Save uploaded bytes to disk
+    # Stream upload in chunks with strict size limit enforcement
+    max_upload_size = settings.MAX_UPLOAD_SIZE_BYTES
+    chunk_size = 64 * 1024  # 64 KB
+    total_bytes = 0
+    header_bytes = bytearray()
+
     try:
-        contents = await file.read()
-        if not contents:
+        with open(destination, "wb") as f:
+            while chunk := await file.read(chunk_size):
+                total_bytes += len(chunk)
+                if len(header_bytes) < 64:
+                    header_bytes.extend(chunk[: 64 - len(header_bytes)])
+                if total_bytes > max_upload_size:
+                    f.close()
+                    destination.unlink(missing_ok=True)
+                    try:
+                        upload_dir.rmdir()
+                    except OSError:
+                        pass
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail=(
+                            f"Uploaded file exceeds maximum allowed size of "
+                            f"{max_upload_size // (1024 * 1024)}MB."
+                        ),
+                    )
+                f.write(chunk)
+
+        if total_bytes == 0:
+            destination.unlink(missing_ok=True)
+            try:
+                upload_dir.rmdir()
+            except OSError:
+                pass
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Uploaded audio file is empty.",
             )
-        destination.write_bytes(contents)
     except HTTPException:
         raise
     except Exception as exc:
+        destination.unlink(missing_ok=True)
+        try:
+            upload_dir.rmdir()
+        except OSError:
+            pass
         logger.error("Failed to persist upload %s: %s", destination, exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to save uploaded file to disk.",
+        ) from exc
+
+    # 2. Inspect audio signature magic bytes
+    if not validate_audio_magic_bytes(bytes(header_bytes)):
+        destination.unlink(missing_ok=True)
+        try:
+            upload_dir.rmdir()
+        except OSError:
+            pass
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File signature does not match supported audio format '{file_ext}'.",
+        )
+
+    # 3. Pre-flight lightweight duration probe
+    try:
+        duration = probe_audio_duration(destination)
+        if duration > settings.MAX_AUDIO_DURATION_SECONDS:
+            destination.unlink(missing_ok=True)
+            try:
+                upload_dir.rmdir()
+            except OSError:
+                pass
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Audio duration ({duration:.1f}s) exceeds maximum allowed limit "
+                    f"of {settings.MAX_AUDIO_DURATION_SECONDS:.0f}s (15 minutes)."
+                ),
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        destination.unlink(missing_ok=True)
+        try:
+            upload_dir.rmdir()
+        except OSError:
+            pass
+        logger.warning("Audio duration probe failed for %s: %s", destination, exc)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded audio file could not be decoded or is corrupted.",
         ) from exc
 
     # Register task and queue background processing
@@ -415,12 +587,17 @@ async def get_task_status(task_id: str) -> TaskStatusResponse:
     if record.status == TaskStatus.COMPLETED:
         res_files = {k: str(v) for k, v in record.output_files.items()}
 
+    settings = get_settings()
+    err_msg = record.error
+    if err_msg and settings.APP_ENV.lower() == "production":
+        err_msg = "Pipeline processing failed. Please check your audio file or try again."
+
     return TaskStatusResponse(
         task_id=record.task_id,
         status=record.status.value,
         progress=round(record.progress, 2),
         stage=record.stage,
-        error=record.error,
+        error=err_msg,
         result_files=res_files,
     )
 
@@ -437,6 +614,8 @@ async def stream_task_progress(task_id: str) -> StreamingResponse:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Task '{task_id}' not found.",
         )
+
+    settings = get_settings()
 
     async def event_generator() -> AsyncGenerator[str, None]:
         last_progress = -1.0
@@ -459,12 +638,16 @@ async def stream_task_progress(task_id: str) -> StreamingResponse:
                 last_status = current.status
                 last_stage = current.stage
 
+                err_msg = current.error
+                if err_msg and settings.APP_ENV.lower() == "production":
+                    err_msg = "Pipeline processing failed. Please check your audio file or try again."
+
                 payload = {
                     "task_id": current.task_id,
                     "status": current.status.value,
                     "progress": round(current.progress, 2),
                     "stage": current.stage,
-                    "error": current.error,
+                    "error": err_msg,
                     "result_files": {k: str(v) for k, v in current.output_files.items()}
                     if current.status == TaskStatus.COMPLETED
                     else None,
