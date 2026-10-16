@@ -50,6 +50,7 @@ coverage.xml
 # Audio and generated chart files
 *.sng
 *.chart
+*.zip
 stems/
 tmp/
 dataset/downloads/

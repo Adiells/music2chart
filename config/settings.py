@@ -38,6 +38,15 @@ class Settings(BaseSettings):
     BASIC_PITCH_MIN_NOTE_LENGTH: float = 58.0
     DEMUCS_MODEL_NAME: str = "htdemucs"
     DEFAULT_RESOLUTION: int = 192
+    DEFAULT_CREATIVITY: float = 0.5
+    DEFAULT_HOPO_THRESHOLD: int = 65
+    DEFAULT_MIN_SUSTAIN_TICKS: int = 72
+    DEFAULT_RELEASE_MARGIN: int = 24
+    DEFAULT_MIN_AMPLITUDE: float = 0.1
+    DEFAULT_CHORD_FUSION_WINDOW_S: float = 0.035
+    DEFAULT_BPM_SCALE: float = 1.0
+    DEFAULT_AUTO_CALIBRATE_BPM: bool = True
+    DEFAULT_MERGE_SUSTAINED_NOTES: bool = True
     DEVICE: str = Field(default_factory=_get_default_device)
 
     def ensure_directories(self) -> None:
