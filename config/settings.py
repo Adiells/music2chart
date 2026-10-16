@@ -61,7 +61,7 @@ class Settings(BaseSettings):
             "http://localhost:5173",
             "http://localhost:8000",
             "http://localhost:3000",
-            "https://music2chart.adiel.me",
+            "https://music2chart.adiels.me",
         ]
     )
     RATE_LIMIT_GENERATE: str = "10/minute"
