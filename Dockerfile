@@ -1,5 +1,19 @@
-# Build with Python 3.11, PyTorch/CUDA support, and FFmpeg
-FROM python:3.11-slim
+# ==============================================================================
+# Stage 1: Build Frontend Assets (Vite + React 19 + TypeScript + Three.js)
+# ==============================================================================
+FROM node:20-alpine AS frontend-builder
+WORKDIR /build
+
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
+# ==============================================================================
+# Stage 2: Runtime Container (Python 3.11 + PyTorch + FFmpeg + FastAPI)
+# ==============================================================================
+FROM python:3.11-slim AS runtime
 
 # Prevent Python from writing bytecode and buffering stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -29,6 +43,9 @@ COPY dataset /app/dataset
 COPY src /app/src
 COPY tests /app/tests
 COPY README.md /app/
+
+# Copy compiled frontend SPA assets from builder stage
+COPY --from=frontend-builder /build/dist /app/frontend/dist
 
 # Create runtime directories for uploads, stems, and output containers
 RUN mkdir -p /app/tmp/uploads /app/tmp/output /app/tmp/stems /root/.cache
