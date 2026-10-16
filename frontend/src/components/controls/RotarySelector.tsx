@@ -27,10 +27,10 @@ export interface RotarySelectorProps<T extends string> {
   className?: string;
 }
 
-const VB_W = 260;
-const VB_H = 150;
-const CX = 130;
-const CY = 90;
+const VB_W = 340;
+const VB_H = 152;
+const CX = 170;
+const CY = 88;
 const KNOB_R = 30;
 
 function polar(r: number, deg: number): { x: number; y: number } {
@@ -165,7 +165,7 @@ export function RotarySelector<T extends string>({
       <svg
         ref={svgRef}
         viewBox={`0 0 ${VB_W} ${VB_H}`}
-        className="w-full max-w-[380px] touch-none outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-silk-neutral"
+        className="w-full max-w-[420px] touch-none outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-silk-neutral"
         role="slider"
         tabIndex={disabled ? -1 : 0}
         aria-label={label}

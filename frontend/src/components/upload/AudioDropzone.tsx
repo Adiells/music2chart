@@ -159,7 +159,7 @@ export function AudioDropzone({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          'no-select relative flex flex-col justify-between gap-3 border bg-chassis p-3.5 shadow-recess transition-colors',
+          'no-select relative flex flex-col gap-2.5 border bg-chassis p-3 shadow-recess transition-colors',
           dragActive
             ? 'border-fret-green bg-[#111916]'
             : errorMsg
@@ -211,6 +211,9 @@ export function AudioDropzone({
               onClick={(e) => {
                 e.stopPropagation();
               }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+              }}
             >
               <PushButton
                 size="sm"
@@ -224,7 +227,7 @@ export function AudioDropzone({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-1.5 py-3 text-center">
+          <div className="flex flex-col items-center justify-center gap-1 py-2 text-center">
             <div className="font-mono text-[11px] font-medium uppercase tracking-silk-wide text-silk">
               DRAG &amp; DROP AUDIO MASTER OR CLICK TO LOAD
             </div>

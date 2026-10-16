@@ -21,14 +21,14 @@ export interface MetadataInputsProps {
 
 const GENRE_OPTIONS = ['rock', 'metal', 'prog', 'indie', 'electronic', 'punk', 'jazz'] as const;
 const MAX_FRET_OPTIONS: readonly { value: number; label: string; sub: string }[] = [
-  { value: 1, label: '1 Fret', sub: 'Lead Mono' },
-  { value: 2, label: '2 Frets', sub: 'Dyad Power' },
-  { value: 3, label: '3 Frets', sub: 'Triad Full' },
+  { value: 1, label: '1 Fret', sub: 'Mono' },
+  { value: 2, label: '2 Frets', sub: 'Power' },
+  { value: 3, label: '3 Frets', sub: 'Triad' },
 ];
-const FORMAT_OPTIONS: readonly { value: OutputFormatOption; label: string }[] = [
-  { value: 'both', label: 'SNG + CHART' },
-  { value: 'sng', label: 'SNG ONLY' },
-  { value: 'chart', label: 'CHART ONLY' },
+const FORMAT_OPTIONS: readonly { value: OutputFormatOption; label: string; sub: string }[] = [
+  { value: 'both', label: 'BOTH', sub: 'SNG + CHART' },
+  { value: 'sng', label: 'SNG', sub: 'SONGBINARY V1' },
+  { value: 'chart', label: 'CHART', sub: '192 PPQ TEXT' },
 ];
 
 /**
@@ -79,7 +79,8 @@ export function MetadataInputs({
         </label>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {/* Row 1: Genre Tag + Chord Clamp */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1">
           <span className="silk">Genre Tag</span>
           <select
@@ -104,6 +105,7 @@ export function MetadataInputs({
                 key={opt.value}
                 size="sm"
                 label={opt.label}
+                sublabel={opt.sub}
                 led="blue"
                 ledOn={value.maxFrets === opt.value}
                 latched={value.maxFrets === opt.value}
@@ -116,26 +118,28 @@ export function MetadataInputs({
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-1">
-          <span className="silk">Container Mode</span>
-          <div className="grid grid-cols-3 gap-1" role="radiogroup" aria-label="Output Format">
-            {FORMAT_OPTIONS.map((opt) => (
-              <PushButton
-                key={opt.value}
-                size="sm"
-                label={opt.label}
-                led="green"
-                ledOn={value.outputFormat === opt.value}
-                latched={value.outputFormat === opt.value}
-                disabled={disabled}
-                role="radio"
-                aria-checked={value.outputFormat === opt.value}
-                onClick={() => update('outputFormat', opt.value)}
-                className="w-full"
-              />
-            ))}
-          </div>
+      {/* Row 2: Container Mode (full width) */}
+      <div className="flex w-full flex-col gap-1">
+        <span className="silk">Container Mode</span>
+        <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Output Format">
+          {FORMAT_OPTIONS.map((opt) => (
+            <PushButton
+              key={opt.value}
+              size="sm"
+              label={opt.label}
+              sublabel={opt.sub}
+              led="green"
+              ledOn={value.outputFormat === opt.value}
+              latched={value.outputFormat === opt.value}
+              disabled={disabled}
+              role="radio"
+              aria-checked={value.outputFormat === opt.value}
+              onClick={() => update('outputFormat', opt.value)}
+              className="w-full"
+            />
+          ))}
         </div>
       </div>
     </div>

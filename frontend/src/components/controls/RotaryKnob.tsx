@@ -155,7 +155,9 @@ export function RotaryKnob({
 
   return (
     <div className={cn('no-select flex flex-col items-center gap-2', disabled && 'cursor-not-allowed')}>
-      <span className="silk text-center">{label}</span>
+      <div className="flex min-h-[28px] w-full items-center justify-center px-1">
+        <span className="silk text-center leading-tight">{label}</span>
+      </div>
 
       <div
         ref={surfaceRef}

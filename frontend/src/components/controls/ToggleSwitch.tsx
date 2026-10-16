@@ -44,9 +44,12 @@ export function ToggleSwitch({
 
   return (
     <div className={cn('no-select flex flex-col items-center gap-2', className)}>
-      <span className="silk max-w-[110px] text-center leading-tight">{label}</span>
+      <div className="flex min-h-[28px] w-full items-center justify-center px-1">
+        <span className="silk max-w-[110px] text-center leading-tight">{label}</span>
+      </div>
 
-      <div className="flex items-center gap-3">
+      {/* The lever defines the column axis; the LED floats to its right, out of flow. */}
+      <div className="relative flex items-center justify-center">
         <button
           type="button"
           role="switch"
@@ -111,7 +114,11 @@ export function ToggleSwitch({
           <span className={cn('silk text-[9px]', !checked ? 'text-silk' : 'text-silk-dim/60')}>{offLabel}</span>
         </button>
 
-        {led ? <LedIndicator color={led} on={checked && !disabled} size="xs" /> : null}
+        {led ? (
+          <span className="pointer-events-none absolute left-full top-1/2 ml-3 flex -translate-y-1/2 items-center">
+            <LedIndicator color={led} on={checked && !disabled} size="xs" />
+          </span>
+        ) : null}
       </div>
     </div>
   );
