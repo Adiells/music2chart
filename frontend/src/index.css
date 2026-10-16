@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * music2chart — Dark Anodized Chassis
+ * Design tokens mirrored as CSS custom properties so non-Tailwind code
+ * (SVG, Three.js materials, canvas) can share the exact same palette.
+ */
+:root {
+  --chassis: #0d0e11;
+  --panel: #14161b;
+  --module: #1a1d24;
+  --hw-border: #2a2e39;
+  --hw-screw: #434958;
+  --silk: #e6e8ee;
+  --silk-dim: #8e95a5;
+  --silk-neutral: #a1a7b5;
+
+  --fret-green: #00e676;
+  --fret-red: #ff1744;
+  --fret-yellow: #ffea00;
+  --fret-blue: #2979ff;
+  --fret-orange: #ff9100;
+  --fret-open: #9d4edd;
+  --starpower: #00e5ff;
+
+  --tracking-silk: 0.08em;
+  --tracking-silk-wide: 0.12em;
+
+  color-scheme: dark;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    /* Hard rule: sharp, machined corners everywhere. */
+    border-radius: 0;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-chassis font-mono text-silk;
+    margin: 0;
+  }
+
+  ::selection {
+    background: var(--hw-screw);
+    color: var(--silk);
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--silk-neutral);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Silk-screened label: uppercase, open tracking, matte neutral ink. */
+  .silk {
+    @apply font-mono text-micro uppercase tracking-silk text-silk-neutral;
+  }
+  .silk-wide {
+    @apply font-mono text-micro uppercase tracking-silk-wide text-silk-dim;
+  }
+
+  /* Brushed/anodized aluminium micro-texture — flat tone, no colour gradient. */
+  .texture-brushed {
+    background-image: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.012) 0px,
+      rgba(255, 255, 255, 0.012) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
+  /* Perforated vent grille used on rack ears. */
+  .texture-vent {
+    background-image: radial-gradient(rgba(0, 0, 0, 0.7) 1px, transparent 1.3px);
+    background-size: 6px 6px;
+  }
+}
+
+@layer utilities {
+  /* Physical round hardware (LED lenses, screw heads, knob caps) opts back in explicitly. */
+  .hw-round {
+    border-radius: 9999px !important;
+  }
+  .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
