@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>music2chart — Clone Hero AI Chart Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d0f14;
+      --bg-card: #151922;
+      --bg-card-hover: #1c222e;
+      --border-color: #273042;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --fret-green: #00e676;
+      --fret-red: #ff1744;
+      --fret-yellow: #ffea00;
+      --fret-blue: #2979ff;
+      --fret-orange: #ff9100;
+      --accent: #8b5cf6;
+      --accent-hover: #7c3aed;
+      --accent-soft: rgba(139, 92, 246, 0.15);
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 760px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .fret-strip {
+      display: inline-flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 9999px;
+      border: 1px solid var(--border-color);
+    }
+
+    .fret-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      box-shadow: 0 0 10px currentColor;
+    }
+    .fret-dot.green { color: var(--fret-green); background: var(--fret-green); }
+    .fret-dot.red { color: var(--fret-red); background: var(--fret-red); }
+    .fret-dot.yellow { color: var(--fret-yellow); background: var(--fret-yellow); }
+    .fret-dot.blue { color: var(--fret-blue); background: var(--fret-blue); }
+    .fret-dot.orange { color: var(--fret-orange); background: var(--fret-orange); }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff 30%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.975rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 2rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      margin-bottom: 1.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius);
+      padding: 2.2rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(255, 255, 255, 0.015);
+      position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(139, 92, 246, 0.06);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .drop-title {
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .drop-hint {
+      font-size: 0.825rem;
+      color: var(--text-muted);
+    }
+
+    .file-selected-box {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .file-selected-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #c4b5fd;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    label {
+      font-size: 0.825rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .label-badge {
+      font-size: 0.75rem;
+      color: #a78bfa;
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: none;
+      font-weight: 500;
+    }
+
+    input[type="text"], input[type="number"], select {
+      background: #0d0f14;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      padding: 0.7rem 0.9rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    /* Section divider */
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #c4b5fd;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-color);
+    }
+
+    /* Preset selector cards */
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 640px) {
+      .preset-grid { grid-template-columns: 1fr; }
+    }
+
+    .preset-card {
+      background: #0d0f14;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .preset-card:hover {
+      border-color: rgba(139, 92, 246, 0.5);
+      background: rgba(139, 92, 246, 0.03);
+    }
+
+    .preset-card.active {
+      border-color: var(--accent);
+      background: rgba(139, 92, 246, 0.12);
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.25);
+    }
+
+    .preset-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 0.925rem;
+      color: #fff;
+    }
+
+    .preset-card.active .preset-card-header {
+      color: #c4b5fd;
+    }
+
+    .preset-card-desc {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* Sliders and Ranges */
+    .range-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #273042;
+      outline: none;
+      margin: 0.4rem 0;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
+      transition: transform 0.1s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    /* Accordion */
+    .accordion-toggle {
+      width: 100%;
+      background: transparent;
+      border: 1px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1.25rem;
+      transition: all 0.2s ease;
+    }
+
+    .accordion-toggle:hover {
+      border-color: var(--accent);
+      color: #fff;
+      background: rgba(139, 92, 246, 0.05);
+    }
+
+    .accordion-content {
+      display: none;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border-color);
+      margin-top: 1rem;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .accordion-content.open {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Checkbox Switches */
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .switch-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .switch-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+
+    .switch-desc {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #273042;
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    .btn-submit {
+      width: 100%;
+      margin-top: 1.75rem;
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.35);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: linear-gradient(135deg, #9061f9, #7e22ce);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Progress Card */
+    .progress-section {
+      display: none;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .progress-stage {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #e5e7eb;
+    }
+
+    .progress-percent {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: #a78bfa;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 12px;
+      background: #0d0f14;
+      border: 1px solid var(--border-color);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin: 0.75rem 0;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #8b5cf6, #00e676);
+      border-radius: 9999px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 10px rgba(0, 230, 118, 0.4);
+    }
+
+    .progress-details {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+      margin-right: 6px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Result Section */
+    .result-section {
+      display: none;
+      text-align: center;
+    }
+
+    .result-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 230, 118, 0.12);
+      border: 1px solid rgba(0, 230, 118, 0.3);
+      color: var(--fret-green);
+      padding: 0.4rem 1rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+
+    @media (max-width: 600px) {
+      .download-grid { grid-template-columns: 1fr; }
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .btn-download.primary {
+      background: #00e676;
+      color: #0b2214;
+      box-shadow: 0 4px 12px rgba(0, 230, 118, 0.3);
+    }
+    .btn-download.primary:hover {
+      background: #1aff87;
+      transform: translateY(-1px);
+    }
+
+    .btn-download.accent {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+    .btn-download.accent:hover {
+      background: linear-gradient(135deg, #9061f9, #8b5cf6);
+      transform: translateY(-1px);
+    }
+
+    .btn-download.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid var(--border-color);
+    }
+    .btn-download.secondary:hover {
+      background: rgba(255, 255, 255, 0.14);
+      transform: translateY(-1px);
+    }
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: all 0.2s;
+    }
+    .btn-reset:hover {
+      color: #fff;
+      border-color: #fff;
+    }
+
+    /* Error alert */
+    .alert-error {
+      display: none;
+      background: rgba(255, 23, 68, 0.12);
+      border: 1px solid rgba(255, 23, 68, 0.3);
+      color: #ff8a80;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      margin-top: auto;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="fret-strip">
+        <span class="fret-dot green"></span>
+        <span class="fret-dot red"></span>
+        <span class="fret-dot yellow"></span>
+        <span class="fret-dot blue"></span>
+        <span class="fret-dot orange"></span>
+      </div>
+      <h1>music2chart</h1>
+      <p class="subtitle">Transforme qualquer música em um chart jogável para Clone Hero</p>
+    </header>
+
+    <!-- Upload Card -->
+    <div class="card" id="upload-card">
+      <form id="chart-form">
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="audio-file" accept=".mp3,.wav,.ogg,.flac" required>
+          <span class="drop-icon">🎵</span>
+          <div class="drop-title">Arraste seu arquivo de áudio aqui</div>
+          <div class="drop-hint">Formatos suportados: MP3, WAV, FLAC, OGG (ou clique para escolher)</div>
+        </div>
+
+        <div class="file-selected-box" id="file-selected-box" style="display: none;">
+          <span class="file-selected-name" id="selected-file-label">musica.mp3</span>
+          <span style="font-size: 0.8rem; color: #a78bfa;" id="selected-file-size">0 MB</span>
+        </div>
+
+        <!-- Metadados da Música -->
+        <div class="section-title">1. Identificação da Faixa</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="song_name">Nome da Música</label>
+            <input type="text" id="song_name" placeholder="Ex: Through the Fire and Flames">
+          </div>
+          <div class="form-group">
+            <label for="artist">Artista</label>
+            <input type="text" id="artist" placeholder="Ex: DragonForce">
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 1rem;">
+          <div class="form-group">
+            <label for="genre">Gênero Musical</label>
+            <input type="text" id="genre" list="genre-suggestions" placeholder="Ex: rock" value="rock">
+            <datalist id="genre-suggestions">
+              <option value="rock">
+              <option value="metal">
+              <option value="pop">
+              <option value="forro">
+              <option value="sertanejo">
+              <option value="punk">
+              <option value="jazz">
+              <option value="eletronica">
+              <option value="acustico">
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label for="output_format">Formato de Saída</label>
+            <select id="output_format">
+              <option value="both" selected>Ambos (.sng + .chart ZIP)</option>
+              <option value="sng">Pacote .sng (Clone Hero v1.0+)</option>
+              <option value="chart">Pasta .chart (notes.chart + song.ini + song.ogg)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Presets de Mapeamento -->
+        <div class="section-title">2. Perfil de Jogabilidade (Presets)</div>
+        <div class="preset-grid">
+          <div class="preset-card active" data-preset="standard" id="preset-standard">
+            <div class="preset-card-header">
+              <span>🎸</span> Padrão (Balanceado)
+            </div>
+            <div class="preset-card-desc">
+              Power chords ergonômicos, HOPOs naturais (65 ticks) e retenção clássica de Guitar Hero.
+            </div>
+          </div>
+          <div class="preset-card" data-preset="strict_rhythm" id="preset-strict">
+            <div class="preset-card-header">
+              <span>🥁</span> Ritmo Rígido
+            </div>
+            <div class="preset-card-desc">
+              Padrões repetitivos e consistentes em riffs, HOPOs curtos (48 ticks) e foco em base rítmica.
+            </div>
+          </div>
+          <div class="preset-card" data-preset="dynamic_solo" id="preset-solo">
+            <div class="preset-card-header">
+              <span>⚡</span> Solo Dinâmico
+            </div>
+            <div class="preset-card-desc">
+              Alta expressão solo (creatividade 0.85), tappings rápidos (80 ticks) e passagens fluidas.
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="preset" value="standard">
+
+        <!-- Parâmetros Principais de Jogabilidade -->
+        <div class="section-title">3. Parâmetros de Game Design</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="difficulty">
+              Dificuldade do Track
+              <span class="label-badge" id="diff-badge">Nível 6 (Expert)</span>
+            </label>
+            <input type="range" id="difficulty" min="1" max="6" value="6" step="1">
+          </div>
+          <div class="form-group">
+            <label for="max_frets">
+              Acordes Máximos Simultâneos
+              <span class="label-badge" id="max-frets-badge">2 Botões</span>
+            </label>
+            <select id="max_frets">
+              <option value="1">1 botão (Apenas notas individuais)</option>
+              <option value="2" selected>2 botões (Power Chords / Díades - Recomendado)</option>
+              <option value="3">3 botões (Permitir Tríades em acentos)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 1rem;">
+          <div class="form-group">
+            <label for="creativity">
+              Criatividade / Variação de Solo
+              <span class="label-badge" id="creativity-badge">0.50</span>
+            </label>
+            <input type="range" id="creativity" min="0.0" max="1.0" value="0.5" step="0.05">
+          </div>
+          <div class="form-group">
+            <label for="bpm_scale">
+              Velocidade da Highway (BPM Scale)
+              <span class="label-badge" id="bpm-scale-badge">1.00x</span>
+            </label>
+            <input type="range" id="bpm_scale" min="0.5" max="2.0" value="1.0" step="0.05">
+          </div>
+        </div>
+
+        <!-- Seção de Configurações Avançadas (Accordion) -->
+        <button type="button" class="accordion-toggle" id="accordion-toggle">
+          <span>⚙️ Configurações Avançadas de Quantização e HOPO</span>
+          <span id="accordion-icon">▼</span>
+        </button>
+
+        <div class="accordion-content" id="accordion-content">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="hopo_threshold">
+                Limiar de HOPO (Ticks)
+                <span class="label-badge" id="hopo-badge">65 ticks</span>
+              </label>
+              <input type="range" id="hopo_threshold" min="24" max="192" value="65" step="1">
+            </div>
+            <div class="form-group">
+              <label for="min_amplitude">
+                Filtro de Sensibilidade / Ruído
+                <span class="label-badge" id="amp-badge">0.10</span>
+              </label>
+              <input type="range" id="min_amplitude" min="0.00" max="0.50" value="0.10" step="0.02">
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 1rem;">
+            <div class="form-group">
+              <label for="min_sustain_ticks">
+                Sustain Mínimo (Ticks)
+                <span class="label-badge" id="sustain-badge">72 ticks</span>
+              </label>
+              <input type="range" id="min_sustain_ticks" min="0" max="192" value="72" step="4">
+            </div>
+            <div class="form-group">
+              <label for="release_margin">
+                Margem de Liberação (Ticks)
+                <span class="label-badge" id="release-badge">24 ticks</span>
+              </label>
+              <input type="range" id="release_margin" min="0" max="96" value="24" step="4">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="chord_fusion_window_s">
+              Janela de Fusão Acústica (String-Roll)
+              <span class="label-badge" id="fusion-badge">35 ms</span>
+            </label>
+            <input type="range" id="chord_fusion_window_s" min="0.010" max="0.080" value="0.035" step="0.005">
+          </div>
+
+          <div style="margin-top: 1.25rem;">
+            <div class="switch-row">
+              <div class="switch-info">
+                <span class="switch-title">Desativar Notas Abertas no Lead</span>
+                <span class="switch-desc">Mapeia sub-graves para Verde (0) preservando a pegada 5-fret de Guitar Hero.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="disable_open_notes" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="switch-row">
+              <div class="switch-info">
+                <span class="switch-title">Colapsar Acordes em Corridas Rápidas</span>
+                <span class="switch-desc">Previne acordes em semicolcheias (<= 48 ticks), evitando fadiga na palhetada.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="collapse_fast_runs" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="switch-row">
+              <div class="switch-info">
+                <span class="switch-title">Consistência de Motivos e Riffs</span>
+                <span class="switch-desc">Garante que riffs repetidos na mesma música gerem sequências visuais idênticas.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="consistent_patterns" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="switch-row">
+              <div class="switch-info">
+                <span class="switch-title">Auto-Calibrar BPM Alto (> 160)</span>
+                <span class="switch-desc">Dobra a grade para manter velocidade de scroll confortável para leitura visual.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="auto_calibrate_bpm" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="switch-row">
+              <div class="switch-info">
+                <span class="switch-title">Mesclar Notas Sustentadas Re-acionadas</span>
+                <span class="switch-desc">Evita que cordas ressoando sejam picotadas em múltiplos toques rápidos.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="merge_sustained_notes" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btn-submit">
+          <span>🎸</span> Gerar Chart
+        </button>
+      </form>
+
+      <div class="alert-error" id="form-error"></div>
+    </div>
+
+    <!-- Progress Card -->
+    <div class="card progress-section" id="progress-card">
+      <div class="progress-header">
+        <div class="progress-stage" id="stage-text">
+          <span class="spinner"></span>Iniciando processamento...
+        </div>
+        <div class="progress-percent" id="percent-text">0%</div>
+      </div>
+
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+
+      <div class="progress-details">
+        <span id="task-id-label">Tarefa: -</span>
+        <span id="timer-label">Tempo: 0s</span>
+      </div>
+
+      <div class="alert-error" id="progress-error"></div>
+    </div>
+
+    <!-- Result Card -->
+    <div class="card result-section" id="result-card">
+      <div class="result-badge">
+        <span>✓</span> Chart gerado com sucesso!
+      </div>
+      <h2 style="font-size: 1.35rem; margin-bottom: 0.35rem;" id="result-title">Título da Música</h2>
+      <p style="color: var(--text-muted); font-size: 0.925rem;" id="result-artist">Artista</p>
+
+      <div class="download-grid" id="download-buttons">
+        <a href="#" class="btn-download primary" id="btn-download-sng" download>
+          📦 Baixar .sng
+        </a>
+        <a href="#" class="btn-download accent" id="btn-download-chart" download>
+          📄 Baixar notes.chart
+        </a>
+        <a href="#" class="btn-download secondary" id="btn-download-zip" download>
+          🗂️ Pacote .zip
+        </a>
+      </div>
+
+      <button class="btn-reset" id="btn-reset">↺ Criar Outro Chart</button>
+    </div>
+
+    <footer>
+      music2chart &bull; Compatível com Clone Hero v1.0+ &bull; 192 PPQ Expert
+    </footer>
+  </div>
+
+  <script>
+    // Elements
+    const fileInput = document.getElementById('audio-file');
+    const dropZone = document.getElementById('drop-zone');
+    const fileSelectedBox = document.getElementById('file-selected-box');
+    const selectedFileLabel = document.getElementById('selected-file-label');
+    const selectedFileSize = document.getElementById('selected-file-size');
+    const songNameInput = document.getElementById('song_name');
+    const artistInput = document.getElementById('artist');
+    const genreInput = document.getElementById('genre');
+    const outputFormatSelect = document.getElementById('output_format');
+    const presetInput = document.getElementById('preset');
+    const difficultyInput = document.getElementById('difficulty');
+    const diffBadge = document.getElementById('diff-badge');
+    const maxFretsSelect = document.getElementById('max_frets');
+    const maxFretsBadge = document.getElementById('max-frets-badge');
+    const creativityInput = document.getElementById('creativity');
+    const creativityBadge = document.getElementById('creativity-badge');
+    const bpmScaleInput = document.getElementById('bpm_scale');
+    const bpmScaleBadge = document.getElementById('bpm-scale-badge');
+    const hopoThresholdInput = document.getElementById('hopo_threshold');
+    const hopoBadge = document.getElementById('hopo-badge');
+    const minAmplitudeInput = document.getElementById('min_amplitude');
+    const ampBadge = document.getElementById('amp-badge');
+    const minSustainTicksInput = document.getElementById('min_sustain_ticks');
+    const sustainBadge = document.getElementById('sustain-badge');
+    const releaseMarginInput = document.getElementById('release_margin');
+    const releaseBadge = document.getElementById('release-badge');
+    const chordFusionWindowInput = document.getElementById('chord_fusion_window_s');
+    const fusionBadge = document.getElementById('fusion-badge');
+    const disableOpenNotesInput = document.getElementById('disable_open_notes');
+    const collapseFastRunsInput = document.getElementById('collapse_fast_runs');
+    const consistentPatternsInput = document.getElementById('consistent_patterns');
+    const autoCalibrateBpmInput = document.getElementById('auto_calibrate_bpm');
+    const mergeSustainedNotesInput = document.getElementById('merge_sustained_notes');
+
+    const chartForm = document.getElementById('chart-form');
+    const btnSubmit = document.getElementById('btn-submit');
+    const formError = document.getElementById('form-error');
+
+    const uploadCard = document.getElementById('upload-card');
+    const progressCard = document.getElementById('progress-card');
+    const resultCard = document.getElementById('result-card');
+
+    const progressBar = document.getElementById('progress-bar');
+    const stageText = document.getElementById('stage-text');
+    const percentText = document.getElementById('percent-text');
+    const taskIdLabel = document.getElementById('task-id-label');
+    const timerLabel = document.getElementById('timer-label');
+    const progressError = document.getElementById('progress-error');
+
+    const resultTitle = document.getElementById('result-title');
+    const resultArtist = document.getElementById('result-artist');
+    const btnDownloadSng = document.getElementById('btn-download-sng');
+    const btnDownloadChart = document.getElementById('btn-download-chart');
+    const btnDownloadZip = document.getElementById('btn-download-zip');
+    const btnReset = document.getElementById('btn-reset');
+
+    const accordionToggle = document.getElementById('accordion-toggle');
+    const accordionContent = document.getElementById('accordion-content');
+    const accordionIcon = document.getElementById('accordion-icon');
+
+    let timerInterval = null;
+    let startTime = 0;
+    let eventSource = null;
+
+    // Difficulty labels
+    const diffNames = {
+      1: 'Nível 1 (Iniciante)',
+      2: 'Nível 2 (Fácil)',
+      3: 'Nível 3 (Médio)',
+      4: 'Nível 4 (Avançado)',
+      5: 'Nível 5 (Difícil)',
+      6: 'Nível 6 (Expert)'
+    };
+
+    // Sliders live badges
+    difficultyInput.addEventListener('input', () => {
+      diffBadge.textContent = diffNames[difficultyInput.value] || `Nível ${difficultyInput.value}`;
+    });
+
+    maxFretsSelect.addEventListener('change', () => {
+      maxFretsBadge.textContent = `${maxFretsSelect.value} Botão${maxFretsSelect.value > 1 ? 'es' : ''}`;
+    });
+
+    creativityInput.addEventListener('input', () => {
+      creativityBadge.textContent = Number(creativityInput.value).toFixed(2);
+    });
+
+    bpmScaleInput.addEventListener('input', () => {
+      bpmScaleBadge.textContent = Number(bpmScaleInput.value).toFixed(2) + 'x';
+    });
+
+    hopoThresholdInput.addEventListener('input', () => {
+      hopoBadge.textContent = `${hopoThresholdInput.value} ticks`;
+    });
+
+    minAmplitudeInput.addEventListener('input', () => {
+      ampBadge.textContent = Number(minAmplitudeInput.value).toFixed(2);
+    });
+
+    minSustainTicksInput.addEventListener('input', () => {
+      sustainBadge.textContent = `${minSustainTicksInput.value} ticks`;
+    });
+
+    releaseMarginInput.addEventListener('input', () => {
+      releaseBadge.textContent = `${releaseMarginInput.value} ticks`;
+    });
+
+    chordFusionWindowInput.addEventListener('input', () => {
+      fusionBadge.textContent = Math.round(Number(chordFusionWindowInput.value) * 1000) + ' ms';
+    });
+
+    // Accordion toggle
+    accordionToggle.addEventListener('click', () => {
+      const isOpen = accordionContent.classList.toggle('open');
+      accordionIcon.textContent = isOpen ? '▲' : '▼';
+    });
+
+    // Preset configurations
+    const presetConfigs = {
+      standard: {
+        creativity: 0.50,
+        hopo_threshold: 65,
+        min_sustain_ticks: 72,
+        release_margin: 24,
+        min_amplitude: 0.10,
+        chord_fusion_window_s: 0.035,
+        collapse_fast_runs: true,
+        consistent_patterns: true,
+      },
+      strict_rhythm: {
+        creativity: 0.15,
+        hopo_threshold: 48,
+        min_sustain_ticks: 96,
+        release_margin: 24,
+        min_amplitude: 0.20,
+        chord_fusion_window_s: 0.040,
+        collapse_fast_runs: true,
+        consistent_patterns: true,
+      },
+      dynamic_solo: {
+        creativity: 0.85,
+        hopo_threshold: 80,
+        min_sustain_ticks: 60,
+        release_margin: 24,
+        min_amplitude: 0.08,
+        chord_fusion_window_s: 0.030,
+        collapse_fast_runs: false,
+        consistent_patterns: false,
+      }
+    };
+
+    const presetCards = document.querySelectorAll('.preset-card');
+    presetCards.forEach(card => {
+      card.addEventListener('click', () => {
+        presetCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        const pKey = card.getAttribute('data-preset');
+        presetInput.value = pKey;
+
+        const cfg = presetConfigs[pKey];
+        if (cfg) {
+          creativityInput.value = cfg.creativity;
+          creativityBadge.textContent = cfg.creativity.toFixed(2);
+
+          hopoThresholdInput.value = cfg.hopo_threshold;
+          hopoBadge.textContent = `${cfg.hopo_threshold} ticks`;
+
+          minSustainTicksInput.value = cfg.min_sustain_ticks;
+          sustainBadge.textContent = `${cfg.min_sustain_ticks} ticks`;
+
+          releaseMarginInput.value = cfg.release_margin;
+          releaseBadge.textContent = `${cfg.release_margin} ticks`;
+
+          minAmplitudeInput.value = cfg.min_amplitude;
+          ampBadge.textContent = cfg.min_amplitude.toFixed(2);
+
+          chordFusionWindowInput.value = cfg.chord_fusion_window_s;
+          fusionBadge.textContent = Math.round(cfg.chord_fusion_window_s * 1000) + ' ms';
+
+          collapseFastRunsInput.checked = cfg.collapse_fast_runs;
+          consistentPatternsInput.checked = cfg.consistent_patterns;
+        }
+      });
+    });
+
+    // Drag and drop events
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+      });
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileSelected();
+      }
+    });
+
+    fileInput.addEventListener('change', handleFileSelected);
+
+    function handleFileSelected() {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      selectedFileLabel.textContent = file.name;
+      selectedFileSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+      fileSelectedBox.style.display = 'flex';
+
+      // Auto-extract artist and title if formatted as "Artist - Title.mp3"
+      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+      if (nameWithoutExt.includes(' - ')) {
+        const parts = nameWithoutExt.split(' - ');
+        if (!artistInput.value) artistInput.value = parts[0].trim();
+        if (!songNameInput.value) songNameInput.value = parts.slice(1).join(' - ').trim();
+      } else if (!songNameInput.value) {
+        songNameInput.value = nameWithoutExt;
+      }
+    }
+
+    // Submit handler
+    chartForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      formError.style.display = 'none';
+
+      const file = fileInput.files[0];
+      if (!file) {
+        showError(formError, 'Por favor, selecione um arquivo de áudio.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      if (songNameInput.value.trim()) formData.append('song_name', songNameInput.value.trim());
+      if (artistInput.value.trim()) formData.append('artist', artistInput.value.trim());
+      formData.append('output_format', outputFormatSelect.value);
+
+      // Append all custom playability & game design parameters
+      if (genreInput.value.trim()) formData.append('genre', genreInput.value.trim());
+      if (presetInput.value.trim()) formData.append('preset', presetInput.value.trim());
+      formData.append('difficulty', difficultyInput.value);
+      formData.append('max_frets', maxFretsSelect.value);
+      formData.append('creativity', creativityInput.value);
+      formData.append('bpm_scale', bpmScaleInput.value);
+      formData.append('hopo_threshold', hopoThresholdInput.value);
+      formData.append('min_amplitude', minAmplitudeInput.value);
+      formData.append('min_sustain_ticks', minSustainTicksInput.value);
+      formData.append('release_margin', releaseMarginInput.value);
+      formData.append('chord_fusion_window_s', chordFusionWindowInput.value);
+      formData.append('disable_open_notes', disableOpenNotesInput.checked);
+      formData.append('collapse_fast_runs', collapseFastRunsInput.checked);
+      formData.append('consistent_patterns', consistentPatternsInput.checked);
+      formData.append('auto_calibrate_bpm', autoCalibrateBpmInput.checked);
+      formData.append('merge_sustained_notes', mergeSustainedNotesInput.checked);
+
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span class="spinner"></span> Enviando áudio e configurando pipeline...';
+
+      try {
+        const response = await fetch('/api/v1/chart/generate', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.detail || 'Falha ao iniciar processamento.');
+        }
+
+        const data = await response.json();
+        startProgressTracking(data.task_id);
+      } catch (err) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<span>🎸</span> Gerar Chart';
+        showError(formError, err.message);
+      }
+    });
+
+    function startProgressTracking(taskId) {
+      uploadCard.style.display = 'none';
+      progressCard.style.display = 'block';
+      resultCard.style.display = 'none';
+      progressError.style.display = 'none';
+
+      taskIdLabel.textContent = `Tarefa: ${taskId.substring(0, 8)}...`;
+      updateProgress(5, 'Iniciando pipeline...');
+
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        timerLabel.textContent = `Tempo: ${elapsed}s`;
+      }, 1000);
+
+      // Try SSE stream first, fallback to polling
+      if (window.EventSource) {
+        connectSSE(taskId);
+      } else {
+        pollStatus(taskId);
+      }
+    }
+
+    function connectSSE(taskId) {
+      if (eventSource) eventSource.close();
+      eventSource = new EventSource(`/api/v1/chart/stream/${taskId}`);
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          handleProgressUpdate(taskId, data);
+        } catch (err) {
+          console.error('SSE JSON parse error:', err);
+        }
+      };
+
+      eventSource.onerror = () => {
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+        }
+        pollStatus(taskId);
+      };
+    }
+
+    async function pollStatus(taskId) {
+      const poll = async () => {
+        try {
+          const res = await fetch(`/api/v1/chart/status/${taskId}`);
+          if (!res.ok) throw new Error('Falha ao checar status');
+          const data = await res.json();
+          const finished = handleProgressUpdate(taskId, data);
+          if (!finished) {
+            setTimeout(poll, 600);
+          }
+        } catch (err) {
+          console.error('Polling error:', err);
+          setTimeout(poll, 1500);
+        }
+      };
+      poll();
+    }
+
+    function handleProgressUpdate(taskId, data) {
+      const percent = Math.round((data.progress || 0) * 100);
+      const stage = data.stage || 'Processando...';
+
+      updateProgress(percent, stage);
+
+      if (data.status === 'COMPLETED') {
+        if (eventSource) eventSource.close();
+        clearInterval(timerInterval);
+        setTimeout(() => showSuccess(taskId, data), 400);
+        return true;
+      }
+
+      if (data.status === 'FAILED') {
+        if (eventSource) eventSource.close();
+        clearInterval(timerInterval);
+        showError(progressError, `Erro no processamento: ${data.error || 'Erro desconhecido'}`);
+        return true;
+      }
+
+      return false;
+    }
+
+    function updateProgress(percent, stage) {
+      const clamped = Math.max(0, Math.min(100, percent));
+      progressBar.style.width = clamped + '%';
+      percentText.textContent = clamped + '%';
+      stageText.innerHTML = `<span class="spinner"></span>${stage}`;
+    }
+
+    function showSuccess(taskId, data) {
+      progressCard.style.display = 'none';
+      resultCard.style.display = 'block';
+
+      resultTitle.textContent = songNameInput.value.trim() || 'Música';
+      resultArtist.textContent = artistInput.value.trim() || 'Artista';
+
+      btnDownloadSng.href = `/api/v1/chart/download/${taskId}?format=sng`;
+      btnDownloadChart.href = `/api/v1/chart/download/${taskId}?format=chart`;
+      btnDownloadZip.href = `/api/v1/chart/download/${taskId}?format=zip`;
+    }
+
+    function showError(element, msg) {
+      element.textContent = msg;
+      element.style.display = 'block';
+    }
+
+    btnReset.addEventListener('click', () => {
+      chartForm.reset();
+      fileSelectedBox.style.display = 'none';
+      diffBadge.textContent = 'Nível 6 (Expert)';
+      maxFretsBadge.textContent = '2 Botões';
+      creativityBadge.textContent = '0.50';
+      bpmScaleBadge.textContent = '1.00x';
+      hopoBadge.textContent = '65 ticks';
+      ampBadge.textContent = '0.10';
+      sustainBadge.textContent = '72 ticks';
+      releaseBadge.textContent = '24 ticks';
+      fusionBadge.textContent = '35 ms';
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = '<span>🎸</span> Gerar Chart';
+      uploadCard.style.display = 'block';
+      progressCard.style.display = 'none';
+      resultCard.style.display = 'none';
+      if (eventSource) eventSource.close();
+      clearInterval(timerInterval);
+    });
+  </script>
+</body>
+</html>

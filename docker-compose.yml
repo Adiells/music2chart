@@ -1,0 +1,36 @@
+services:
+  music2chart-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: music2chart:latest
+    container_name: music2chart-api
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=music2chart
+      - APP_ENV=production
+      - DEMUCS_MODEL_NAME=htdemucs
+      - BASIC_PITCH_ONSET_THRESHOLD=0.5
+      - BASIC_PITCH_FRAME_THRESHOLD=0.3
+      - BASIC_PITCH_MIN_NOTE_LENGTH=58.0
+      - DEFAULT_RESOLUTION=192
+    volumes:
+      # Persistent cache for Torch and Demucs model weights
+      - torch_cache:/root/.cache/torch
+      - demucs_cache:/root/.cache/demucs
+      # Working storage mounts for local inspection and persistence
+      - ./tmp:/app/tmp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  torch_cache:
+    driver: local
+  demucs_cache:
+    driver: local
