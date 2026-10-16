@@ -87,6 +87,7 @@ def create_app(frontend_dist: Path | str | None = None) -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
+        allow_origin_regex=r"https?://([a-zA-Z0-9-]+\.)*adiels\.me(:[0-9]+)?",
         allow_credentials=allow_creds,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -127,11 +128,17 @@ def create_app(frontend_dist: Path | str | None = None) -> FastAPI:
         )
 
     @app.exception_handler(Exception)
-    async def unhandled_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
+    async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("Unhandled server exception: %s", exc)
+        origin = request.headers.get("origin")
+        headers: dict[str, str] = {}
+        if origin:
+            headers["Access-Control-Allow-Origin"] = origin
+            headers["Access-Control-Allow-Credentials"] = "true"
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"detail": "An unexpected internal server error occurred."},
+            content={"detail": f"Internal server error: {exc}"},
+            headers=headers,
         )
 
     # -----------------------------------------------------------------------

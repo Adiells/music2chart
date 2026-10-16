@@ -111,12 +111,15 @@ async function extractPeaksFromArrayBuffer(
   bins = DEFAULT_PEAK_BINS,
 ): Promise<number[] | null> {
   if (typeof window === 'undefined') return null;
-  const Ctor =
-    window.AudioContext ??
-    (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctor) return null;
+  let ctx: BaseAudioContext;
+  if (typeof window.OfflineAudioContext !== 'undefined') {
+    ctx = new window.OfflineAudioContext(1, 1, 44100);
+  } else if (typeof window.AudioContext !== 'undefined') {
+    ctx = new window.AudioContext();
+  } else {
+    return null;
+  }
 
-  const ctx = new Ctor();
   try {
     const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
     const channel = audioBuffer.getChannelData(0);
