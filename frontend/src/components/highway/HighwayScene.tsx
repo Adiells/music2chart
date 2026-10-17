@@ -337,7 +337,7 @@ export function HighwayScene({
         {isDemoChart ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-2.5 flex justify-center px-4">
             <div className="border border-fret-orange/80 bg-[#120F0A]/95 px-3 py-1 font-mono text-[9px] font-semibold uppercase tracking-silk text-fret-orange shadow-lg backdrop-blur-sm">
-              MODO DEMO // CLIQUE EM "GENERATE CHART" PARA PROCESSAR E VER A VISUALIZACAO DO SEU AUDIO
+              DEMO MODE // CLICK "GENERATE CHART" TO PROCESS AND RENDER YOUR CUSTOM AUDIO
             </div>
           </div>
         ) : null}

@@ -53,7 +53,7 @@ export function TempoDisplay({
           <div className="mt-0.5 font-mono text-lg font-bold tabular-nums leading-none tracking-silk text-silk">
             {snap.numerator}/{snap.denominator}
           </div>
-          <span className="silk-wide mt-1 text-[8px]">COMPASSO</span>
+          <span className="silk-wide mt-1 text-[8px]">TIME SIGNATURE</span>
         </div>
 
         {/* Measure : Beat & Tick Readout */}

@@ -232,7 +232,7 @@ export default function App() {
 
     if (audioFile.size > MAX_UPLOAD_SIZE) {
       setSubmitError(
-        'Payload Too Large: O arquivo excede o limite de 50 MB. Por favor, selecione um arquivo de audio menor.'
+        'Payload Too Large: File exceeds 50 MB limit. Please select a smaller audio file.'
       );
       return;
     }
@@ -290,7 +290,7 @@ export default function App() {
         if (response.status === 413) {
           throw new Error(
             `Payload Too Large (HTTP 413): ${
-              errorDetail || 'Arquivo excede o limite de 50 MB do servidor. Por favor, selecione um arquivo menor.'
+              errorDetail || 'File exceeds server 50 MB limit. Please select a smaller file.'
             }`
           );
         }
@@ -298,7 +298,7 @@ export default function App() {
         if (response.status === 429) {
           throw new Error(
             `Too Many Requests (HTTP 429): ${
-              errorDetail || 'Servidor sobrecarregado ou fila de processamento cheia. Aguarde alguns instantes e tente novamente.'
+              errorDetail || 'Server overloaded or processing queue full. Please wait a moment and try again.'
             }`
           );
         }
@@ -570,20 +570,20 @@ export default function App() {
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-xs font-bold uppercase tracking-silk text-fret-orange">
                             {isBusy
-                              ? 'PIPELINE EM PROCESSAMENTO // GERANDO PISTA 3D'
-                              : 'AVISO // REQUER CLICAR EM "GENERATE CHART"'}
+                              ? 'PIPELINE PROCESSING // GENERATING 3D HIGHWAY'
+                              : 'NOTICE // CLICK "GENERATE CHART" TO RENDER HIGHWAY'}
                           </span>
                           <span className="border border-hw-border bg-chassis px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-silk text-silk-dim">
-                            {isBusy ? 'AGUARDE' : 'ACAO NECESSARIA'}
+                            {isBusy ? 'PROCESSING' : 'ACTION REQUIRED'}
                           </span>
                         </div>
                         <p className="font-mono text-[11px] leading-relaxed text-silk-neutral">
                           {isBusy ? (
-                            'O audio esta sendo processado pela IA. A visualizacao 3D das suas notas sera carregada automaticamente assim que a conversao for finalizada.'
+                            'AI pipeline is transcribing and mapping your audio in real time. Your 3D note highway will load automatically once conversion completes.'
                           ) : hasAudio ? (
-                            'Voce carregou o arquivo de audio, mas as notas ainda nao foram processadas. Para gerar e ver as notas na pista 3D, e necessario clicar no botao "GENERATE CHART".'
+                            'Audio master is mounted, but notes have not been generated yet. Click "GENERATE CHART" to run AI transcription and render your interactive 3D highway.'
                           ) : (
-                            'Para ver a visualizacao 3D da sua musica, va ao Passo 01, carregue o arquivo de audio e clique no botao "GENERATE CHART" (ou use o botao "Carregar Demo" para ver um exemplo).'
+                            'To view your custom 3D note highway, go to Step 01, load an audio file, and click "GENERATE CHART" (or click "Load Demo" to preview the reference chart).'
                           )}
                         </p>
                       </div>
@@ -599,7 +599,7 @@ export default function App() {
                           className="flex items-center gap-2 border border-fret-green bg-fret-green px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-silk text-black shadow-[0_0_15px_rgba(0,230,118,0.3)] hover:bg-[#00c864] transition-colors"
                         >
                           <span className="inline-block h-2 w-2 border border-black bg-black animate-ping" />
-                          <span>GENERATE CHART AGORA</span>
+                          <span>GENERATE CHART NOW</span>
                         </button>
                       )}
                       {!hasAudio && !isBusy && (
@@ -609,14 +609,14 @@ export default function App() {
                             onClick={() => setActiveStep(1)}
                             className="border border-hw-border bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-silk hover:bg-panel transition-colors"
                           >
-                            &lt; IR PARA PASSO 01
+                            &lt; GO TO STEP 01
                           </button>
                           <button
                             type="button"
                             onClick={handleRunDemo}
                             className="border border-fret-blue/60 bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-fret-blue hover:text-silk transition-colors"
                           >
-                            CARREGAR DEMO
+                            LOAD DEMO
                           </button>
                         </>
                       )}
@@ -659,7 +659,7 @@ export default function App() {
                   <span className="silk-wide text-[9px]">
                     {completedTaskId
                       ? `${chart.notes.length} NOTES // ${chart.starPower.length} STAR POWER PHRASES`
-                      : 'EXIBINDO DEMO DE REFERENCIA // EXECUTE "GENERATE CHART" PARA SEU PROPRIO AUDIO'}
+                      : 'SHOWING REFERENCE DEMO // RUN "GENERATE CHART" FOR YOUR CUSTOM AUDIO'}
                   </span>
                 </div>
                 <button
