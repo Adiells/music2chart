@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   AboutPage,
   AudioDropzone,
@@ -316,11 +316,14 @@ export default function App() {
     }
   }, [audioFile, calibration, metadata, player, preset, submitting]);
 
+  const completedTasksRef = useRef<Set<string>>(new Set());
+
   const handleRunDemo = useCallback((): void => {
     setSubmitError(null);
     player.stop();
-    setActiveTaskId(`demo-${Date.now()}`);
-    setActiveStep(3); // Auto-navigate to 3D Player!
+    const demoId = `demo-${Date.now()}`;
+    setActiveTaskId(demoId);
+    setActiveStep(3); // Navigate to 3D Player!
   }, [player]);
 
   const handleAbort = useCallback((): void => {
@@ -331,7 +334,11 @@ export default function App() {
 
   const handleTelemetryCompleted = useCallback((taskId: string): void => {
     setCompletedTaskId(taskId);
-    setActiveStep(3); // Auto-advance to 3D Highway upon completion!
+    // Only auto-advance to 3D Highway on the initial completion transition!
+    if (!completedTasksRef.current.has(taskId)) {
+      completedTasksRef.current.add(taskId);
+      setActiveStep(3);
+    }
   }, []);
 
   const isBusy = submitting || (activeTaskId !== null && activeTaskId !== completedTaskId);
@@ -527,6 +534,7 @@ export default function App() {
               {(isBusy || activeTaskId) && (
                 <PipelineTelemetry
                   taskId={activeTaskId}
+                  completedTaskId={completedTaskId}
                   submitting={submitting}
                   canGenerate={hasAudio}
                   onGenerate={() => {
@@ -625,6 +633,22 @@ export default function App() {
                 </div>
               )}
 
+              {/* If generation or demo is active, show the live telemetry deck so it executes smoothly and displays real-time progress */}
+              {isBusy && activeTaskId && (
+                <PipelineTelemetry
+                  taskId={activeTaskId}
+                  completedTaskId={completedTaskId}
+                  submitting={submitting}
+                  canGenerate={hasAudio}
+                  onGenerate={() => {
+                    void handleGenerate();
+                  }}
+                  onRunDemo={handleRunDemo}
+                  onAbort={handleAbort}
+                  onCompleted={handleTelemetryCompleted}
+                />
+              )}
+
               <HighwayScene
                 chart={chart}
                 isPlaying={player.isPlaying}
@@ -709,6 +733,7 @@ export default function App() {
 
               <PipelineTelemetry
                 taskId={activeTaskId}
+                completedTaskId={completedTaskId}
                 submitting={submitting}
                 canGenerate={hasAudio}
                 onGenerate={() => {

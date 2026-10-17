@@ -19,6 +19,8 @@ export interface SseTelemetryPayload {
 export interface PipelineTelemetryProps {
   /** Active backend task UUID (or `demo-*` for local simulation). */
   taskId: string | null;
+  /** Previously completed task UUID to avoid repeating completed state streams. */
+  completedTaskId?: string | null;
   /** Whether an upload request is currently in-flight before taskId is assigned. */
   submitting?: boolean;
   /** Whether an audio file is mounted and ready to process. */
@@ -213,6 +215,7 @@ interface TaskTelemetrySnapshot {
  */
 export function PipelineTelemetry({
   taskId,
+  completedTaskId,
   submitting = false,
   canGenerate,
   onGenerate,
@@ -223,6 +226,7 @@ export function PipelineTelemetry({
   className,
 }: PipelineTelemetryProps) {
   const [snapshot, setSnapshot] = useState<TaskTelemetrySnapshot | null>(null);
+  const completedFiredRef = useRef<string | null>(null);
 
   const callbacksRef = useRef({ onCompleted, onFailed });
   useEffect(() => {
@@ -231,7 +235,8 @@ export function PipelineTelemetry({
 
   // Subscribe to SSE stream when taskId is active
   useEffect(() => {
-    if (!taskId) {
+    // If task is not set or already completed, do not reopen stream or replay simulation
+    if (!taskId || completedTaskId === taskId) {
       return undefined;
     }
 
@@ -280,13 +285,16 @@ export function PipelineTelemetry({
         if (isDone) {
           window.clearInterval(stepTimer);
           window.clearInterval(timer);
-          callbacksRef.current.onCompleted?.(taskId, {
-            task_id: taskId,
-            status: 'COMPLETED',
-            progress: 1.0,
-            stage: entry.stage,
-            error: null,
-          });
+          if (completedFiredRef.current !== taskId) {
+            completedFiredRef.current = taskId;
+            callbacksRef.current.onCompleted?.(taskId, {
+              task_id: taskId,
+              status: 'COMPLETED',
+              progress: 1.0,
+              stage: entry.stage,
+              error: null,
+            });
+          }
         } else {
           stepIdx += 1;
         }
@@ -331,7 +339,10 @@ export function PipelineTelemetry({
         window.clearInterval(timer);
         if (pollTimer !== null) window.clearInterval(pollTimer);
         es.close();
-        callbacksRef.current.onCompleted?.(taskId, payload);
+        if (completedFiredRef.current !== taskId) {
+          completedFiredRef.current = taskId;
+          callbacksRef.current.onCompleted?.(taskId, payload);
+        }
       } else if (nextStatus === 'FAILED') {
         finished = true;
         window.clearInterval(timer);
@@ -383,10 +394,24 @@ export function PipelineTelemetry({
       window.clearInterval(timer);
       if (pollTimer !== null) window.clearInterval(pollTimer);
     };
-  }, [taskId]);
+  }, [taskId, completedTaskId]);
 
-  const activeSnap =
-    taskId && snapshot?.taskId === taskId
+  const isAlreadyCompleted = Boolean(taskId && completedTaskId === taskId);
+
+  const activeSnap = isAlreadyCompleted
+    ? {
+        taskId: taskId ?? '',
+        status: 'COMPLETED' as TelemetryStatus,
+        progress: 1.0,
+        stageText: 'COMPLETED SUCCESSFULLY',
+        errorMsg: null,
+        elapsedSec: snapshot?.taskId === taskId ? snapshot.elapsedSec : 0,
+        logEntries: snapshot?.taskId === taskId ? snapshot.logEntries : [
+          formatLogEntry(0, 1.0, `TASK ${taskId?.slice(0, 8) ?? ''} COMPLETED`),
+          formatLogEntry(0, 1.0, 'PIPELINE ARTIFACTS READY FOR DOWNLOAD'),
+        ],
+      }
+    : taskId && snapshot?.taskId === taskId
       ? snapshot
       : taskId
         ? {
