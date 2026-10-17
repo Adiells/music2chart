@@ -1,11 +1,10 @@
 import { cn } from '../../lib/utils';
 import { playMechanicalClick } from '../../lib/mechanicalClick';
 import { LedIndicator } from '../rack/LedIndicator';
-import type { WorkflowStepId } from '../navigation/WorkflowStepper';
+import type { Language } from '../../lib/language';
 
 export interface FloatingActionDockProps {
-  currentStep: WorkflowStepId;
-  onStepChange: (step: WorkflowStepId) => void;
+  language?: Language;
   canGenerate: boolean;
   isProcessing: boolean;
   submitting?: boolean;
@@ -21,8 +20,7 @@ export interface FloatingActionDockProps {
  * remain permanently visible and instantly accessible across all workflow views.
  */
 export function FloatingActionDock({
-  currentStep,
-  onStepChange,
+  language = 'en',
   canGenerate,
   isProcessing,
   submitting = false,
@@ -32,20 +30,7 @@ export function FloatingActionDock({
   className,
 }: FloatingActionDockProps) {
   const isBusy = isProcessing || submitting;
-
-  const handlePrevStep = (): void => {
-    if (currentStep > 1) {
-      playMechanicalClick(3200, 0.16);
-      onStepChange((currentStep - 1) as WorkflowStepId);
-    }
-  };
-
-  const handleNextStep = (): void => {
-    if (currentStep < 4) {
-      playMechanicalClick(3200, 0.16);
-      onStepChange((currentStep + 1) as WorkflowStepId);
-    }
-  };
+  const portuguese = language === 'pt-BR';
 
   const handleGenerateClick = (): void => {
     if (!canGenerate || isBusy) return;
@@ -66,43 +51,6 @@ export function FloatingActionDock({
         className
       )}
     >
-      {/* Step Progression Navigation Buttons */}
-      <div className="flex items-center gap-1 border-r border-hw-border pr-2">
-        <button
-          type="button"
-          onClick={handlePrevStep}
-          disabled={currentStep <= 1}
-          aria-label="Previous step"
-          className={cn(
-            'flex h-9 items-center justify-center border px-2.5 font-mono text-[10px] font-semibold uppercase tracking-silk transition-colors',
-            currentStep > 1
-              ? 'border-hw-border bg-module text-silk hover:border-silk hover:bg-panel'
-              : 'cursor-not-allowed border-hw-border/40 bg-chassis text-silk-dim/50'
-          )}
-        >
-          &lt; PREV
-        </button>
-
-        <span className="silk-wide px-1 text-[9px] tabular-nums">
-          0{currentStep}/04
-        </span>
-
-        <button
-          type="button"
-          onClick={handleNextStep}
-          disabled={currentStep >= 4}
-          aria-label="Next step"
-          className={cn(
-            'flex h-9 items-center justify-center border px-2.5 font-mono text-[10px] font-semibold uppercase tracking-silk transition-colors',
-            currentStep < 4
-              ? 'border-hw-border bg-module text-silk hover:border-silk hover:bg-panel'
-              : 'cursor-not-allowed border-hw-border/40 bg-chassis text-silk-dim/50'
-          )}
-        >
-          NEXT &gt;
-        </button>
-      </div>
-
       {/* Demo Bench Quick Action (shown when no audio loaded and idle) */}
       {!canGenerate && !isBusy && onRunDemo ? (
         <button
@@ -111,7 +59,7 @@ export function FloatingActionDock({
           className="flex h-9 items-center gap-1.5 border border-hw-border bg-module px-3 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-fret-blue hover:text-silk transition-colors"
         >
           <LedIndicator color="blue" on size="xs" />
-          <span>TRY DEMO</span>
+          <span>{portuguese ? 'Ver demonstração' : 'Try demo'}</span>
         </button>
       ) : null}
 
@@ -123,7 +71,7 @@ export function FloatingActionDock({
           className="flex h-9 items-center gap-1.5 border border-fret-red/60 bg-[#210D12] px-3 font-mono text-[10px] font-semibold uppercase tracking-silk text-fret-red hover:bg-[#2F121A] transition-colors"
         >
           <LedIndicator color="red" on blink="fast" size="xs" />
-          <span>ABORT</span>
+          <span>{portuguese ? 'Cancelar' : 'Cancel'}</span>
         </button>
       ) : null}
 
@@ -155,12 +103,12 @@ export function FloatingActionDock({
         />
         <span>
           {submitting
-            ? 'UPLOADING...'
+            ? (portuguese ? 'ENVIANDO…' : 'UPLOADING…')
             : isBusy
-              ? 'PROCESSING...'
+              ? (portuguese ? 'CRIANDO…' : 'CREATING…')
               : canGenerate
-                ? 'GENERATE CHART'
-                : 'AWAITING AUDIO'}
+                ? (portuguese ? 'CRIAR CHART' : 'CREATE CHART')
+                : (portuguese ? 'ESCOLHA UM ÁUDIO' : 'CHOOSE AUDIO')}
         </span>
       </button>
     </aside>

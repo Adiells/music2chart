@@ -1,5 +1,6 @@
 import { cn } from '../../lib/utils';
 import { PushButton } from '../controls/PushButton';
+import type { Language } from '../../lib/language';
 
 export type OutputFormatOption = 'both' | 'sng' | 'chart';
 
@@ -17,6 +18,7 @@ export interface MetadataInputsProps {
   onChange: (next: TrackMetadataState) => void;
   disabled?: boolean;
   className?: string;
+  language?: Language;
 }
 
 const GENRE_OPTIONS = ['rock', 'metal', 'prog', 'indie', 'electronic', 'punk', 'jazz'] as const;
@@ -40,6 +42,7 @@ export function MetadataInputs({
   onChange,
   disabled = false,
   className,
+  language = 'en',
 }: MetadataInputsProps) {
   const update = <K extends keyof TrackMetadataState>(key: K, fieldVal: TrackMetadataState[K]): void => {
     onChange({ ...value, [key]: fieldVal });
@@ -50,7 +53,7 @@ export function MetadataInputs({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
-            <span className="silk">Song Title</span>
+            <span className="silk">{language === 'pt-BR' ? 'Nome da música' : 'Song title'}</span>
             <span className="silk-wide text-[8px]">SONG.INI / NAME</span>
           </div>
           <input
@@ -65,7 +68,7 @@ export function MetadataInputs({
 
         <label className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
-            <span className="silk">Artist / Performer</span>
+            <span className="silk">{language === 'pt-BR' ? 'Artista' : 'Artist'}</span>
             <span className="silk-wide text-[8px]">SONG.INI / ARTIST</span>
           </div>
           <input
@@ -79,8 +82,9 @@ export function MetadataInputs({
         </label>
       </div>
 
-      {/* Row 1: Genre Tag + Chord Clamp */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <details className="border-t border-hw-border pt-3">
+        <summary className="cursor-pointer font-mono text-xs text-silk-neutral">{language === 'pt-BR' ? 'Mais opções' : 'More options'}</summary>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1">
           <span className="silk">Genre Tag</span>
           <select
@@ -118,10 +122,9 @@ export function MetadataInputs({
             ))}
           </div>
         </div>
-      </div>
+        </div>
 
-      {/* Row 2: Container Mode (full width) */}
-      <div className="flex w-full flex-col gap-1">
+        <div className="mt-3 flex w-full flex-col gap-1">
         <span className="silk">Container Mode</span>
         <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Output Format">
           {FORMAT_OPTIONS.map((opt) => (
@@ -141,7 +144,8 @@ export function MetadataInputs({
             />
           ))}
         </div>
-      </div>
+        </div>
+      </details>
     </div>
   );
 }

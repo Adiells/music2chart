@@ -3,6 +3,7 @@ import { getApiUrl } from '../../lib/api';
 import { cn } from '../../lib/utils';
 import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
+import type { Language } from '../../lib/language';
 
 export type ExportFormat = 'sng' | 'chart' | 'zip';
 
@@ -18,6 +19,7 @@ export interface ExportPanelProps {
   songName: string;
   artist: string;
   className?: string;
+  language?: Language;
 }
 
 function triggerBrowserDownload(url: string, filename?: string): void {
@@ -39,7 +41,9 @@ export function ExportPanel({
   songName,
   artist,
   className,
+  language = 'en',
 }: ExportPanelProps) {
+  const portuguese = language === 'pt-BR';
   const [activeFormat, setActiveFormat] = useState<ExportFormat | null>(null);
   const [statusNote, setStatusNote] = useState<string>(IDLE_STATUS_NOTE);
   const statusResetRef = useRef<number | null>(null);
@@ -98,7 +102,7 @@ export function ExportPanel({
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hw-border pb-1.5">
         <div className="flex items-center gap-3">
-          <span className="silk-wide">E-01 // MASTER EXPORT BAY</span>
+          <span className="silk-wide">{portuguese ? 'Baixar arquivos para o jogo' : 'Download game files'}</span>
           <span className="h-3 w-px bg-hw-border" aria-hidden="true" />
           <span className="silk-wide text-[9px] text-silk-neutral">{statusNote}</span>
         </div>
@@ -115,8 +119,8 @@ export function ExportPanel({
         <PushButton
           size="md"
           variant="master"
-          label="Download .SNG"
-          sublabel="SongBinary v1 XOR"
+          label={portuguese ? 'Baixar .SNG' : 'Download .SNG'}
+          sublabel={portuguese ? 'Pacote Clone Hero' : 'Clone Hero package'}
           led="green"
           ledOn={hasBackendPackage}
           latched={activeFormat === 'sng'}
@@ -128,8 +132,8 @@ export function ExportPanel({
         <PushButton
           size="md"
           variant="standard"
-          label="Download .CHART"
-          sublabel="192 PPQ Text Spec"
+          label={portuguese ? 'Baixar .CHART' : 'Download .CHART'}
+          sublabel={portuguese ? 'Arquivo de notas' : 'Notes file'}
           led="blue"
           ledOn
           latched={activeFormat === 'chart'}
@@ -140,8 +144,8 @@ export function ExportPanel({
         <PushButton
           size="md"
           variant="standard"
-          label="Download .ZIP"
-          sublabel="Full Bundle Archive"
+          label={portuguese ? 'Baixar .ZIP' : 'Download .ZIP'}
+          sublabel={portuguese ? 'Pacote completo' : 'Complete package'}
           led="orange"
           ledOn={hasBackendPackage}
           latched={activeFormat === 'zip'}
@@ -153,7 +157,7 @@ export function ExportPanel({
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hw-border pt-1.5 text-[8px]">
         <span className="silk-wide">
-          TARGET: CLONE HERO / YARG COMPATIBLE
+          {portuguese ? 'Compatível com Clone Hero e YARG' : 'Compatible with Clone Hero and YARG'}
         </span>
         <span className="font-mono uppercase tracking-silk text-silk-dim">
           {hasBackendPackage && completedTaskId

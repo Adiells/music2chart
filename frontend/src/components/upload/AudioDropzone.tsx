@@ -4,6 +4,7 @@ import { cn } from '../../lib/utils';
 import { playMechanicalClick } from '../../lib/mechanicalClick';
 import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
+import type { Language } from '../../lib/language';
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
@@ -34,6 +35,7 @@ export interface AudioDropzoneProps {
   onFileSelect: (file: File | null, derivedMeta?: DerivedTrackMeta) => void;
   disabled?: boolean;
   className?: string;
+  language?: Language;
 }
 
 function formatByteSize(bytes: number): string {
@@ -71,7 +73,9 @@ export function AudioDropzone({
   onFileSelect,
   disabled = false,
   className,
+  language = 'en',
 }: AudioDropzoneProps) {
+  const portuguese = language === 'pt-BR';
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -172,10 +176,10 @@ export function AudioDropzone({
   return (
     <div className={cn('flex flex-col gap-2.5', className)}>
       <div className="flex items-center justify-between">
-        <span className="silk">Master Audio Ingestion Deck</span>
+        <span className="silk">{portuguese ? 'Arquivo de áudio' : 'Audio file'}</span>
         <div className="flex items-center gap-3">
           <span className="silk-wide tabular-nums text-[9px]">
-            {file ? `${extBadge} / ${formatByteSize(file.size)}` : 'BAY EMPTY / READY'}
+            {file ? `${extBadge} / ${formatByteSize(file.size)}` : (portuguese ? 'Nenhum arquivo' : 'No file selected')}
           </span>
           <LedIndicator
             color={errorMsg ? 'red' : file ? 'green' : dragActive ? 'green' : 'yellow'}
@@ -190,7 +194,7 @@ export function AudioDropzone({
       <div
         role="button"
         tabIndex={disabled ? -1 : 0}
-        aria-label="Audio file dropzone. Click or drag an MP3, WAV, FLAC, or OGG file."
+        aria-label={portuguese ? 'Área para escolher ou arrastar um arquivo de áudio MP3, WAV, FLAC ou OGG.' : 'Choose or drag an MP3, WAV, FLAC, or OGG audio file.'}
         aria-disabled={disabled || undefined}
         onClick={handleBrowse}
         onKeyDown={(e) => {
@@ -235,14 +239,14 @@ export function AudioDropzone({
             />
             <span className="silk-wide text-[9px]">
               {dragActive
-                ? 'RELEASE TO LOCK AUDIO STREAM'
+                ? (portuguese ? 'Solte o arquivo aqui' : 'Release to add your song')
                 : file
-                  ? 'SOURCE AUDIO MASTER MOUNTED'
-                  : 'DROPZONE ACTIVE // CH 1-2 STEREO'}
+                  ? (portuguese ? 'Áudio selecionado' : 'Audio selected')
+                  : (portuguese ? 'Escolha sua música' : 'Choose your song')}
             </span>
           </div>
           <span className="border border-hw-border bg-panel px-2 py-0.5 font-mono text-[9px] uppercase tracking-silk text-silk-neutral">
-            {file ? extBadge : 'MAX 50 MB'}
+            {file ? extBadge : (portuguese ? 'Máx. 50 MB' : 'Max 50 MB')}
           </span>
         </div>
 
@@ -261,11 +265,11 @@ export function AudioDropzone({
                   {file.name}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-silk text-silk-dim">
-                  <span>SIZE: {formatByteSize(file.size)}</span>
+            <span>{portuguese ? 'Tamanho' : 'Size'}: {formatByteSize(file.size)}</span>
                   <span>|</span>
-                  <span>CONTAINER: {extBadge} PCM</span>
+            <span>{portuguese ? 'Formato' : 'Format'}: {extBadge}</span>
                   <span>|</span>
-                  <span className="text-fret-green">READY FOR MAPPING</span>
+            <span className="text-fret-green">{portuguese ? 'Pronto para gerar' : 'Ready to create'}</span>
                 </div>
               </div>
             </div>
@@ -281,7 +285,7 @@ export function AudioDropzone({
               <PushButton
                 size="sm"
                 variant="alert"
-                label="Eject"
+                label={portuguese ? 'Remover' : 'Remove'}
                 led="red"
                 ledOn={false}
                 disabled={disabled}
@@ -312,10 +316,10 @@ export function AudioDropzone({
                   dragActive ? 'text-fret-green' : 'text-silk'
                 )}
               >
-                {dragActive ? 'DROP MASTER AUDIO HERE TO MOUNT' : 'DRAG & DROP MASTER AUDIO FILE'}
+                {dragActive ? (portuguese ? 'Solte o arquivo aqui' : 'Drop your audio file here') : (portuguese ? 'Arraste sua música até aqui' : 'Drag your song here')}
               </div>
               <div className="font-mono text-[10px] uppercase tracking-silk text-silk-dim">
-                OR CLICK ANYWHERE INSIDE THIS BOX TO BROWSE
+                {portuguese ? 'ou clique para escolher um arquivo' : 'or click to choose a file'}
               </div>
             </div>
 
@@ -330,7 +334,7 @@ export function AudioDropzone({
                 </span>
               ))}
               <span className="border border-hw-border bg-chassis px-2 py-0.5 font-mono text-[9px] uppercase tracking-silk text-silk-dim">
-                MAX 50 MB
+                {portuguese ? 'Máx. 50 MB' : 'Max 50 MB'}
               </span>
             </div>
           </div>
@@ -338,9 +342,9 @@ export function AudioDropzone({
 
         {/* Bottom Signal Path Strip */}
         <div className="flex items-center justify-between border-t border-hw-border/80 pt-2.5 text-[9px]">
-          <span className="silk-wide">SIGNAL CHAIN: DEMUCS v4 STEM SEPARATION -&gt; SPOTIFY BASIC PITCH</span>
+          <span className="silk-wide">{portuguese ? 'Transformação automática do áudio em notas' : 'Audio is automatically converted into notes'}</span>
           <span className="font-mono uppercase tracking-silk text-silk-neutral">
-            {file ? 'READY FOR STEP 2 (MAPPING CONFIG)' : 'WAITING FOR SOURCE'}
+            {file ? (portuguese ? 'Pronto para criar' : 'Ready to create') : (portuguese ? 'Aguardando arquivo' : 'Waiting for file')}
           </span>
         </div>
       </div>

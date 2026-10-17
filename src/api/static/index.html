@@ -53,6 +53,9 @@
       margin-bottom: 2rem;
     }
 
+    .language-picker { position: absolute; top: 1rem; right: 1rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
     .fret-strip {
       display: inline-flex;
       gap: 8px;
@@ -643,6 +646,9 @@
 <body>
   <div class="container">
     <header>
+      <label class="language-picker"><span class="sr-only">Language</span>
+        <select id="language-picker" aria-label="Language"><option value="pt-BR">Português</option><option value="en">English</option></select>
+      </label>
       <div class="fret-strip">
         <span class="fret-dot green"></span>
         <span class="fret-dot red"></span>
@@ -651,7 +657,7 @@
         <span class="fret-dot orange"></span>
       </div>
       <h1>music2chart</h1>
-      <p class="subtitle">Transforme qualquer música em um chart jogável para Clone Hero</p>
+      <p class="subtitle" data-en="Turn any song into a playable Clone Hero chart">Transforme qualquer música em um chart jogável para Clone Hero</p>
     </header>
 
     <!-- Upload Card -->
@@ -660,8 +666,8 @@
         <div class="drop-zone" id="drop-zone">
           <input type="file" id="audio-file" accept=".mp3,.wav,.ogg,.flac" required>
           <span class="drop-icon">🎵</span>
-          <div class="drop-title">Arraste seu arquivo de áudio aqui</div>
-          <div class="drop-hint">Formatos suportados: MP3, WAV, FLAC, OGG (ou clique para escolher)</div>
+          <div class="drop-title" data-en="Choose an audio file">Escolha um arquivo de áudio</div>
+          <div class="drop-hint" data-en="MP3, WAV, FLAC or OGG · up to 50 MB">MP3, WAV, FLAC, OGG · até 50 MB</div>
         </div>
 
         <div class="file-selected-box" id="file-selected-box" style="display: none;">
@@ -670,21 +676,23 @@
         </div>
 
         <!-- Metadados da Música -->
-        <div class="section-title">1. Identificação da Faixa</div>
+        <div class="section-title" data-en="Song details (optional)" data-pt="Identificação da faixa (opcional)">Identificação da faixa (opcional)</div>
         <div class="form-grid">
           <div class="form-group">
-            <label for="song_name">Nome da Música</label>
+            <label for="song_name" data-en="Song title">Nome da Música</label>
             <input type="text" id="song_name" placeholder="Ex: Through the Fire and Flames">
           </div>
           <div class="form-group">
-            <label for="artist">Artista</label>
+            <label for="artist" data-en="Artist">Artista</label>
             <input type="text" id="artist" placeholder="Ex: DragonForce">
           </div>
         </div>
 
+        <details style="margin-top: 1rem;">
+          <summary data-en="More song options">Mais opções da música</summary>
         <div class="form-grid" style="margin-top: 1rem;">
           <div class="form-group">
-            <label for="genre">Gênero Musical</label>
+            <label for="genre" data-en="Genre">Gênero Musical</label>
             <input type="text" id="genre" list="genre-suggestions" placeholder="Ex: rock" value="rock">
             <datalist id="genre-suggestions">
               <option value="rock">
@@ -699,7 +707,7 @@
             </datalist>
           </div>
           <div class="form-group">
-            <label for="output_format">Formato de Saída</label>
+            <label for="output_format" data-en="Output files">Formato de Saída</label>
             <select id="output_format">
               <option value="both" selected>Ambos (.sng + .chart ZIP)</option>
               <option value="sng">Pacote .sng (Clone Hero v1.0+)</option>
@@ -707,9 +715,12 @@
             </select>
           </div>
         </div>
+        </details>
 
         <!-- Presets de Mapeamento -->
-        <div class="section-title">2. Perfil de Jogabilidade (Presets)</div>
+        <details>
+        <summary data-en="Advanced generation settings">Ajustes avançados de geração</summary>
+        <div class="section-title" data-en="Recommended profile" data-pt="Perfil recomendado">Perfil recomendado</div>
         <div class="preset-grid">
           <div class="preset-card active" data-preset="the_best" id="preset-the-best">
             <div class="preset-card-header">
@@ -747,18 +758,18 @@
         <input type="hidden" id="preset" value="the_best">
 
         <!-- Parâmetros Principais de Jogabilidade -->
-        <div class="section-title">3. Parâmetros de Game Design</div>
+        <div class="section-title" data-en="Chart difficulty and controls" data-pt="Dificuldade e controles da chart">Dificuldade e controles da chart</div>
         <div class="form-grid">
           <div class="form-group">
-            <label for="difficulty">
-              Dificuldade do Track
+            <label for="difficulty" data-en="Chart difficulty">
+              Dificuldade
               <span class="label-badge" id="diff-badge">Nível 6 (Expert)</span>
             </label>
             <input type="range" id="difficulty" min="1" max="6" value="6" step="1">
           </div>
           <div class="form-group">
-            <label for="max_frets">
-              Acordes Máximos Simultâneos
+            <label for="max_frets" data-en="Maximum notes played together">
+              Quantidade máxima de notas juntas
               <span class="label-badge" id="max-frets-badge">2 Botões</span>
             </label>
             <select id="max_frets">
@@ -892,9 +903,10 @@
             </div>
           </div>
         </div>
+        </details>
 
-        <button type="submit" class="btn-submit" id="btn-submit">
-          <span>🎸</span> Gerar Chart
+        <button type="submit" class="btn-submit" id="btn-submit" data-en="Create chart">
+          <span>🎸</span> Criar chart
         </button>
       </form>
 
@@ -1011,6 +1023,31 @@
     const accordionToggle = document.getElementById('accordion-toggle');
     const accordionContent = document.getElementById('accordion-content');
     const accordionIcon = document.getElementById('accordion-icon');
+
+    const languagePicker = document.getElementById('language-picker');
+    let pageLanguage = 'pt-BR';
+    try {
+      const savedLanguage = localStorage.getItem('music2chart-language');
+      pageLanguage = savedLanguage === 'pt-BR' || savedLanguage === 'en' ? savedLanguage :
+        (navigator.language.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en');
+    } catch { pageLanguage = navigator.language.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en'; }
+    languagePicker.value = pageLanguage;
+    document.querySelectorAll('[data-en]').forEach((element) => { element.dataset.originalText = element.textContent; });
+    function applyLanguage(language) {
+      pageLanguage = language;
+      document.documentElement.lang = language;
+      document.querySelectorAll('[data-en]').forEach((element) => {
+        if (element.id === 'btn-submit') {
+          if (!btnSubmit.disabled) btnSubmit.innerHTML = `<span>🎸</span> ${language === 'en' ? 'Create chart' : 'Criar chart'}`;
+          return;
+        }
+        element.textContent = language === 'en' ? element.dataset.en : element.dataset.pt || element.dataset.originalText;
+      });
+      languagePicker.value = language;
+      try { localStorage.setItem('music2chart-language', language); } catch { /* keep this session's choice */ }
+    }
+    languagePicker.addEventListener('change', () => applyLanguage(languagePicker.value));
+    applyLanguage(pageLanguage);
 
     let timerInterval = null;
     let startTime = 0;
@@ -1227,7 +1264,7 @@
       formData.append('merge_sustained_notes', mergeSustainedNotesInput.checked);
 
       btnSubmit.disabled = true;
-      btnSubmit.innerHTML = '<span class="spinner"></span> Enviando áudio e configurando pipeline...';
+      btnSubmit.innerHTML = `<span class="spinner"></span> ${pageLanguage === 'en' ? 'Uploading and creating chart…' : 'Enviando áudio e criando chart…'}`;
 
       try {
         const response = await fetch('/api/v1/chart/generate', {
@@ -1244,7 +1281,7 @@
         startProgressTracking(data.task_id);
       } catch (err) {
         btnSubmit.disabled = false;
-        btnSubmit.innerHTML = '<span>🎸</span> Gerar Chart';
+        btnSubmit.innerHTML = `<span>🎸</span> ${pageLanguage === 'en' ? 'Create chart' : 'Criar chart'}`;
         showError(formError, err.message);
       }
     });
@@ -1372,7 +1409,7 @@
       releaseBadge.textContent = '24 ticks';
       fusionBadge.textContent = '35 ms';
       btnSubmit.disabled = false;
-      btnSubmit.innerHTML = '<span>🎸</span> Gerar Chart';
+      btnSubmit.innerHTML = `<span>🎸</span> ${pageLanguage === 'en' ? 'Create chart' : 'Criar chart'}`;
       uploadCard.style.display = 'block';
       progressCard.style.display = 'none';
       resultCard.style.display = 'none';

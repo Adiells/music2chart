@@ -1,6 +1,7 @@
 import { cn } from '../../lib/utils';
 import { playMechanicalClick } from '../../lib/mechanicalClick';
 import { LedIndicator } from '../rack/LedIndicator';
+import type { Language } from '../../lib/language';
 
 export type WorkflowStepId = 1 | 2 | 3 | 4;
 
@@ -19,32 +20,33 @@ export interface WorkflowStepperProps {
   hasChart: boolean;
   isProcessing: boolean;
   className?: string;
+  language?: Language;
 }
 
 const WORKFLOW_STEPS: readonly StepItem[] = [
   {
     id: 1,
     code: '01',
-    label: 'Ingest & Metadata',
-    sublabel: 'Audio Input Deck',
+    label: 'Add a song',
+    sublabel: 'Choose audio and options',
   },
   {
     id: 2,
     code: '02',
-    label: 'Mapping Profile',
-    sublabel: 'Preset & Heuristics',
+    label: 'Create chart',
+    sublabel: 'We process your song',
   },
   {
     id: 3,
     code: '03',
-    label: '3D Preview & Player',
-    sublabel: 'Highway Visualizer',
+    label: 'Preview',
+    sublabel: 'Review the result',
   },
   {
     id: 4,
     code: '04',
-    label: 'Export & Audit',
-    sublabel: 'Packages & Telemetry',
+    label: 'Download',
+    sublabel: 'Get your game files',
   },
 ];
 
@@ -59,6 +61,7 @@ export function WorkflowStepper({
   hasChart,
   isProcessing,
   className,
+  language = 'en',
 }: WorkflowStepperProps) {
   const handleStepClick = (stepId: WorkflowStepId): void => {
     if (stepId === currentStep) return;
@@ -108,10 +111,10 @@ export function WorkflowStepper({
                   {step.code}
                 </span>
                 <span className="truncate font-mono text-[10px] font-semibold uppercase tracking-silk">
-                  {step.label}
+                  {language === 'pt-BR' ? ['Adicionar música', 'Criar chart', 'Prévia', 'Baixar'][step.id - 1] : step.label}
                 </span>
               </div>
-              <span className="truncate silk-wide text-[8px]">{step.sublabel}</span>
+              <span className="truncate silk-wide text-[8px]">{language === 'pt-BR' ? ['Escolha um áudio', 'Geramos sua chart', 'Revise o resultado', 'Baixe para o jogo'][step.id - 1] : step.sublabel}</span>
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">

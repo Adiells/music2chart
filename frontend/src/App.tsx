@@ -30,6 +30,7 @@ import type {
 import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { useChartParser } from './hooks/useChartParser';
 import { getApiUrl } from './lib/api';
+import { useLanguage } from './lib/language';
 import { cn } from './lib/utils';
 
 type PresetId = 'the_best' | 'standard' | 'strict_rhythm' | 'dynamic_solo' | 'melodic' | 'chord_heavy';
@@ -177,6 +178,7 @@ interface GenerateApiResponse {
 }
 
 export default function App() {
+  const [language, setLanguage] = useLanguage();
   /* Navigation View & 4-Step Linear Workflow State */
   const [activeView, setActiveView] = useState<ActiveView>('workstation');
   const [activeStep, setActiveStep] = useState<WorkflowStepId>(1);
@@ -330,6 +332,7 @@ export default function App() {
 
       const data = (await response.json()) as GenerateApiResponse;
       setActiveTaskId(data.task_id);
+      setActiveStep(2);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to dispatch generation task';
       setSubmitError(msg);
@@ -370,16 +373,21 @@ export default function App() {
   return (
     <RackChassis
       brand="MUSIC2CHART"
-      model="STUDIO WORKSTATION"
+      model={language === 'pt-BR' ? 'Crie uma chart para sua música' : 'Create a chart for your song'}
       onOpenSupport={() => setIsSupportOpen(true)}
       headerRight={
         <div className="flex flex-wrap items-center gap-2.5">
+          <label className="sr-only" htmlFor="language-picker">Language</label>
+          <select id="language-picker" value={language} onChange={(event) => setLanguage(event.target.value as 'en' | 'pt-BR')} className="border border-hw-border bg-module px-2 py-1 text-xs text-silk">
+            <option value="en">English</option>
+            <option value="pt-BR">Português</option>
+          </select>
           {/* View Selector: Workstation vs About */}
           <div className="flex items-center gap-1.5" role="navigation" aria-label="Chassis Mode Navigation">
             <PushButton
               size="sm"
-              label="Workstation"
-              sublabel="Console"
+              label={language === 'pt-BR' ? 'Criar chart' : 'Create chart'}
+              sublabel={language === 'pt-BR' ? 'Início' : 'Home'}
               led="green"
               ledOn={activeView === 'workstation'}
               latched={activeView === 'workstation'}
@@ -387,8 +395,8 @@ export default function App() {
             />
             <PushButton
               size="sm"
-              label="Documentation"
-              sublabel="Technical Spec"
+              label={language === 'pt-BR' ? 'Ajuda' : 'Help'}
+              sublabel={language === 'pt-BR' ? 'Como usar' : 'How it works'}
               led="blue"
               ledOn={activeView === 'about'}
               latched={activeView === 'about'}
@@ -403,14 +411,14 @@ export default function App() {
             on
             blink={player.isPlaying ? 'fast' : false}
             size="xs"
-            label={player.isPlaying ? 'PLAYING' : 'SYNC 192 PPQ'}
+            label={player.isPlaying ? (language === 'pt-BR' ? 'TOCANDO' : 'PLAYING') : ''}
           />
           <LedIndicator
             color={isBusy ? 'orange' : 'green'}
             on
             blink={isBusy ? 'fast' : false}
             size="xs"
-            label={isBusy ? 'DSP ACTIVE' : 'SYSTEM READY'}
+            label={isBusy ? (language === 'pt-BR' ? 'CRIANDO CHART' : 'CREATING CHART') : ''}
           />
         </div>
       }
@@ -426,6 +434,7 @@ export default function App() {
             hasAudio={hasAudio}
             hasChart={hasChart}
             isProcessing={isBusy}
+            language={language}
           />
 
           {/* Active Error Notice */}
@@ -445,22 +454,23 @@ export default function App() {
             <div className="flex flex-col gap-3.5">
               <ModulePanel
                 code="M-01"
-                title="Master Ingestion & Track Metadata"
+                title={language === 'pt-BR' ? 'Adicione sua música' : 'Add your song'}
                 headerRight={
                   <LedIndicator
                     color={hasAudio ? 'green' : 'yellow'}
                     on
                     size="xs"
-                    label={hasAudio ? 'AUDIO MOUNTED' : 'AWAITING MASTER'}
+                    label={hasAudio ? 'Song ready' : 'Choose an audio file'}
                   />
                 }
-                footer="ACCEPTED CONTAINERS: .MP3 / .WAV / .FLAC / .OGG (MAX 50 MB)"
+                footer={language === 'pt-BR' ? 'MP3, WAV, FLAC ou OGG · até 50 MB' : 'MP3, WAV, FLAC or OGG · up to 50 MB'}
               >
                 <div className="flex flex-col gap-4">
                   <AudioDropzone
                     file={audioFile}
                     onFileSelect={handleFileSelect}
                     disabled={isBusy}
+                  language={language}
                   />
 
                   <div className="border-t border-hw-border pt-4">
@@ -468,22 +478,16 @@ export default function App() {
                       value={metadata}
                       onChange={handleMetadataChange}
                       disabled={isBusy}
+                      language={language}
                     />
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hw-border pt-3">
+                  <div className="flex flex-wrap items-center gap-3 border-t border-hw-border pt-3">
                     <span className="silk-wide text-[9px]">
                       {hasAudio
-                        ? 'SOURCE READY -> PROCEED TO STEP 2 OR EXECUTE GENERATE DIRECTLY'
-                        : 'SELECT AN AUDIO FILE TO UNLOCK CHART GENERATION'}
+                        ? language === 'pt-BR' ? 'Sua música está pronta. Se quiser, ajuste as opções antes de gerar.' : 'Your song is ready. Adjust options if you want, then create the chart.'
+                        : language === 'pt-BR' ? 'Escolha um arquivo de áudio para começar. Você pode editar o nome e o artista.' : 'Choose an audio file to get started. You can edit the title and artist.'}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setActiveStep(2)}
-                      className="border border-hw-border bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-silk hover:bg-panel transition-colors"
-                    >
-                      PROCEED TO MAPPING &gt;
-                    </button>
                   </div>
                 </div>
               </ModulePanel>
@@ -491,33 +495,44 @@ export default function App() {
           )}
 
           {/* ========================================================================= */}
-          {/* STEP 2: MAPPING PROFILE & ENGINE CALIBRATION                              */}
+          {/* STEP 2: GENERATION PROGRESS                                              */}
           {/* ========================================================================= */}
-          {activeStep === 2 && (
+          {(activeStep === 1 || activeStep === 2) && (
             <div className="flex flex-col gap-3.5">
+              {activeStep === 1 && (
               <ModulePanel
                 code="M-02"
-                title="Mapping Profile & Difficulty Tuning"
+                title={language === 'pt-BR' ? 'Preferências (opcional)' : 'Preferences (optional)'}
                 headerRight={
                   <span className="silk-wide text-[9px]">
                     PRESET: {preset.toUpperCase()}
                   </span>
                 }
-                footer="CALIBRATED FOR PHYSICAL GUITAR CONTROLLERS // ERGONOMIC CHORD & HOPO RULES"
+                footer={language === 'pt-BR' ? 'As opções recomendadas já estão selecionadas. Você pode pular esta etapa.' : 'Recommended settings are selected automatically. You can skip this step.'}
               >
                 <div className="flex flex-col gap-5">
                   {/* Linear Tactile Preset Selection */}
-                  <PresetSelector
-                    options={PRESET_OPTIONS}
-                    value={preset}
-                    onChange={handlePresetChange}
-                    disabled={isBusy}
-                  />
+                  <details className="border border-hw-border bg-chassis p-3">
+                    <summary className="cursor-pointer font-mono text-xs font-semibold text-silk">{language === 'pt-BR' ? 'Ajustes avançados' : 'Advanced settings'}</summary>
+                    <p className="mt-2 font-mono text-xs text-silk-neutral">{language === 'pt-BR' ? 'Para a maioria das músicas, as opções recomendadas funcionam bem.' : 'The recommended options work well for most songs.'}</p>
+                    <PresetSelector
+                      options={PRESET_OPTIONS}
+                      value={preset}
+                      onChange={handlePresetChange}
+                      disabled={isBusy}
+                    />
+                    <CalibrationBay
+                      value={calibration}
+                      onChange={handleCalibrationChange}
+                      defaultExpanded={false}
+                      disabled={isBusy}
+                    />
+                  </details>
 
                   {/* Difficulty Tier Selection */}
                   <div className="border-t border-hw-border pt-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="silk">Target Difficulty Tier</span>
+                      <span className="silk">{language === 'pt-BR' ? 'Dificuldade' : 'Chart difficulty'}</span>
                       <span className="silk-wide text-[9px]">
                         SELECTED: {DIFFICULTY_TIERS.find((d) => d.level === metadata.difficulty)?.label.toUpperCase()}
                       </span>
@@ -543,17 +558,16 @@ export default function App() {
                   </div>
                 </div>
               </ModulePanel>
-
-              {/* M-03: Advanced Calibration Bay */}
-              <CalibrationBay
-                value={calibration}
-                onChange={handleCalibrationChange}
-                defaultExpanded={false}
-                disabled={isBusy}
-              />
+              )}
 
               {/* Live Pipeline Telemetry if task is running or available */}
-              {(isBusy || activeTaskId) && (
+              {activeStep === 2 && !activeTaskId && !isBusy && (
+                <div className="border border-hw-border bg-panel p-4">
+                  <h2 className="font-grotesk text-lg font-semibold text-silk">{language === 'pt-BR' ? 'Sua chart será criada aqui' : 'Your chart will be created here'}</h2>
+                  <p className="mt-1 text-sm text-silk-neutral">{language === 'pt-BR' ? 'Volte para Adicionar música, escolha um áudio e use Criar chart.' : 'Go back to Add a song, choose audio, then select Create chart.'}</p>
+                </div>
+              )}
+              {activeStep === 2 && (isBusy || activeTaskId) && (
                 <PipelineTelemetry
                   taskId={activeTaskId}
                   completedTaskId={completedTaskId}
@@ -600,8 +614,8 @@ export default function App() {
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-xs font-bold uppercase tracking-silk text-fret-orange">
                             {isBusy
-                              ? 'PIPELINE PROCESSING // GENERATING 3D HIGHWAY'
-                              : 'NOTICE // CLICK "GENERATE CHART" TO RENDER HIGHWAY'}
+                          ? (language === 'pt-BR' ? 'CRIANDO SUA CHART' : 'CREATING YOUR CHART')
+                              : (language === 'pt-BR' ? 'SUA PRÉVIA APARECERÁ AQUI' : 'YOUR PREVIEW WILL APPEAR HERE')}
                           </span>
                           <span className="border border-hw-border bg-chassis px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-silk text-silk-dim">
                             {isBusy ? 'PROCESSING' : 'ACTION REQUIRED'}
@@ -609,11 +623,11 @@ export default function App() {
                         </div>
                         <p className="font-mono text-[11px] leading-relaxed text-silk-neutral">
                           {isBusy ? (
-                            'AI pipeline is transcribing and mapping your audio in real time. Your 3D note highway will load automatically once conversion completes.'
+                            language === 'pt-BR' ? 'Estamos analisando o áudio e montando a chart. A prévia aparecerá automaticamente quando terminar.' : 'We are analyzing your audio and creating the chart. The preview will appear when it is ready.'
                           ) : hasAudio ? (
-                            'Audio master is mounted, but notes have not been generated yet. Click "GENERATE CHART" to run AI transcription and render your interactive 3D highway.'
+                            language === 'pt-BR' ? 'Seu áudio está pronto. Use o botão Criar chart para gerar uma prévia.' : 'Your audio is ready. Select Create chart to generate a preview.'
                           ) : (
-                            'To view your custom 3D note highway, go to Step 01, load an audio file, and click "GENERATE CHART" (or click "Load Demo" to preview the reference chart).'
+                            language === 'pt-BR' ? 'Envie um arquivo de áudio para gerar uma chart ou experimente a demonstração.' : 'Upload an audio file to create a chart, or try the demo.'
                           )}
                         </p>
                       </div>
@@ -629,7 +643,7 @@ export default function App() {
                           className="flex items-center gap-2 border border-fret-green bg-fret-green px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-silk text-black shadow-[0_0_15px_rgba(0,230,118,0.3)] hover:bg-[#00c864] transition-colors"
                         >
                           <span className="inline-block h-2 w-2 border border-black bg-black animate-ping" />
-                          <span>GENERATE CHART NOW</span>
+                          <span>{language === 'pt-BR' ? 'CRIAR CHART' : 'CREATE CHART'}</span>
                         </button>
                       )}
                       {!hasAudio && !isBusy && (
@@ -639,14 +653,14 @@ export default function App() {
                             onClick={() => setActiveStep(1)}
                             className="border border-hw-border bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-silk hover:bg-panel transition-colors"
                           >
-                            &lt; GO TO STEP 01
+                            {language === 'pt-BR' ? 'Enviar áudio' : 'Add a song'}
                           </button>
                           <button
                             type="button"
                             onClick={handleRunDemo}
                             className="border border-fret-blue/60 bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-fret-blue hover:text-silk transition-colors"
                           >
-                            LOAD DEMO
+                            {language === 'pt-BR' ? 'Ver demonstração' : 'Try demo'}
                           </button>
                         </>
                       )}
@@ -713,7 +727,7 @@ export default function App() {
                   onClick={() => setActiveStep(4)}
                   className="border border-hw-border bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-silk hover:bg-panel transition-colors"
                 >
-                  PROCEED TO EXPORT &amp; AUDIT &gt;
+                  {language === 'pt-BR' ? 'Ir para downloads >' : 'Go to downloads >'}
                 </button>
               </div>
             </div>
@@ -729,31 +743,17 @@ export default function App() {
                 rawChartText={chart.rawText}
                 songName={metadata.songName || chart.songName}
                 artist={metadata.artist || chart.artist}
+                language={language}
               />
 
-              <div className="grid grid-cols-1 items-stretch gap-3.5 lg:grid-cols-12">
-                <TempoDisplay
-                  chart={chart}
-                  currentTime={player.currentTime}
-                  isPlaying={player.isPlaying}
-                  className="h-full lg:col-span-5"
-                />
-                <StatsCard
-                  stats={chart.stats}
-                  className="h-full lg:col-span-7"
-                />
-              </div>
-
-              <NpsGraph
-                buckets={chart.npsBuckets}
-                peakNps={chart.stats.peakNps}
-                avgNps={chart.stats.avgNps}
-                currentTime={player.currentTime}
-                duration={player.duration}
-                onSeek={player.seek}
-              />
-
-              <PipelineTelemetry
+              <details className="border border-hw-border bg-panel p-3">
+                <summary className="cursor-pointer font-mono text-xs text-silk-neutral">Chart details and processing log</summary>
+                <div className="mt-3 grid grid-cols-1 items-stretch gap-3.5 lg:grid-cols-12">
+                  <TempoDisplay chart={chart} currentTime={player.currentTime} isPlaying={player.isPlaying} className="h-full lg:col-span-5" />
+                  <StatsCard stats={chart.stats} className="h-full lg:col-span-7" />
+                </div>
+                <NpsGraph buckets={chart.npsBuckets} peakNps={chart.stats.peakNps} avgNps={chart.stats.avgNps} currentTime={player.currentTime} duration={player.duration} onSeek={player.seek} />
+                <PipelineTelemetry
                 taskId={activeTaskId}
                 completedTaskId={completedTaskId}
                 submitting={submitting}
@@ -764,14 +764,14 @@ export default function App() {
                 onRunDemo={handleRunDemo}
                 onAbort={handleAbort}
                 onCompleted={handleTelemetryCompleted}
-              />
+                />
+              </details>
             </div>
           )}
 
           {/* Permanent High-Contrast Master Floating Action Dock */}
           <FloatingActionDock
-            currentStep={activeStep}
-            onStepChange={setActiveStep}
+            language={language}
             canGenerate={hasAudio}
             isProcessing={isBusy}
             submitting={submitting}
