@@ -159,7 +159,6 @@ export function SupportModal({ isOpen, onClose, className }: SupportModalProps) 
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 border border-fret-yellow bg-[#26200F] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-silk text-fret-yellow hover:bg-[#382F15] transition-colors shadow-recess"
             >
-              <span className="text-sm">⚡</span>
               <span>Sponsor on GitHub</span>
               <span className="text-fret-yellow">↗</span>
             </a>

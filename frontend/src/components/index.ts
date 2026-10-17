@@ -17,6 +17,13 @@ export { PushButton } from './controls/PushButton';
 export type { PushButtonProps, PushButtonVariant, PushButtonSize } from './controls/PushButton';
 export { RotarySelector } from './controls/RotarySelector';
 export type { RotarySelectorProps, RotarySelectorOption } from './controls/RotarySelector';
+export { PresetSelector } from './controls/PresetSelector';
+export type { PresetSelectorProps, PresetItem } from './controls/PresetSelector';
+
+export { WorkflowStepper } from './navigation/WorkflowStepper';
+export type { WorkflowStepperProps, WorkflowStepId, StepItem } from './navigation/WorkflowStepper';
+export { FloatingActionDock } from './actions/FloatingActionDock';
+export type { FloatingActionDockProps } from './actions/FloatingActionDock';
 
 export { AudioDropzone } from './upload/AudioDropzone';
 export type { AudioDropzoneProps, DerivedTrackMeta } from './upload/AudioDropzone';

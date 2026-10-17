@@ -162,6 +162,28 @@ export function RotarySelector<T extends string>({
     <div className={cn('no-select flex flex-col items-center gap-1', disabled && 'opacity-50', className)}>
       <span className="silk">{label}</span>
 
+      <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 lg:hidden" role="radiogroup" aria-label={`${label} options`}>
+        {options.map((option, optionIndex) => (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={option.value === value}
+            disabled={disabled}
+            onClick={() => select(optionIndex)}
+            className={cn(
+              'min-h-11 border px-2 py-2 font-mono text-[10px] uppercase tracking-wide transition-colors',
+              option.value === value
+                ? 'border-fret-orange bg-module text-silk'
+                : 'border-hw-border bg-chassis text-silk-dim hover:text-silk',
+              disabled && 'cursor-not-allowed opacity-50',
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
       <svg
         ref={svgRef}
         viewBox={`0 0 ${VB_W} ${VB_H}`}

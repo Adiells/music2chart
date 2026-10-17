@@ -38,8 +38,10 @@ export interface PipelineTelemetryProps {
 
 interface StageSpec {
   id: string;
+  code: string;
   label: string;
-  sublabel: string;
+  engine: string;
+  description: string;
   thresholdStart: number;
   thresholdDone: number;
   keywords: readonly string[];
@@ -48,40 +50,50 @@ interface StageSpec {
 const TELEMETRY_STAGES: readonly StageSpec[] = [
   {
     id: 'demucs',
-    label: 'DEMUCS',
-    sublabel: 'HTDEMUCS v4',
+    code: '01',
+    label: 'Demucs v4',
+    engine: 'HTDEMUCS',
+    description: 'Separating guitar, bass & drums stems',
     thresholdStart: 0.05,
     thresholdDone: 0.25,
     keywords: ['stem', 'demucs', 'separat'],
   },
   {
     id: 'beatnet',
-    label: 'BEATNET',
-    sublabel: '192 PPQ GRID',
+    code: '02',
+    label: 'BeatNet',
+    engine: '192 PPQ SYNC',
+    description: 'Variable BPM & beat grid tracking',
     thresholdStart: 0.25,
     thresholdDone: 0.44,
     keywords: ['tempo', 'beat', 'bpm'],
   },
   {
     id: 'basic_pitch',
-    label: 'BASIC PITCH',
-    sublabel: 'MIDI + FILTER',
+    code: '03',
+    label: 'Basic Pitch',
+    engine: 'SPOTIFY ML',
+    description: 'Polyphonic pitch & harmonic filtering',
     thresholdStart: 0.44,
     thresholdDone: 0.64,
     keywords: ['transcrib', 'pitch', 'harmonic', 'overtone'],
   },
   {
     id: 'quantization',
-    label: 'QUANTIZATION',
-    sublabel: '5-FRET + HOPO',
+    code: '04',
+    label: 'Quantization',
+    engine: 'GAME HEURISTICS',
+    description: '5-fret projection, HOPO & sustains',
     thresholdStart: 0.64,
     thresholdDone: 0.89,
     keywords: ['snap', 'quantiz', 'fret', 'chord', 'hopo', 'sustain'],
   },
   {
     id: 'packaging',
-    label: 'PACKAGING',
-    sublabel: 'CHART + SNG',
+    code: '05',
+    label: 'Packaging',
+    engine: 'CHART & SNG',
+    description: 'notes.chart, song.ini & XOR container',
     thresholdStart: 0.89,
     thresholdDone: 0.99,
     keywords: ['serializ', 'packag', 'sng', 'chart'],
@@ -149,7 +161,7 @@ function resolveStageState(
     return progress >= spec.thresholdDone ? 'done' : 'idle';
   }
 
-  // Note: pipeline.py runs Tempo (0.10) then Stems (0.25); handle both keyword & progress smoothly
+  // Handle tempo and stem sequence smoothly
   if (index === 0 && (lower.includes('tempo') || lower.includes('beat')) && progress < 0.25) {
     return 'idle';
   }
@@ -169,6 +181,20 @@ function resolveStageState(
   return 'idle';
 }
 
+function calculateStageProgress(
+  state: 'idle' | 'active' | 'done' | 'error',
+  overallProgress: number,
+  start: number,
+  done: number,
+): number {
+  if (state === 'done') return 100;
+  if (state === 'idle') return 0;
+  if (state === 'error') return 50;
+  if (done <= start) return 50;
+  const rel = (overallProgress - start) / (done - start);
+  return Math.round(clamp(rel, 0.1, 0.95) * 100);
+}
+
 interface TaskTelemetrySnapshot {
   taskId: string;
   status: TelemetryStatus;
@@ -181,9 +207,9 @@ interface TaskTelemetrySnapshot {
 
 /**
  * Real-time SSE telemetry receiver connected to `/api/v1/chart/stream/{task_id}`.
- * Renders 5 hardware stage LEDs (Demucs, BeatNet, Basic Pitch, Quantization, Packaging),
+ * Renders 5 responsive stage cards with pulsating indicators and individual progress meters,
  * an analytical 28-segment progress meter, an embedded CRT telemetry log monitor,
- * and a full-width 3-column Master Actuation Grid.
+ * and master action controls.
  */
 export function PipelineTelemetry({
   taskId,
@@ -400,9 +426,9 @@ export function PipelineTelemetry({
   return (
     <ModulePanel
       code="M-04"
-      title="Pipeline Telemetry // SSE Stream"
+      title="Pipeline Telemetry & Stage Progress"
       className={className}
-      bodyClassName="flex-1 flex flex-col justify-between gap-3"
+      bodyClassName="flex-1 flex flex-col justify-between gap-3.5"
       headerRight={
         <div className="flex items-center gap-3">
           <span className="silk-wide tabular-nums text-[9px]">
@@ -419,60 +445,114 @@ export function PipelineTelemetry({
       }
       footer={
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span>STREAM: {taskId ? `/API/V1/CHART/STREAM/${taskId.slice(0, 8).toUpperCase()}` : 'DISCONNECTED'}</span>
+          <span>TASK: {taskId ? taskId.slice(0, 8).toUpperCase() : 'STANDBY'}</span>
           <span className="tabular-nums text-silk">{percent}% COMPLETE</span>
         </div>
       }
     >
-      <div className="flex flex-1 flex-col justify-between gap-2.5">
-        {/* 5-Stage Hardware LED Matrix */}
-        <ol
+      <div className="flex flex-1 flex-col justify-between gap-3">
+        {/* Enhanced 5-Stage Visual Cards with Pulsing Feedback & Stage Bars */}
+        <div
           aria-label="Pipeline Processing Stages"
-          className="grid grid-cols-5 gap-px border border-hw-border bg-hw-border"
+          className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5"
         >
           {TELEMETRY_STAGES.map((spec, idx) => {
             const st = resolveStageState(spec, idx, status, progress, stageText);
+            const stagePct = calculateStageProgress(st, progress, spec.thresholdStart, spec.thresholdDone);
             const ledColor =
               st === 'error' ? 'red' : st === 'done' ? 'green' : st === 'active' ? 'orange' : 'yellow';
+
             return (
-              <li
+              <div
                 key={spec.id}
                 className={cn(
-                  'flex flex-col items-center justify-between gap-1.5 bg-chassis px-1.5 py-2.5 text-center transition-colors',
-                  st === 'active' && 'bg-[#171A21]',
-                  st === 'done' && 'bg-[#0F1614]',
+                  'relative flex flex-col justify-between border p-2.5 transition-all duration-200',
+                  st === 'active' &&
+                    'border-fret-orange bg-[#181D26] shadow-[0_0_15px_rgba(255,145,0,0.25)] ring-1 ring-fret-orange',
+                  st === 'done' && 'border-hw-border bg-[#0E1714]',
+                  st === 'error' && 'border-fret-red bg-[#1E0F14] ring-1 ring-fret-red',
+                  st === 'idle' && 'border-hw-border bg-chassis opacity-75'
                 )}
               >
-                <div className="flex w-full items-center justify-between px-0.5">
-                  <span className="silk-wide text-[8px] tabular-nums">
-                    0{idx + 1}
-                  </span>
-                  <LedIndicator
-                    color={ledColor}
-                    on={st !== 'idle'}
-                    blink={st === 'active' || st === 'error' ? 'fast' : false}
-                    size="xs"
-                  />
+                {/* Stage Header */}
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="silk-wide text-[8px] font-semibold tabular-nums text-silk-dim">
+                      {spec.code}
+                    </span>
+                    <span className="font-mono text-[9px] font-bold uppercase tracking-silk text-silk">
+                      {spec.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {st === 'active' ? (
+                      <span className="inline-block h-1.5 w-1.5 animate-ping bg-fret-orange" aria-hidden="true" />
+                    ) : null}
+                    <LedIndicator
+                      color={ledColor}
+                      on={st !== 'idle'}
+                      blink={st === 'active' ? 'fast' : false}
+                      size="xs"
+                    />
+                  </div>
                 </div>
-                <span
-                  className={cn(
-                    'font-mono text-[9px] font-semibold uppercase tracking-silk',
-                    st === 'done'
-                      ? 'text-fret-green'
-                      : st === 'active'
-                        ? 'text-silk'
-                        : st === 'error'
-                          ? 'text-fret-red'
-                          : 'text-silk-dim',
-                  )}
-                >
-                  {spec.label}
-                </span>
-                <span className="silk-wide text-[7px] leading-none">{spec.sublabel}</span>
-              </li>
+
+                {/* Subtitle / Engine Description */}
+                <div className="my-2 flex flex-col gap-0.5">
+                  <span className="silk-wide text-[8px] leading-tight text-silk-neutral">
+                    {spec.engine}
+                  </span>
+                  <span className="truncate font-mono text-[9px] text-silk-dim">
+                    {spec.description}
+                  </span>
+                </div>
+
+                {/* Individual Stage Progress Bar */}
+                <div className="mt-1 flex flex-col gap-1 border-t border-hw-border/70 pt-2">
+                  <div className="flex items-center justify-between text-[8px] font-mono">
+                    <span
+                      className={cn(
+                        'uppercase font-semibold tracking-silk',
+                        st === 'done'
+                          ? 'text-fret-green'
+                          : st === 'active'
+                            ? 'text-fret-orange animate-pulse'
+                            : st === 'error'
+                              ? 'text-fret-red'
+                              : 'text-silk-dim'
+                      )}
+                    >
+                      {st === 'done'
+                        ? 'COMPLETED'
+                        : st === 'active'
+                          ? 'PROCESSING...'
+                          : st === 'error'
+                            ? 'FAULT'
+                            : 'STANDBY'}
+                    </span>
+                    <span className="tabular-nums text-silk-dim">{stagePct}%</span>
+                  </div>
+
+                  <div className="h-1.5 w-full bg-[#07080A] p-[1px] border border-hw-border/60">
+                    <div
+                      className={cn(
+                        'h-full transition-all duration-150',
+                        st === 'done'
+                          ? 'bg-fret-green w-full'
+                          : st === 'active'
+                            ? 'bg-fret-orange animate-pulse'
+                            : st === 'error'
+                              ? 'bg-fret-red w-full'
+                              : 'bg-transparent'
+                      )}
+                      style={{ width: st === 'active' ? `${stagePct}%` : undefined }}
+                    />
+                  </div>
+                </div>
+              </div>
             );
           })}
-        </ol>
+        </div>
 
         {/* Analytical Segmented Progress Meter */}
         <div className="flex flex-col gap-1.5 border border-hw-border bg-chassis p-2.5 shadow-recess">
@@ -513,7 +593,7 @@ export function PipelineTelemetry({
                   key={i}
                   className={cn(
                     'h-2.5 transition-colors duration-75',
-                    active ? segColor : 'bg-[#181B22]',
+                    active ? segColor : 'bg-[#181B22]'
                   )}
                 />
               );
@@ -534,7 +614,7 @@ export function PipelineTelemetry({
 
           <div
             aria-live="polite"
-            className="flex min-h-[78px] flex-1 flex-col justify-end gap-0.5 font-mono text-[9px] leading-4 tracking-silk text-silk-neutral"
+            className="flex min-h-[72px] flex-1 flex-col justify-end gap-0.5 font-mono text-[9px] leading-4 tracking-silk text-silk-neutral"
           >
             {logEntries.map((line, idx) => {
               const isLatest = idx === logEntries.length - 1;
@@ -549,7 +629,7 @@ export function PipelineTelemetry({
                         : status === 'COMPLETED'
                           ? 'text-fret-green'
                           : 'text-silk'
-                      : 'text-silk-dim',
+                      : 'text-silk-dim'
                   )}
                 >
                   {line}
@@ -574,7 +654,7 @@ export function PipelineTelemetry({
           </div>
         ) : null}
 
-        {/* Full-Width 3-Column Master Actuation Grid */}
+        {/* Master Actuation Grid */}
         <div className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-3">
           <PushButton
             size="md"
@@ -613,13 +693,6 @@ export function PipelineTelemetry({
             onClick={onAbort}
             className="w-full"
           />
-        </div>
-
-        {/* Lower Diagnostic Strip */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hw-border pt-2 font-mono text-[8px] uppercase tracking-silk text-silk-dim">
-          <span>CHANNEL: SSE / EVENTSTREAM</span>
-          <span>TASK REF: {taskId ? taskId.slice(0, 12).toUpperCase() : 'NONE'}</span>
-          <span>BUFFER LATENCY: {isRunning ? '12 MS' : '0 MS'}</span>
         </div>
       </div>
     </ModulePanel>

@@ -713,7 +713,7 @@ export function AboutPage({ onReturnToWorkstation, className }: AboutPageProps) 
               rel="noopener noreferrer"
               className="mt-3 flex items-center justify-center gap-2 border border-fret-yellow bg-[#26200F] py-2 font-mono text-[10px] font-semibold uppercase tracking-silk text-fret-yellow hover:bg-[#382F15] transition-colors"
             >
-              <span>⚡ Sponsor on GitHub</span>
+              <span>Sponsor on GitHub</span>
               <span className="text-fret-yellow">↗</span>
             </a>
           </div>

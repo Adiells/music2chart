@@ -4,25 +4,28 @@ import {
   AudioDropzone,
   CalibrationBay,
   ExportPanel,
+  FloatingActionDock,
   HighwayScene,
   LedIndicator,
   MetadataInputs,
   ModulePanel,
   NpsGraph,
   PipelineTelemetry,
+  PresetSelector,
   PushButton,
   RackChassis,
-  RotarySelector,
   StatsCard,
   SupportModal,
   TempoDisplay,
   WaveformBar,
+  WorkflowStepper,
 } from './components';
 import type {
   CalibrationState,
   DerivedTrackMeta,
-  RotarySelectorOption,
+  PresetItem,
   TrackMetadataState,
+  WorkflowStepId,
 } from './components';
 import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { useChartParser } from './hooks/useChartParser';
@@ -31,12 +34,39 @@ import { getApiUrl } from './lib/api';
 type PresetId = 'standard' | 'strict_rhythm' | 'dynamic_solo' | 'melodic' | 'chord_heavy';
 type ActiveView = 'workstation' | 'about';
 
-const PRESET_OPTIONS: readonly RotarySelectorOption<PresetId>[] = [
-  { value: 'standard', label: 'Standard' },
-  { value: 'strict_rhythm', label: 'Strict Rhythm' },
-  { value: 'dynamic_solo', label: 'Dynamic Solo' },
-  { value: 'melodic', label: 'Melodic' },
-  { value: 'chord_heavy', label: 'Chord Heavy' },
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024;
+
+const PRESET_OPTIONS: readonly PresetItem<PresetId>[] = [
+  {
+    value: 'standard',
+    label: 'Standard',
+    description: 'Balanced 5-fret mapping with 35ms chord fusion and standard HOPO logic.',
+    tag: 'BALANCED',
+  },
+  {
+    value: 'strict_rhythm',
+    label: 'Strict Rhythm',
+    description: 'Tight 40ms quantization, lower creativity tolerance, and solid chord foundation.',
+    tag: 'RHYTHM',
+  },
+  {
+    value: 'dynamic_solo',
+    label: 'Dynamic Solo',
+    description: 'Expressive lead solo mapping, expanded HOPO threshold, and rapid runs.',
+    tag: 'EXPRESSIVE',
+  },
+  {
+    value: 'melodic',
+    label: 'Melodic',
+    description: 'Lead motif recognition with adaptive sliding tessitura and balanced sustains.',
+    tag: 'MOTIF',
+  },
+  {
+    value: 'chord_heavy',
+    label: 'Chord Heavy',
+    description: 'Full polyphonic triad support, 45ms fusion, and authentic power chord voicings.',
+    tag: 'POLYPHONIC',
+  },
 ];
 
 const PRESET_CALIBRATION_MAP: Record<PresetId, CalibrationState> = {
@@ -126,11 +156,12 @@ interface GenerateApiResponse {
 }
 
 export default function App() {
-  /* Navigation View State */
+  /* Navigation View & 4-Step Linear Workflow State */
   const [activeView, setActiveView] = useState<ActiveView>('workstation');
+  const [activeStep, setActiveStep] = useState<WorkflowStepId>(1);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
 
-  /* Left Rack State: Upload, Metadata, Preset, Calibration, and SSE Task */
+  /* Audio Ingestion, Metadata, Preset, Calibration, and Task State */
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [metadata, setMetadata] = useState<TrackMetadataState>({
     songName: '',
@@ -148,7 +179,7 @@ export default function App() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  /* Right Workstation State: Chart Parser & Synchronized Audio Player */
+  /* Chart Parser & Synchronized Audio Player */
   const { chart, isDemoChart } = useChartParser(completedTaskId);
 
   const player = useAudioPlayer({
@@ -198,11 +229,9 @@ export default function App() {
   const handleGenerate = useCallback(async (): Promise<void> => {
     if (!audioFile || submitting) return;
 
-    // Client-side guard against oversized payloads (>100MB) before starting upload
-    const MAX_UPLOAD_SIZE = 100 * 1024 * 1024; // 100 MB
     if (audioFile.size > MAX_UPLOAD_SIZE) {
       setSubmitError(
-        'Payload Too Large: O arquivo excede o limite de 100 MB. Por favor, selecione um arquivo de áudio menor.'
+        'Payload Too Large: O arquivo excede o limite de 50 MB. Por favor, selecione um arquivo de audio menor.'
       );
       return;
     }
@@ -221,12 +250,10 @@ export default function App() {
       form.append('difficulty', String(metadata.difficulty));
       form.append('genre', metadata.genre);
 
-      // Map UI preset to backend preset profile
       const backendPreset =
         preset === 'strict_rhythm' || preset === 'dynamic_solo' ? preset : 'standard';
       form.append('preset', backendPreset);
 
-      // 6 Knobs + 6 Switches Calibration Payload
       form.append('chord_fusion_window_s', (calibration.fusionMs / 1000).toFixed(3));
       form.append('min_amplitude', calibration.noiseGateSensitivity.toFixed(2));
       form.append('creativity', (calibration.creativity / 100).toFixed(2));
@@ -262,7 +289,7 @@ export default function App() {
         if (response.status === 413) {
           throw new Error(
             `Payload Too Large (HTTP 413): ${
-              errorDetail || 'Arquivo excede o limite de 100 MB do servidor. Por favor, selecione um arquivo menor.'
+              errorDetail || 'Arquivo excede o limite de 50 MB do servidor. Por favor, selecione um arquivo menor.'
             }`
           );
         }
@@ -292,6 +319,7 @@ export default function App() {
     setSubmitError(null);
     player.stop();
     setActiveTaskId(`demo-${Date.now()}`);
+    setActiveStep(3); // Auto-navigate to 3D Player!
   }, [player]);
 
   const handleAbort = useCallback((): void => {
@@ -302,19 +330,21 @@ export default function App() {
 
   const handleTelemetryCompleted = useCallback((taskId: string): void => {
     setCompletedTaskId(taskId);
+    setActiveStep(3); // Auto-advance to 3D Highway upon completion!
   }, []);
 
   const isBusy = submitting || (activeTaskId !== null && activeTaskId !== completedTaskId);
+  const hasAudio = Boolean(audioFile);
+  const hasChart = chart.notes.length > 0;
 
   return (
     <RackChassis
       brand="MUSIC2CHART"
-      model="M2C-01 // DUAL-CHASSIS STUDIO WORKSTATION"
-      serial="SN 2026-1016 / FW 1.0.0"
+      model="STUDIO WORKSTATION"
       onOpenSupport={() => setIsSupportOpen(true)}
       headerRight={
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Top Chassis View Selector */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* View Selector: Workstation vs About */}
           <div className="flex items-center gap-1.5" role="navigation" aria-label="Chassis Mode Navigation">
             <PushButton
               size="sm"
@@ -327,8 +357,8 @@ export default function App() {
             />
             <PushButton
               size="sm"
-              label="Technical Manual"
-              sublabel="About / Spec"
+              label="Documentation"
+              sublabel="Technical Spec"
               led="blue"
               ledOn={activeView === 'about'}
               latched={activeView === 'about'}
@@ -343,14 +373,14 @@ export default function App() {
             on
             blink={player.isPlaying ? 'fast' : false}
             size="xs"
-            label={player.isPlaying ? 'TRANSPORT PLAY' : 'SYNC LOCKED'}
+            label={player.isPlaying ? 'PLAYING' : 'SYNC 192 PPQ'}
           />
           <LedIndicator
             color={isBusy ? 'orange' : 'green'}
             on
             blink={isBusy ? 'fast' : false}
             size="xs"
-            label={isBusy ? 'DSP BUSY' : 'READY'}
+            label={isBusy ? 'DSP ACTIVE' : 'SYSTEM READY'}
           />
         </div>
       }
@@ -358,173 +388,271 @@ export default function App() {
       {activeView === 'about' ? (
         <AboutPage onReturnToWorkstation={() => setActiveView('workstation')} />
       ) : (
-        /* Dual-Chassis Studio Workstation Grid: Left Control Rack (5 cols) | Right 3D Highway & Audit Deck (7 cols) */
-        <div className="grid grid-cols-1 items-stretch gap-3.5 xl:grid-cols-12">
-          {/* ================================================================ */}
-          {/* LEFT COLUMN: HARDWARE CONTROL RACK (UPLOAD, PRESETS, CALIB, SSE) */}
-          {/* ================================================================ */}
-          <div className="flex h-full flex-col gap-3 xl:col-span-5">
-            {/* M-01: Audio Dropzone & Metadata Inputs */}
-            <ModulePanel
-              code="M-01"
-              title="Master Ingestion & Track Metadata"
-              headerRight={
-                <LedIndicator
-                  color={audioFile ? 'green' : 'yellow'}
-                  on
-                  size="xs"
-                  label={audioFile ? 'SOURCE IN' : 'STANDBY'}
-                />
-              }
-              footer="FORMATS: MP3 / WAV / FLAC / OGG (MAX 100MB) -> DEMUCS v4 + BASIC PITCH"
+        <div className="flex flex-col gap-3.5 pb-20">
+          {/* 4-Step Guided Linear Workflow Navigation */}
+          <WorkflowStepper
+            currentStep={activeStep}
+            onStepChange={setActiveStep}
+            hasAudio={hasAudio}
+            hasChart={hasChart}
+            isProcessing={isBusy}
+          />
+
+          {/* Active Error Notice */}
+          {submitError ? (
+            <div
+              role="alert"
+              className="border border-fret-red bg-[#1B0F13] px-4 py-2.5 font-mono text-xs uppercase tracking-silk text-fret-red"
             >
-              <div className="flex flex-col gap-4">
-                <AudioDropzone
-                  file={audioFile}
-                  onFileSelect={handleFileSelect}
-                  disabled={isBusy}
-                />
-                <div className="border-t border-hw-border pt-3.5">
-                  <MetadataInputs
-                    value={metadata}
-                    onChange={handleMetadataChange}
+              PIPELINE ERROR // {submitError}
+            </div>
+          ) : null}
+
+          {/* ========================================================================= */}
+          {/* STEP 1: INGESTION & MASTER AUDIO METADATA                                  */}
+          {/* ========================================================================= */}
+          {activeStep === 1 && (
+            <div className="flex flex-col gap-3.5">
+              <ModulePanel
+                code="M-01"
+                title="Master Ingestion & Track Metadata"
+                headerRight={
+                  <LedIndicator
+                    color={hasAudio ? 'green' : 'yellow'}
+                    on
+                    size="xs"
+                    label={hasAudio ? 'AUDIO MOUNTED' : 'AWAITING MASTER'}
+                  />
+                }
+                footer="ACCEPTED CONTAINERS: .MP3 / .WAV / .FLAC / .OGG (MAX 50 MB)"
+              >
+                <div className="flex flex-col gap-4">
+                  <AudioDropzone
+                    file={audioFile}
+                    onFileSelect={handleFileSelect}
                     disabled={isBusy}
                   />
-                </div>
-              </div>
-            </ModulePanel>
 
-            {/* M-03: Expandable Calibration Bay (6 RotaryKnobs + 6 ToggleSwitches) */}
-            <CalibrationBay
-              value={calibration}
-              onChange={handleCalibrationChange}
-              defaultExpanded
-              disabled={isBusy}
-            />
+                  <div className="border-t border-hw-border pt-4">
+                    <MetadataInputs
+                      value={metadata}
+                      onChange={handleMetadataChange}
+                      disabled={isBusy}
+                    />
+                  </div>
 
-            {/* M-04: Real-time SSE Pipeline Telemetry */}
-            <PipelineTelemetry
-              taskId={activeTaskId}
-              submitting={submitting}
-              canGenerate={Boolean(audioFile)}
-              onGenerate={() => {
-                void handleGenerate();
-              }}
-              onRunDemo={handleRunDemo}
-              onAbort={handleAbort}
-              onCompleted={handleTelemetryCompleted}
-              className="flex-1 flex flex-col"
-            />
-
-            {submitError ? (
-              <div
-                role="alert"
-                className="border border-fret-red bg-[#1B0F13] px-3.5 py-2 font-mono text-[10px] uppercase tracking-silk text-fret-red"
-              >
-                UPLOAD / API ERROR // {submitError}
-              </div>
-            ) : null}
-          </div>
-
-          {/* ================================================================ */}
-          {/* RIGHT COLUMN: 3D THREE.JS HIGHWAY VISUALIZER, AUDIT & EXPORT     */}
-          {/* ================================================================ */}
-          <div className="flex h-full flex-col gap-3 xl:col-span-7">
-            {/* M-02: Master Preset Rotary Selector & Difficulty Tier */}
-            <ModulePanel
-              code="M-02"
-              title="Mapping Profile & Difficulty"
-              footer="ROTARY DETENT SELECTOR // AUTO-CALIBRATES M-03 PARAMETERS"
-            >
-              <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-[1fr_auto]">
-                <RotarySelector
-                  label="Mapping Preset"
-                  options={PRESET_OPTIONS}
-                  value={preset}
-                  onChange={handlePresetChange}
-                  disabled={isBusy}
-                />
-
-                <div className="flex flex-col items-center gap-2 border-t border-hw-border pt-3 md:border-l md:border-t-0 md:pl-4 md:pt-0">
-                  <span className="silk">Difficulty Tier</span>
-                  <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Track Difficulty">
-                    {DIFFICULTY_TIERS.map((d) => (
-                      <PushButton
-                        key={d.level}
-                        size="sm"
-                        label={d.label}
-                        sublabel={d.tag}
-                        led="green"
-                        ledOn={metadata.difficulty === d.level}
-                        latched={metadata.difficulty === d.level}
-                        disabled={isBusy}
-                        role="radio"
-                        aria-checked={metadata.difficulty === d.level}
-                        onClick={() => setMetadata((prev) => ({ ...prev, difficulty: d.level }))}
-                      />
-                    ))}
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hw-border pt-3">
+                    <span className="silk-wide text-[9px]">
+                      {hasAudio
+                        ? 'SOURCE READY -> PROCEED TO STEP 2 OR EXECUTE GENERATE DIRECTLY'
+                        : 'SELECT AN AUDIO FILE TO UNLOCK CHART GENERATION'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveStep(2)}
+                      className="border border-hw-border bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-silk hover:bg-panel transition-colors"
+                    >
+                      PROCEED TO MAPPING &gt;
+                    </button>
                   </div>
                 </div>
-              </div>
-            </ModulePanel>
+              </ModulePanel>
+            </div>
+          )}
 
-            {/* V-01: Three.js 3D Inclined Highway & Transport (Compact 220px / Focus 320px) */}
-            <HighwayScene
-              chart={chart}
-              isPlaying={player.isPlaying}
-              currentTime={player.currentTime}
-              duration={player.duration}
-              playbackRate={player.playbackRate}
-              getCurrentTime={player.getCurrentTime}
-              onTogglePlay={player.togglePlay}
-              onStop={player.stop}
-              onChangeSpeed={player.setPlaybackRate}
-              isDemoChart={isDemoChart}
-            />
+          {/* ========================================================================= */}
+          {/* STEP 2: MAPPING PROFILE & ENGINE CALIBRATION                              */}
+          {/* ========================================================================= */}
+          {activeStep === 2 && (
+            <div className="flex flex-col gap-3.5">
+              <ModulePanel
+                code="M-02"
+                title="Mapping Profile & Difficulty Tuning"
+                headerRight={
+                  <span className="silk-wide text-[9px]">
+                    PRESET: {preset.toUpperCase()}
+                  </span>
+                }
+                footer="CALIBRATED FOR PHYSICAL GUITAR CONTROLLERS // ERGONOMIC CHORD & HOPO RULES"
+              >
+                <div className="flex flex-col gap-5">
+                  {/* Linear Tactile Preset Selection */}
+                  <PresetSelector
+                    options={PRESET_OPTIONS}
+                    value={preset}
+                    onChange={handlePresetChange}
+                    disabled={isBusy}
+                  />
 
-            {/* A-01: Navigable Waveform Bar with [Events] Sections & Scrubbing */}
-            <WaveformBar
-              peaks={player.waveformPeaks}
-              currentTime={player.currentTime}
-              duration={player.duration}
-              sections={chart.sections}
-              starPower={chart.starPower}
-              audioSourceLabel={player.audioSourceLabel}
-              onSeek={player.seek}
-            />
+                  {/* Difficulty Tier Selection */}
+                  <div className="border-t border-hw-border pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="silk">Target Difficulty Tier</span>
+                      <span className="silk-wide text-[9px]">
+                        SELECTED: {DIFFICULTY_TIERS.find((d) => d.level === metadata.difficulty)?.label.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Difficulty Tiers">
+                      {DIFFICULTY_TIERS.map((d) => (
+                        <PushButton
+                          key={d.level}
+                          size="md"
+                          label={d.label}
+                          sublabel={d.tag}
+                          led="green"
+                          ledOn={metadata.difficulty === d.level}
+                          latched={metadata.difficulty === d.level}
+                          disabled={isBusy}
+                          role="radio"
+                          aria-checked={metadata.difficulty === d.level}
+                          onClick={() => setMetadata((prev) => ({ ...prev, difficulty: d.level }))}
+                          className="w-full"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </ModulePanel>
 
-            {/* A-02 & A-04: Instantaneous BPM / Meter Display & Chart Audit Counters */}
-            <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-12">
-              <TempoDisplay
-                chart={chart}
-                currentTime={player.currentTime}
-                isPlaying={player.isPlaying}
-                className="h-full lg:col-span-5"
+              {/* M-03: Advanced Calibration Bay */}
+              <CalibrationBay
+                value={calibration}
+                onChange={handleCalibrationChange}
+                defaultExpanded={false}
+                disabled={isBusy}
               />
-              <StatsCard
-                stats={chart.stats}
-                className="h-full lg:col-span-7"
+
+              {/* Live Pipeline Telemetry if task is running or available */}
+              {(isBusy || activeTaskId) && (
+                <PipelineTelemetry
+                  taskId={activeTaskId}
+                  submitting={submitting}
+                  canGenerate={hasAudio}
+                  onGenerate={() => {
+                    void handleGenerate();
+                  }}
+                  onRunDemo={handleRunDemo}
+                  onAbort={handleAbort}
+                  onCompleted={handleTelemetryCompleted}
+                />
+              )}
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* STEP 3: 3D THREE.JS HIGHWAY VISUALIZER & SYNCHRONIZED PLAYER               */}
+          {/* ========================================================================= */}
+          {activeStep === 3 && (
+            <div className="flex flex-col gap-3.5">
+              <HighwayScene
+                chart={chart}
+                isPlaying={player.isPlaying}
+                currentTime={player.currentTime}
+                duration={player.duration}
+                playbackRate={player.playbackRate}
+                getCurrentTime={player.getCurrentTime}
+                onTogglePlay={player.togglePlay}
+                onStop={player.stop}
+                onChangeSpeed={player.setPlaybackRate}
+                isDemoChart={isDemoChart}
+              />
+
+              <WaveformBar
+                peaks={player.waveformPeaks}
+                currentTime={player.currentTime}
+                duration={player.duration}
+                sections={chart.sections}
+                starPower={chart.starPower}
+                audioSourceLabel={player.audioSourceLabel}
+                onSeek={player.seek}
+              />
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border border-hw-border bg-panel p-3">
+                <div className="flex items-center gap-3">
+                  <LedIndicator
+                    color={hasChart ? 'green' : 'yellow'}
+                    on
+                    size="xs"
+                    label={hasChart ? 'CHART LOADED' : 'WAITING FOR DATA'}
+                  />
+                  <span className="silk-wide text-[9px]">
+                    {hasChart
+                      ? `${chart.notes.length} NOTES // ${chart.starPower.length} STAR POWER PHRASES`
+                      : 'NO CHART GENERATED YET'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(4)}
+                  className="border border-hw-border bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-silk hover:bg-panel transition-colors"
+                >
+                  PROCEED TO EXPORT &amp; AUDIT &gt;
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* STEP 4: MASTER EXPORT, AUDIT METRICS & CRT TELEMETRY LOG                   */}
+          {/* ========================================================================= */}
+          {activeStep === 4 && (
+            <div className="flex flex-col gap-3.5">
+              <ExportPanel
+                completedTaskId={completedTaskId}
+                rawChartText={chart.rawText}
+                songName={metadata.songName || chart.songName}
+                artist={metadata.artist || chart.artist}
+              />
+
+              <div className="grid grid-cols-1 items-stretch gap-3.5 lg:grid-cols-12">
+                <TempoDisplay
+                  chart={chart}
+                  currentTime={player.currentTime}
+                  isPlaying={player.isPlaying}
+                  className="h-full lg:col-span-5"
+                />
+                <StatsCard
+                  stats={chart.stats}
+                  className="h-full lg:col-span-7"
+                />
+              </div>
+
+              <NpsGraph
+                buckets={chart.npsBuckets}
+                peakNps={chart.stats.peakNps}
+                avgNps={chart.stats.avgNps}
+                currentTime={player.currentTime}
+                duration={player.duration}
+                onSeek={player.seek}
+              />
+
+              <PipelineTelemetry
+                taskId={activeTaskId}
+                submitting={submitting}
+                canGenerate={hasAudio}
+                onGenerate={() => {
+                  void handleGenerate();
+                }}
+                onRunDemo={handleRunDemo}
+                onAbort={handleAbort}
+                onCompleted={handleTelemetryCompleted}
               />
             </div>
+          )}
 
-            {/* A-03: Notes-Per-Second (NPS) Timeline Density Graph */}
-            <NpsGraph
-              buckets={chart.npsBuckets}
-              peakNps={chart.stats.peakNps}
-              avgNps={chart.stats.avgNps}
-              currentTime={player.currentTime}
-              duration={player.duration}
-              onSeek={player.seek}
-            />
-
-            {/* E-01: Master Export Panel (.sng, .chart, .zip) */}
-            <ExportPanel
-              completedTaskId={completedTaskId}
-              rawChartText={chart.rawText}
-              songName={metadata.songName || chart.songName}
-              artist={metadata.artist || chart.artist}
-            />
-          </div>
+          {/* Permanent High-Contrast Master Floating Action Dock */}
+          <FloatingActionDock
+            currentStep={activeStep}
+            onStepChange={setActiveStep}
+            canGenerate={hasAudio}
+            isProcessing={isBusy}
+            submitting={submitting}
+            onGenerate={() => {
+              void handleGenerate();
+            }}
+            onAbort={handleAbort}
+            onRunDemo={handleRunDemo}
+          />
         </div>
       )}
 

@@ -5,7 +5,7 @@ import { playMechanicalClick } from '../../lib/mechanicalClick';
 import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
 
-const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB (104,857,600 bytes)
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
 const ALLOWED_EXTENSIONS = ['.mp3', '.wav', '.flac', '.ogg'] as const;
 
@@ -63,8 +63,8 @@ function deriveMetadataFromFilename(filename: string): DerivedTrackMeta {
 }
 
 /**
- * Industrial tape/media bay dropzone for raw audio ingestion (.mp3, .wav, .flac, .ogg).
- * Features sharp 1px recessed framing, status LEDs, format readout, and mechanical eject.
+ * High-visibility audio ingestion deck for Clone Hero chart creation.
+ * Features animated drag-and-drop feedback, technical SVG glyphs, and audio validation.
  */
 export function AudioDropzone({
   file,
@@ -115,7 +115,7 @@ export function AudioDropzone({
 
     if (candidate.size > MAX_FILE_SIZE_BYTES) {
       setErrorMsg(
-        `FILE SIZE (${formatByteSize(candidate.size)}) EXCEEDS 100 MB LIMIT — MAXIMUM ALLOWED IS 100 MB`
+        `FILE SIZE (${formatByteSize(candidate.size)}) EXCEEDS 50 MB LIMIT — MAXIMUM ALLOWED IS 50 MB`
       );
       if (inputRef.current) inputRef.current.value = '';
       onFileSelect(null);
@@ -172,17 +172,17 @@ export function AudioDropzone({
   return (
     <div className={cn('flex flex-col gap-2.5', className)}>
       <div className="flex items-center justify-between">
-        <span className="silk">Audio Input Deck</span>
+        <span className="silk">Master Audio Ingestion Deck</span>
         <div className="flex items-center gap-3">
           <span className="silk-wide tabular-nums text-[9px]">
-            {file ? `${extBadge} / ${formatByteSize(file.size)}` : 'BAY EMPTY'}
+            {file ? `${extBadge} / ${formatByteSize(file.size)}` : 'BAY EMPTY / READY'}
           </span>
           <LedIndicator
-            color={errorMsg ? 'red' : file ? 'green' : 'yellow'}
+            color={errorMsg ? 'red' : file ? 'green' : dragActive ? 'green' : 'yellow'}
             on={Boolean(errorMsg || file || dragActive)}
-            blink={errorMsg ? 'fast' : dragActive ? 'slow' : false}
+            blink={errorMsg ? 'fast' : dragActive ? 'fast' : false}
             size="xs"
-            label={errorMsg ? 'ERR' : file ? 'LOCKED' : 'STBY'}
+            label={errorMsg ? 'FAULT' : file ? 'MOUNTED' : dragActive ? 'DROP READY' : 'STANDBY'}
           />
         </div>
       </div>
@@ -203,15 +203,14 @@ export function AudioDropzone({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          'no-select relative flex flex-col gap-2.5 border bg-chassis p-3 shadow-recess transition-colors',
-          dragActive
-            ? 'border-fret-green bg-[#111916]'
-            : errorMsg
-              ? 'border-fret-red bg-[#1A1014]'
-              : file
-                ? 'border-hw-screw bg-chassis'
-                : 'border-hw-border hover:border-hw-screw',
-          disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+          'no-select relative flex flex-col justify-between overflow-hidden p-5 transition-all duration-200',
+          file
+            ? 'border border-hw-border bg-chassis shadow-recess'
+            : dragActive
+              ? 'border-2 border-dashed border-fret-green bg-[#0D1C15] shadow-[0_0_25px_rgba(0,230,118,0.25)] ring-1 ring-fret-green'
+              : 'border-2 border-dashed border-hw-screw/90 bg-chassis/80 hover:border-fret-green/70 hover:bg-chassis hover:shadow-[0_0_15px_rgba(0,230,118,0.1)]',
+          errorMsg && 'border-fret-red bg-[#1A1014] ring-1 ring-fret-red',
+          disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
         )}
       >
         <input
@@ -224,30 +223,50 @@ export function AudioDropzone({
           tabIndex={-1}
         />
 
-        {/* Top mechanical bay slot graphic */}
-        <div className="flex items-center justify-between border-b border-hw-border pb-2">
+        {/* Top Status Header */}
+        <div className="flex items-center justify-between border-b border-hw-border/80 pb-2.5">
           <div className="flex items-center gap-2">
-            <span className="inline-block h-2 w-2 border border-hw-screw bg-panel" aria-hidden="true" />
+            <span
+              className={cn(
+                'inline-block h-2 w-2 border',
+                file ? 'border-fret-green bg-fret-green' : dragActive ? 'animate-ping border-fret-green bg-fret-green' : 'border-hw-screw bg-panel'
+              )}
+              aria-hidden="true"
+            />
             <span className="silk-wide text-[9px]">
-              {dragActive ? 'DROP STREAM TO LOCK BAY' : file ? 'SOURCE STREAM MOUNTED' : 'INSERT MASTER AUDIO'}
+              {dragActive
+                ? 'RELEASE TO LOCK AUDIO STREAM'
+                : file
+                  ? 'SOURCE AUDIO MASTER MOUNTED'
+                  : 'DROPZONE ACTIVE // CH 1-2 STEREO'}
             </span>
           </div>
-          <span className="border border-hw-border bg-panel px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-silk text-silk-neutral">
-            {extBadge}
+          <span className="border border-hw-border bg-panel px-2 py-0.5 font-mono text-[9px] uppercase tracking-silk text-silk-neutral">
+            {file ? extBadge : 'MAX 50 MB'}
           </span>
         </div>
 
-        {/* Center readout */}
+        {/* Center Target Content */}
         {file ? (
-          <div className="flex items-center justify-between gap-3 py-1">
-            <div className="min-w-0 flex-1">
-              <div className="truncate font-mono text-xs font-semibold tracking-silk text-silk" title={file.name}>
-                {file.name}
+          <div className="flex items-center justify-between gap-4 py-4">
+            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-fret-green/40 bg-[#0F1E17] text-fret-green">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
               </div>
-              <div className="mt-1 flex items-center gap-3 font-mono text-[10px] uppercase tracking-silk text-silk-dim">
-                <span>SIZE: {formatByteSize(file.size)}</span>
-                <span>|</span>
-                <span>CODEC: {extBadge} PCM/STREAM</span>
+
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-mono text-sm font-semibold tracking-silk text-silk" title={file.name}>
+                  {file.name}
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-silk text-silk-dim">
+                  <span>SIZE: {formatByteSize(file.size)}</span>
+                  <span>|</span>
+                  <span>CONTAINER: {extBadge} PCM</span>
+                  <span>|</span>
+                  <span className="text-fret-green">READY FOR MAPPING</span>
+                </div>
               </div>
             </div>
 
@@ -271,21 +290,57 @@ export function AudioDropzone({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-1 py-2 text-center">
-            <div className="font-mono text-[11px] font-medium uppercase tracking-silk-wide text-silk">
-              DRAG &amp; DROP AUDIO MASTER OR CLICK TO LOAD
+          <div className="flex flex-col items-center justify-center gap-3 py-6 text-center">
+            {/* Technical Audio Waveform / Upload Glyph */}
+            <div
+              className={cn(
+                'flex h-12 w-12 items-center justify-center border transition-transform duration-200',
+                dragActive
+                  ? 'scale-110 border-fret-green bg-[#11241C] text-fret-green'
+                  : 'border-hw-border bg-panel text-silk-neutral group-hover:border-silk'
+              )}
+            >
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V3m0 0L7.5 7.5M12 3l4.5 4.5M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5" />
+              </svg>
             </div>
-            <div className="silk-wide text-[9px]">
-              ACCEPTED CONTAINERS: .MP3 / .WAV / .FLAC / .OGG (MAX 100 MB)
+
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={cn(
+                  'font-mono text-xs font-bold uppercase tracking-silk-wide transition-colors',
+                  dragActive ? 'text-fret-green' : 'text-silk'
+                )}
+              >
+                {dragActive ? 'DROP MASTER AUDIO HERE TO MOUNT' : 'DRAG & DROP MASTER AUDIO FILE'}
+              </div>
+              <div className="font-mono text-[10px] uppercase tracking-silk text-silk-dim">
+                OR CLICK ANYWHERE INSIDE THIS BOX TO BROWSE
+              </div>
+            </div>
+
+            {/* Allowed Formats Tag Bar */}
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5" aria-label="Supported file extensions">
+              {['.MP3', '.WAV', '.FLAC', '.OGG'].map((ext) => (
+                <span
+                  key={ext}
+                  className="border border-hw-border bg-panel px-2 py-0.5 font-mono text-[9px] uppercase tracking-silk text-silk-neutral"
+                >
+                  {ext}
+                </span>
+              ))}
+              <span className="border border-hw-border bg-chassis px-2 py-0.5 font-mono text-[9px] uppercase tracking-silk text-silk-dim">
+                MAX 50 MB
+              </span>
             </div>
           </div>
         )}
 
-        {/* Bottom signal path bar */}
-        <div className="flex items-center justify-between border-t border-hw-border pt-2 text-[9px]">
-          <span className="silk-wide">INPUT BUS: CH 1-2 STEREO</span>
+        {/* Bottom Signal Path Strip */}
+        <div className="flex items-center justify-between border-t border-hw-border/80 pt-2.5 text-[9px]">
+          <span className="silk-wide">SIGNAL CHAIN: DEMUCS v4 STEM SEPARATION -&gt; SPOTIFY BASIC PITCH</span>
           <span className="font-mono uppercase tracking-silk text-silk-neutral">
-            {file ? 'READY FOR DEMUCS STEM SPLIT' : 'AWAITING SIGNAL'}
+            {file ? 'READY FOR STEP 2 (MAPPING CONFIG)' : 'WAITING FOR SOURCE'}
           </span>
         </div>
       </div>
@@ -293,7 +348,7 @@ export function AudioDropzone({
       {errorMsg ? (
         <div
           role="alert"
-          className="border border-fret-red bg-[#1B0F13] px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-silk text-fret-red"
+          className="border border-fret-red bg-[#1B0F13] px-3 py-2 font-mono text-[10px] uppercase tracking-silk text-fret-red"
         >
           {errorMsg}
         </div>

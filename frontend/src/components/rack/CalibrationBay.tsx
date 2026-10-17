@@ -65,7 +65,7 @@ export interface CalibrationBayProps {
 export function CalibrationBay({
   value,
   onChange,
-  defaultExpanded = true,
+  defaultExpanded = false,
   disabled = false,
   className,
 }: CalibrationBayProps) {
