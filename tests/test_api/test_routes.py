@@ -10,15 +10,17 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from src.api.app import app, create_app
-from src.api.routes import TaskStatus, task_manager
+from src.api.routes import TaskStatus, limiter, task_manager
 
 
 @pytest.fixture(autouse=True)
 def clean_tasks():
     """Ensure clean task manager state for every test."""
     task_manager.clear()
+    limiter.reset()
     yield
     task_manager.clear()
+    limiter.reset()
 
 
 @pytest.fixture
@@ -75,6 +77,50 @@ async def test_generate_chart_success(dummy_wav_bytes: bytes):
         assert record is not None
         assert record.song_name == "Test Track"
         assert record.artist == "Test Artist"
+        assert record.client_ip == "127.0.0.1"
+
+
+@pytest.mark.asyncio
+async def test_generate_chart_rejects_second_active_task_from_same_ip(dummy_wav_bytes: bytes):
+    """A client cannot queue another conversion while its first task is active."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        files = {"file": ("test_song.wav", dummy_wav_bytes, "audio/wav")}
+        with patch("src.api.routes.run_pipeline_task"):
+            first = await client.post("/api/v1/chart/generate", files=files)
+            second = await client.post("/api/v1/chart/generate", files=files)
+
+        assert first.status_code == 202
+        assert second.status_code == 429
+        assert second.json()["detail"] == (
+            "Você já possui uma conversão em processamento ou na fila. "
+            "Aguarde a conclusão antes de enviar outro arquivo."
+        )
+
+
+@pytest.mark.asyncio
+async def test_generate_chart_rate_limit_is_five_per_hour(dummy_wav_bytes: bytes):
+    """The generate endpoint enforces its configured hourly request limit."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        with patch("src.api.routes.run_pipeline_task"):
+            responses = []
+            for _ in range(5):
+                response = await client.post(
+                    "/api/v1/chart/generate",
+                    files={"file": ("test_song.wav", dummy_wav_bytes, "audio/wav")},
+                    headers={"X-Forwarded-For": "198.51.100.22"},
+                )
+                responses.append(response)
+                if response.status_code == 202:
+                    task_manager.set_completed(response.json()["task_id"], {})
+
+            sixth = await client.post(
+                "/api/v1/chart/generate",
+                files={"file": ("test_song.wav", dummy_wav_bytes, "audio/wav")},
+                headers={"X-Forwarded-For": "198.51.100.22"},
+            )
+
+    assert all(response.status_code == 202 for response in responses)
+    assert sixth.status_code == 429
 
 
 @pytest.mark.asyncio

@@ -22,10 +22,12 @@ from fastapi import (
     Form,
     HTTPException,
     Query,
+    Request,
     UploadFile,
     status,
 )
 from fastapi.responses import FileResponse, StreamingResponse
+from slowapi import Limiter
 
 from config.settings import get_settings
 from src.api.schemas import (
@@ -35,7 +37,7 @@ from src.api.schemas import (
     TaskStatus,
     TaskStatusResponse,
 )
-from src.utils.security import probe_audio_duration, validate_audio_magic_bytes
+from src.utils.security import get_client_ip, probe_audio_duration, validate_audio_magic_bytes
 
 if TYPE_CHECKING:
     from src.pipeline import Music2ChartPipeline
@@ -57,6 +59,7 @@ class TaskRecord:
     output_files: dict[str, Path] = field(default_factory=dict)
     song_name: str = ""
     artist: str = ""
+    client_ip: str = ""
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
 
@@ -68,11 +71,14 @@ class TaskManager:
         self._tasks: dict[str, TaskRecord] = {}
         self._lock = threading.Lock()
 
-    def create_task(self, task_id: str, song_name: str = "", artist: str = "") -> TaskRecord:
+    def create_task(
+        self, task_id: str, song_name: str = "", artist: str = "", client_ip: str = ""
+    ) -> TaskRecord:
         record = TaskRecord(
             task_id=task_id,
             song_name=song_name,
             artist=artist,
+            client_ip=client_ip,
             stage="Queued",
         )
         with self._lock:
@@ -137,6 +143,17 @@ class TaskManager:
         with self._lock:
             return sum(1 for task in self._tasks.values() if task.status == TaskStatus.PENDING)
 
+    def has_active_task_for_ip(self, client_ip: str, max_active: int = 1) -> bool:
+        """Return whether an IP has reached its active task limit."""
+        with self._lock:
+            active_count = sum(
+                1
+                for task in self._tasks.values()
+                if task.client_ip == client_ip
+                and task.status in (TaskStatus.PENDING, TaskStatus.PROCESSING)
+            )
+            return active_count >= max_active
+
     def cleanup_expired_tasks(self, ttl_seconds: float = 7200.0) -> list[str]:
         """Remove tasks older than ttl_seconds and delete their files from disk."""
         now = time.time()
@@ -188,6 +205,7 @@ class TaskManager:
 
 
 task_manager = TaskManager()
+limiter = Limiter(key_func=get_client_ip)
 
 _semaphore_lock = threading.Lock()
 _pipeline_semaphore: threading.Semaphore | None = None
@@ -327,7 +345,9 @@ preview_router = APIRouter(tags=["Chart Preview"])
     status_code=status.HTTP_202_ACCEPTED,
     summary="Submit an audio file for automated Clone Hero chart generation",
 )
+@limiter.limit(get_settings().RATE_LIMIT_GENERATE)
 async def generate_chart(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(..., description="Audio file (MP3, WAV, FLAC, OGG)"),
     song_name: str | None = Form(default=None, description="Optional title of the song"),
@@ -384,6 +404,37 @@ async def generate_chart(
             detail="Uploaded file must have a valid filename.",
         )
 
+    client_ip = get_client_ip(request)
+    settings = get_settings()
+    if task_manager.has_active_task_for_ip(
+        client_ip, max_active=settings.MAX_ACTIVE_TASKS_PER_IP
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                "Você já possui uma conversão em processamento ou na fila. "
+                "Aguarde a conclusão antes de enviar outro arquivo."
+            ),
+        )
+
+    content_length = request.headers.get("content-length")
+    if content_length is not None:
+        try:
+            declared_length = int(content_length)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Content-Length header.",
+            ) from exc
+        if declared_length > settings.MAX_UPLOAD_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=(
+                    "Uploaded file exceeds maximum allowed size of "
+                    f"{settings.MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)}MB."
+                ),
+            )
+
     file_ext = Path(file.filename).suffix.lower()
     if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
@@ -420,8 +471,6 @@ async def generate_chart(
     clean_genre = genre.strip() if genre and genre.strip().lower() not in ("string", "") else "rock"
     clean_min_amplitude = min(0.5, min_amplitude) if min_amplitude is not None else None
 
-    settings = get_settings()
-
     # 1. Check queue capacity before accepting upload
     active_tasks = task_manager.get_active_task_count()
     if active_tasks >= (settings.MAX_CONCURRENT_TASKS + settings.TASK_QUEUE_CAPACITY):
@@ -436,8 +485,18 @@ async def generate_chart(
     import uuid
 
     task_id = str(uuid.uuid4())
+    task_manager.create_task(
+        task_id=task_id, song_name=final_song, artist=final_artist, client_ip=client_ip
+    )
     upload_dir = settings.UPLOAD_DIR / task_id
-    upload_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        upload_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        task_manager.set_failed(task_id, str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to prepare upload storage.",
+        ) from exc
     # Secure filename decoupling: avoid storing unvalidated user filenames directly
     destination = upload_dir / f"audio_input{file_ext}"
 
@@ -479,7 +538,8 @@ async def generate_chart(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Uploaded audio file is empty.",
             )
-    except HTTPException:
+    except HTTPException as exc:
+        task_manager.set_failed(task_id, str(exc.detail))
         raise
     except Exception as exc:
         destination.unlink(missing_ok=True)
@@ -488,6 +548,7 @@ async def generate_chart(
         except OSError:
             pass
         logger.error("Failed to persist upload %s: %s", destination, exc)
+        task_manager.set_failed(task_id, str(exc))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to save uploaded file to disk.",
@@ -500,15 +561,17 @@ async def generate_chart(
             upload_dir.rmdir()
         except OSError:
             pass
+        task_manager.set_failed(task_id, "Invalid audio file signature.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"File signature does not match supported audio format '{file_ext}'.",
         )
 
     # 3. Pre-flight lightweight duration probe
+    max_duration_seconds = min(settings.MAX_AUDIO_DURATION_SECONDS, 900.0)
     try:
         duration = probe_audio_duration(destination)
-        if duration > settings.MAX_AUDIO_DURATION_SECONDS:
+        if duration > max_duration_seconds:
             destination.unlink(missing_ok=True)
             try:
                 upload_dir.rmdir()
@@ -518,10 +581,11 @@ async def generate_chart(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
                     f"Audio duration ({duration:.1f}s) exceeds maximum allowed limit "
-                    f"of {settings.MAX_AUDIO_DURATION_SECONDS:.0f}s (15 minutes)."
+                    f"of {max_duration_seconds:.0f}s (15 minutes)."
                 ),
             )
-    except HTTPException:
+    except HTTPException as exc:
+        task_manager.set_failed(task_id, str(exc.detail))
         raise
     except Exception as exc:
         destination.unlink(missing_ok=True)
@@ -530,13 +594,13 @@ async def generate_chart(
         except OSError:
             pass
         logger.warning("Audio duration probe failed for %s: %s", destination, exc)
+        task_manager.set_failed(task_id, str(exc))
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Uploaded audio file could not be decoded or is corrupted.",
         ) from exc
 
     # Register task and queue background processing
-    task_manager.create_task(task_id=task_id, song_name=final_song, artist=final_artist)
     background_tasks.add_task(
         run_pipeline_task,
         task_id=task_id,

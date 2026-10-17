@@ -50,7 +50,8 @@ class Settings(BaseSettings):
     DEVICE: str = Field(default_factory=_get_default_device)
 
     # Security, concurrency, and retention configuration
-    MAX_UPLOAD_SIZE_BYTES: int = 100 * 1024 * 1024  # 100 MB
+    MAX_UPLOAD_SIZE_BYTES: int = 50 * 1024 * 1024  # 50 MB
+    MAX_ACTIVE_TASKS_PER_IP: int = 1
     MAX_AUDIO_DURATION_SECONDS: float = 900.0  # 15 minutes
     MAX_CONCURRENT_TASKS: int = 1  # Maximum concurrent heavy pipeline tasks
     TASK_QUEUE_CAPACITY: int = 10  # Queue capacity before HTTP 429
@@ -66,7 +67,7 @@ class Settings(BaseSettings):
             "https://adiels.me",
         ]
     )
-    RATE_LIMIT_GENERATE: str = "10/minute"
+    RATE_LIMIT_GENERATE: str = "5/hour"
     ENABLE_AUTO_STEM_CLEANUP: bool = True  # Clean intermediate stems after packaging
 
     @field_validator("ALLOWED_ORIGINS", mode="before")

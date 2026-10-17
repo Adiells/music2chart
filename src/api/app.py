@@ -13,9 +13,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi.errors import RateLimitExceeded
+from slowapi.extension import _rate_limit_exceeded_handler
 
 from config.settings import get_settings
-from src.api.routes import preview_router, task_manager
+from src.api.routes import limiter, preview_router, task_manager
 from src.api.routes import router as chart_router
 from src.api.schemas import HealthResponse
 
@@ -78,6 +80,8 @@ def create_app(frontend_dist: Path | str | None = None) -> FastAPI:
         redoc_url="/redoc",
         lifespan=lifespan,
     )
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     # -----------------------------------------------------------------------
     # CORS Middleware

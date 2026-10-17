@@ -6,12 +6,28 @@ import logging
 import re
 from pathlib import Path
 
+from fastapi import Request
+
 logger = logging.getLogger(__name__)
 
 # Regular expressions for sanitization
 CONTROL_CHAR_RE = re.compile(r"[\x00-\x1f\x7f-\x9f]")
 NEWLINE_RE = re.compile(r"[\r\n]+")
 INI_ILLEGAL_KEY_CHARS_RE = re.compile(r"[\r\n=:\[\]\x00-\x1f\x7f-\x9f]")
+
+
+def get_client_ip(request: Request) -> str:
+    """Return the client address from supported proxy headers or the ASGI peer."""
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        return forwarded_for.split(",", 1)[0].strip()
+
+    for header_name in ("cf-connecting-ip", "x-real-ip"):
+        address = request.headers.get(header_name)
+        if address:
+            return address.strip()
+
+    return request.client.host if request.client is not None else "unknown"
 
 
 def is_mp3_sync(header: bytes) -> bool:
