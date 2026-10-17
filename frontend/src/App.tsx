@@ -30,6 +30,7 @@ import type {
 import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { useChartParser } from './hooks/useChartParser';
 import { getApiUrl } from './lib/api';
+import { cn } from './lib/utils';
 
 type PresetId = 'standard' | 'strict_rhythm' | 'dynamic_solo' | 'melodic' | 'chord_heavy';
 type ActiveView = 'workstation' | 'about';
@@ -544,6 +545,86 @@ export default function App() {
           {/* ========================================================================= */}
           {activeStep === 3 && (
             <div className="flex flex-col gap-3.5">
+              {/* Notice when chart has not been generated yet */}
+              {!completedTaskId && (
+                <div
+                  role="alert"
+                  className={cn(
+                    'border p-3.5 shadow-lift transition-colors',
+                    isBusy
+                      ? 'border-fret-orange bg-[#181612]'
+                      : hasAudio
+                        ? 'border-fret-orange/90 bg-[#17130E]'
+                        : 'border-hw-border bg-panel'
+                  )}
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <LedIndicator
+                        color={isBusy ? 'orange' : hasAudio ? 'orange' : 'yellow'}
+                        on
+                        blink={isBusy ? 'fast' : false}
+                        size="sm"
+                      />
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold uppercase tracking-silk text-fret-orange">
+                            {isBusy
+                              ? 'PIPELINE EM PROCESSAMENTO // GERANDO PISTA 3D'
+                              : 'AVISO // REQUER CLICAR EM "GENERATE CHART"'}
+                          </span>
+                          <span className="border border-hw-border bg-chassis px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-silk text-silk-dim">
+                            {isBusy ? 'AGUARDE' : 'ACAO NECESSARIA'}
+                          </span>
+                        </div>
+                        <p className="font-mono text-[11px] leading-relaxed text-silk-neutral">
+                          {isBusy ? (
+                            'O audio esta sendo processado pela IA. A visualizacao 3D das suas notas sera carregada automaticamente assim que a conversao for finalizada.'
+                          ) : hasAudio ? (
+                            'Voce carregou o arquivo de audio, mas as notas ainda nao foram processadas. Para gerar e ver as notas na pista 3D, e necessario clicar no botao "GENERATE CHART".'
+                          ) : (
+                            'Para ver a visualizacao 3D da sua musica, va ao Passo 01, carregue o arquivo de audio e clique no botao "GENERATE CHART" (ou use o botao "Carregar Demo" para ver um exemplo).'
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 flex-wrap items-center gap-2 pt-1 sm:pt-0">
+                      {!isBusy && hasAudio && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleGenerate();
+                          }}
+                          className="flex items-center gap-2 border border-fret-green bg-fret-green px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-silk text-black shadow-[0_0_15px_rgba(0,230,118,0.3)] hover:bg-[#00c864] transition-colors"
+                        >
+                          <span className="inline-block h-2 w-2 border border-black bg-black animate-ping" />
+                          <span>GENERATE CHART AGORA</span>
+                        </button>
+                      )}
+                      {!hasAudio && !isBusy && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setActiveStep(1)}
+                            className="border border-hw-border bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-silk hover:bg-panel transition-colors"
+                          >
+                            &lt; IR PARA PASSO 01
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRunDemo}
+                            className="border border-fret-blue/60 bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-fret-blue hover:text-silk transition-colors"
+                          >
+                            CARREGAR DEMO
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <HighwayScene
                 chart={chart}
                 isPlaying={player.isPlaying}
@@ -576,9 +657,9 @@ export default function App() {
                     label={hasChart ? 'CHART LOADED' : 'WAITING FOR DATA'}
                   />
                   <span className="silk-wide text-[9px]">
-                    {hasChart
+                    {completedTaskId
                       ? `${chart.notes.length} NOTES // ${chart.starPower.length} STAR POWER PHRASES`
-                      : 'NO CHART GENERATED YET'}
+                      : 'EXIBINDO DEMO DE REFERENCIA // EXECUTE "GENERATE CHART" PARA SEU PROPRIO AUDIO'}
                   </span>
                 </div>
                 <button

@@ -333,6 +333,14 @@ export function HighwayScene({
           <span className="text-silk-dim">TICK</span>
           <span>{String(tempoSnap.tick).padStart(6, '0')}</span>
         </div>
+
+        {isDemoChart ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-2.5 flex justify-center px-4">
+            <div className="border border-fret-orange/80 bg-[#120F0A]/95 px-3 py-1 font-mono text-[9px] font-semibold uppercase tracking-silk text-fret-orange shadow-lg backdrop-blur-sm">
+              MODO DEMO // CLIQUE EM "GENERATE CHART" PARA PROCESSAR E VER A VISUALIZACAO DO SEU AUDIO
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Lower Transport & Speed Deck */}
