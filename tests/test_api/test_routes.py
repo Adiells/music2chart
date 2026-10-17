@@ -98,12 +98,12 @@ async def test_generate_chart_rejects_second_active_task_from_same_ip(dummy_wav_
 
 
 @pytest.mark.asyncio
-async def test_generate_chart_rate_limit_is_five_per_hour(dummy_wav_bytes: bytes):
+async def test_generate_chart_rate_limit_is_twenty_per_hour(dummy_wav_bytes: bytes):
     """The generate endpoint enforces its configured hourly request limit."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         with patch("src.api.routes.run_pipeline_task"):
             responses = []
-            for _ in range(5):
+            for _ in range(20):
                 response = await client.post(
                     "/api/v1/chart/generate",
                     files={"file": ("test_song.wav", dummy_wav_bytes, "audio/wav")},
@@ -113,14 +113,14 @@ async def test_generate_chart_rate_limit_is_five_per_hour(dummy_wav_bytes: bytes
                 if response.status_code == 202:
                     task_manager.set_completed(response.json()["task_id"], {})
 
-            sixth = await client.post(
+            twenty_first = await client.post(
                 "/api/v1/chart/generate",
                 files={"file": ("test_song.wav", dummy_wav_bytes, "audio/wav")},
                 headers={"X-Forwarded-For": "198.51.100.22"},
             )
 
     assert all(response.status_code == 202 for response in responses)
-    assert sixth.status_code == 429
+    assert twenty_first.status_code == 429
 
 
 @pytest.mark.asyncio

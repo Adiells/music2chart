@@ -67,7 +67,7 @@ class Settings(BaseSettings):
             "https://adiels.me",
         ]
     )
-    RATE_LIMIT_GENERATE: str = "5/hour"
+    RATE_LIMIT_GENERATE: str = "20/hour"
     ENABLE_AUTO_STEM_CLEANUP: bool = True  # Clean intermediate stems after packaging
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
