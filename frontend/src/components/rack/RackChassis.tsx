@@ -65,8 +65,19 @@ export function RackChassis({
               </span>
               <span className="silk hidden sm:inline text-silk-neutral">{model}</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3">
               {headerRight}
+              {onOpenSupport ? (
+                <button
+                  type="button"
+                  onClick={onOpenSupport}
+                  className="flex items-center gap-1.5 border border-fret-yellow/70 bg-[#1A1810] px-2 py-1 font-mono text-[9px] font-semibold uppercase tracking-silk text-fret-yellow hover:border-fret-yellow hover:bg-[#252214] transition-colors"
+                  title="Support Project / Server Compute Sponsor"
+                >
+                  <LedIndicator color="orange" on size="xs" blink="slow" />
+                  <span>INFRA / SPONSOR</span>
+                </button>
+              ) : null}
               <a
                 href="https://github.com/Adiells/music2chart"
                 target="_blank"
@@ -98,16 +109,6 @@ export function RackChassis({
                   <span className="hidden sm:inline">192 PPQ SYNC</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  {onOpenSupport ? (
-                    <button
-                      type="button"
-                      onClick={onOpenSupport}
-                      className="flex items-center gap-1.5 border border-hw-border bg-module px-2 py-0.5 font-mono text-[9px] font-semibold tracking-silk text-fret-yellow hover:border-fret-yellow hover:bg-panel transition-colors"
-                    >
-                      <LedIndicator color="orange" on size="xs" blink="slow" />
-                      <span>SERVER COMPUTE / SPONSOR</span>
-                    </button>
-                  ) : null}
                   <LedIndicator color="green" on size="xs" label="READY" />
                 </div>
               </div>

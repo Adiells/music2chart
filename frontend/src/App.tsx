@@ -389,7 +389,7 @@ export default function App() {
       {activeView === 'about' ? (
         <AboutPage onReturnToWorkstation={() => setActiveView('workstation')} />
       ) : (
-        <div className="flex flex-col gap-3.5 pb-20">
+        <div className="flex flex-col gap-3.5 pb-28 sm:pb-32">
           {/* 4-Step Guided Linear Workflow Navigation */}
           <WorkflowStepper
             currentStep={activeStep}

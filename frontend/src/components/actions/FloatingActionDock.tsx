@@ -62,7 +62,7 @@ export function FloatingActionDock({
     <aside
       aria-label="Master Action Dock"
       className={cn(
-        'fixed bottom-3 right-3 z-40 flex max-w-[calc(100vw-1.5rem)] flex-wrap items-center gap-2 border border-hw-border bg-[#0B0C0F]/95 p-2 shadow-2xl backdrop-blur-md sm:bottom-5 sm:right-5 sm:gap-3 sm:p-2.5',
+        'fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex max-w-[calc(100vw-1.5rem)] flex-wrap items-center justify-center gap-2 border border-hw-border bg-[#0B0C0F]/95 p-2 shadow-2xl backdrop-blur-md sm:bottom-4 sm:gap-3 sm:p-2.5',
         className
       )}
     >
