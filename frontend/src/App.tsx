@@ -32,12 +32,18 @@ import { useChartParser } from './hooks/useChartParser';
 import { getApiUrl } from './lib/api';
 import { cn } from './lib/utils';
 
-type PresetId = 'standard' | 'strict_rhythm' | 'dynamic_solo' | 'melodic' | 'chord_heavy';
+type PresetId = 'the_best' | 'standard' | 'strict_rhythm' | 'dynamic_solo' | 'melodic' | 'chord_heavy';
 type ActiveView = 'workstation' | 'about';
 
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024;
 
 const PRESET_OPTIONS: readonly PresetItem<PresetId>[] = [
+  {
+    value: 'the_best',
+    label: 'The Best',
+    description: 'Developer suggested preset: tuned strict rhythm with 0.41 noise gate and 0.65 BPM scale.',
+    tag: 'DEV PICK',
+  },
   {
     value: 'standard',
     label: 'Standard',
@@ -71,6 +77,20 @@ const PRESET_OPTIONS: readonly PresetItem<PresetId>[] = [
 ];
 
 const PRESET_CALIBRATION_MAP: Record<PresetId, CalibrationState> = {
+  the_best: {
+    fusionMs: 40,
+    noiseGateSensitivity: 0.41,
+    creativity: 15,
+    hopoThreshold: 64,
+    minSustainTicks: 120,
+    bpmScale: 0.65,
+    disableOpenNotes: true,
+    collapseFastRuns: true,
+    consistentPatterns: true,
+    autoCalibrateBpm: true,
+    mergeSustainedNotes: true,
+    allowTriads: false,
+  },
   standard: {
     fusionMs: 35,
     noiseGateSensitivity: 0.1,
@@ -172,8 +192,8 @@ export default function App() {
     maxFrets: 2,
     outputFormat: 'both',
   });
-  const [preset, setPreset] = useState<PresetId>('standard');
-  const [calibration, setCalibration] = useState<CalibrationState>(PRESET_CALIBRATION_MAP.standard);
+  const [preset, setPreset] = useState<PresetId>('the_best');
+  const [calibration, setCalibration] = useState<CalibrationState>(PRESET_CALIBRATION_MAP.the_best);
 
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [completedTaskId, setCompletedTaskId] = useState<string | null>(null);
@@ -252,7 +272,9 @@ export default function App() {
       form.append('genre', metadata.genre);
 
       const backendPreset =
-        preset === 'strict_rhythm' || preset === 'dynamic_solo' ? preset : 'standard';
+        preset === 'the_best' || preset === 'strict_rhythm' || preset === 'dynamic_solo'
+          ? preset
+          : 'standard';
       form.append('preset', backendPreset);
 
       form.append('chord_fusion_window_s', (calibration.fusionMs / 1000).toFixed(3));

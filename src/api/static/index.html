@@ -711,32 +711,40 @@
         <!-- Presets de Mapeamento -->
         <div class="section-title">2. Perfil de Jogabilidade (Presets)</div>
         <div class="preset-grid">
-          <div class="preset-card active" data-preset="standard" id="preset-standard">
+          <div class="preset-card active" data-preset="the_best" id="preset-the-best">
             <div class="preset-card-header">
-              <span>🎸</span> Padrão (Balanceado)
+              The Best (Sugestao Dev)
             </div>
             <div class="preset-card-desc">
-              Power chords ergonômicos, HOPOs naturais (65 ticks) e retenção clássica de Guitar Hero.
+              Sugestao do desenvolvedor: ritmo rigido afinado com noise gate em 0.41 e escala BPM em 0.65.
+            </div>
+          </div>
+          <div class="preset-card" data-preset="standard" id="preset-standard">
+            <div class="preset-card-header">
+              Padrao (Balanceado)
+            </div>
+            <div class="preset-card-desc">
+              Power chords ergonomicos, HOPOs naturais (65 ticks) e retencao classica de Guitar Hero.
             </div>
           </div>
           <div class="preset-card" data-preset="strict_rhythm" id="preset-strict">
             <div class="preset-card-header">
-              <span>🥁</span> Ritmo Rígido
+              Ritmo Rigido
             </div>
             <div class="preset-card-desc">
-              Padrões repetitivos e consistentes em riffs, HOPOs curtos (48 ticks) e foco em base rítmica.
+              Padroes repetitivos e consistentes em riffs, HOPOs curtos (48 ticks) e foco em base ritmica.
             </div>
           </div>
           <div class="preset-card" data-preset="dynamic_solo" id="preset-solo">
             <div class="preset-card-header">
-              <span>⚡</span> Solo Dinâmico
+              Solo Dinamico
             </div>
             <div class="preset-card-desc">
-              Alta expressão solo (creatividade 0.85), tappings rápidos (80 ticks) e passagens fluidas.
+              Alta expressao solo (creatividade 0.85), tappings rapidos (80 ticks) e passagens fluidas.
             </div>
           </div>
         </div>
-        <input type="hidden" id="preset" value="standard">
+        <input type="hidden" id="preset" value="the_best">
 
         <!-- Parâmetros Principais de Jogabilidade -->
         <div class="section-title">3. Parâmetros de Game Design</div>
@@ -1063,6 +1071,17 @@
 
     // Preset configurations
     const presetConfigs = {
+      the_best: {
+        creativity: 0.15,
+        hopo_threshold: 48,
+        min_sustain_ticks: 96,
+        release_margin: 24,
+        min_amplitude: 0.41,
+        chord_fusion_window_s: 0.040,
+        bpm_scale: 0.65,
+        collapse_fast_runs: true,
+        consistent_patterns: true,
+      },
       standard: {
         creativity: 0.50,
         hopo_threshold: 65,

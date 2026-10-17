@@ -11,12 +11,26 @@ from pydantic import BaseModel, Field
 class ChartPreset(StrEnum):
     """Preset configuration profiles for automated Clone Hero chart fitting."""
 
+    THE_BEST = "the_best"
     STANDARD = "standard"
     STRICT_RHYTHM = "strict_rhythm"
     DYNAMIC_SOLO = "dynamic_solo"
 
 
 PRESET_CONFIGS: dict[str, dict[str, Any]] = {
+    "the_best": {
+        "creativity": 0.15,
+        "hopo_threshold": 48,
+        "min_sustain_ticks": 96,
+        "release_margin": 24,
+        "min_amplitude": 0.41,
+        "chord_fusion_window_s": 0.040,
+        "collapse_fast_runs": True,
+        "consistent_patterns": True,
+        "auto_calibrate_bpm": True,
+        "bpm_scale": 0.65,
+        "merge_sustained_notes": True,
+    },
     "standard": {
         "creativity": 0.5,
         "hopo_threshold": 65,

@@ -197,7 +197,7 @@ class Music2ChartPipeline:
             consistent_patterns: Enforce consistent motif anchoring on repeating musical riffs.
             difficulty: Guitar track difficulty rating scalar (1-6, default 6).
             genre: Musical genre string (default 'rock').
-            preset: Optional preset configuration profile name ('standard', 'strict_rhythm', 'dynamic_solo').
+            preset: Optional preset configuration profile name ('the_best', 'standard', 'strict_rhythm', 'dynamic_solo').
             creativity: Fret mapping creativity factor (0.0 to 1.0).
             min_amplitude: Minimum amplitude confidence threshold to filter ghost notes.
             min_sustain_ticks: Minimum note duration in ticks to render sustain tails.

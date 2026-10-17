@@ -254,17 +254,27 @@ const SWITCH_DOCS: readonly SwitchDoc[] = [
 
 const PRESET_DOCS: readonly PresetDoc[] = [
   {
-    id: 'POS 01 // STANDARD',
+    id: 'POS 01 // THE BEST',
+    name: 'The Best (Developer Recommended Profile)',
+    targetGenre: 'HEAVY ROCK / METAL / ALL-ROUND OPTIMIZED TRACKING',
+    led: 'green',
+    knobsSummary: 'FUSION 40MS | GATE 0.41 | CREAT 15% | HOPO 64T | SUS 120T | BPM 0.65X',
+    switchesSummary: 'OPEN: MUTE | RUNS: COLLAPSE | MOTIF: LOCKED | AUTO BPM: AUTO | MERGE: ON | CHORDS: POWER (2)',
+    rationale:
+      'Developer suggested preset: tuned strict rhythm profile with noise gate set to 0.41 and BPM scale at 0.65 for high-clarity riff separation and robust beat tracking.',
+  },
+  {
+    id: 'POS 02 // STANDARD',
     name: 'Standard (Balanced Studio Default)',
     targetGenre: 'CLASSIC ROCK / ALTERNATIVE / GENERAL LEAD',
-    led: 'green',
+    led: 'yellow',
     knobsSummary: 'FUSION 35MS | GATE 0.10 | CREAT 50% | HOPO 96T | SUS 90T | BPM 1.00X',
     switchesSummary: 'OPEN: MUTE | RUNS: COLLAPSE | MOTIF: LOCKED | AUTO BPM: AUTO | MERGE: ON | CHORDS: POWER (2)',
     rationale:
       'Reference all-rounder profile. Balances clean 2-note power chords on rhythm sections with responsive eighth/sixteenth-note HOPO runs and strict motif consistency.',
   },
   {
-    id: 'POS 02 // STRICT RHYTHM',
+    id: 'POS 03 // STRICT RHYTHM',
     name: 'Strict Rhythm (Tight Riffing & Downstrokes)',
     targetGenre: 'PUNK / HARD ROCK / RHYTHM GUITAR',
     led: 'yellow',
@@ -274,7 +284,7 @@ const PRESET_DOCS: readonly PresetDoc[] = [
       'Raises the Noise Gate (0.20) and Chord Fusion Window (40 ms) while tightening the HOPO cutoff (64 ticks) so palm-muted eighth-note chugs remain deliberate strummed patterns.',
   },
   {
-    id: 'POS 03 // DYNAMIC SOLO',
+    id: 'POS 04 // DYNAMIC SOLO',
     name: 'Dynamic Solo (Virtuoso Lead & Shred)',
     targetGenre: 'PROG METAL / SHRED / GUITAR SOLOS',
     led: 'red',
@@ -284,7 +294,7 @@ const PRESET_DOCS: readonly PresetDoc[] = [
       'Lowers the Noise Gate (0.08) to capture fast legato tapping, expands Creativity (85%) and HOPO cutoff (128 ticks) for sweeping fluid runs, and disables Sustain Merge to preserve rapid alternate-picking articulation.',
   },
   {
-    id: 'POS 04 // MELODIC',
+    id: 'POS 05 // MELODIC',
     name: 'Melodic (Expressive Phrasing & Sustains)',
     targetGenre: 'INDIE / BLUES ROCK / POST-ROCK / SYNTH LEAD',
     led: 'blue',
@@ -294,7 +304,7 @@ const PRESET_DOCS: readonly PresetDoc[] = [
       'Lowers the Sustain Tail Cutoff (72 ticks) and enables Sustain Merge so vocal-like guitar bends and ringing melodic hooks render with smooth, expressive sustain ribbons.',
   },
   {
-    id: 'POS 05 // CHORD HEAVY',
+    id: 'POS 06 // CHORD HEAVY',
     name: 'Chord Heavy (Full Triads & Open Breakdowns)',
     targetGenre: 'DJENT / MODERN METAL / POLYPHONIC PROG',
     led: 'open',

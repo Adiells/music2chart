@@ -509,3 +509,46 @@ def test_pipeline_preset_override_parameter(
     assert len(frets_at_fast_tick) == 1, (
         f"Expected override collapse_fast_runs=True to collapse to 1 note, got {len(frets_at_fast_tick)}"
     )
+
+
+def test_pipeline_preset_the_best(
+    synthesized_audio_wav: Path,
+    tmp_path: Path,
+):
+    """Verify that preset='the_best' applies strict rhythm heuristics with noise gate 0.41 and bpm_scale 0.65."""
+    test_notes = [
+        # Note with amplitude 0.35 (below the_best min_amplitude 0.41)
+        NoteEvent(start_time=0.0, end_time=0.1, pitch=52, amplitude=0.35),
+        # Real note with amplitude 0.85
+        NoteEvent(start_time=0.5, end_time=0.7, pitch=52, amplitude=0.85),
+    ]
+
+    pipeline = Music2ChartPipeline(
+        settings=Settings(
+            UPLOAD_DIR=tmp_path / "uploads",
+            OUTPUT_DIR=tmp_path / "output",
+            STEMS_DIR=tmp_path / "stems",
+        )
+    )
+
+    with patch.object(pipeline.transcriber, "transcribe", return_value=test_notes):
+        result = pipeline.process_song(
+            audio_path=synthesized_audio_wav,
+            song_name="The Best Preset Test",
+            artist="Developer",
+            output_format="chart",
+            output_dir=tmp_path / "output" / "The Best Preset Test",
+            preset="the_best",
+        )
+
+    parser = ChartParser()
+    tempo_map, tracks, _ = parser.parse_file(result["chart"])
+    expert_track = tracks["ExpertSingle"]
+
+    # Note at tick 0 (amplitude 0.35) should be filtered out by the_best min_amplitude 0.41
+    assert not any(n.tick == 0 for n in expert_track.notes)
+    # Note at 0.5s should be present
+    assert any(n.tick > 0 for n in expert_track.notes)
+    # Verify tempo map has bpm changes
+    assert len(tempo_map.bpm_changes) >= 1
+
