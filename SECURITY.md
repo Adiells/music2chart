@@ -50,8 +50,12 @@ To help us investigate and remediate the issue promptly, please include:
 
 ## Known Security Architecture & Defenses
 
-`music2chart` incorporates proactive defense-in-depth measures against common multimedia attack vectors:
+`music2chart` incorporates proactive defense-in-depth measures against common multimedia and web attack vectors:
+- **Client IP Rate Limiting & DoS Protection**: Generative endpoints enforce slowapi rate limiting (default: `20 requests/hour` per IP) to prevent compute resource exhaustion.
+- **Task Deduplication & Anti-Starvation**: Enforces a strict concurrency quota of 1 active task (queued or processing) per IP address, preventing single-user queue monopolization.
+- **Audio Magic Byte Verification**: Uploaded payloads are inspected at the byte level (`validate_audio_magic_bytes`) to verify valid container headers (`ID3`/`\xFF\xFB` for MP3, `RIFF`/`WAVE` for WAV, `fLaC` for FLAC, `OggS` for OGG) before initiating costly neural transcription pipelines.
+- **Audio Bomb & Decompression Memory Clamping**: File uploads are strictly capped at 50MB and audio length is probed via FFprobe/Librosa with a hard ceiling of 15 minutes (`MAX_AUDIO_DURATION_SECONDS = 900.0s`).
 - **Zip-Slip & Path Traversal Mitigation**: File paths within `.chart` archives and `.sng` containers are sanitized and validated to prevent filesystem escape (`src/utils/security.py`).
-- **Input Sanitization**: Song titles, artist metadata, and charter strings are strictly escaped before inclusion in `notes.chart` or `song.ini` text files to prevent injection attacks.
-- **Audio Bomb / Memory Allocation Clamping**: Uploaded audio files are bounded in duration, file size, and decompression memory footprint before passing to Demucs or Basic Pitch.
-- **FFmpeg Execution Hardening**: Subprocess calls avoid shell interpretation (`shell=False`) and invoke sanitized argument arrays directly.
+- **Input Sanitization**: Song titles, artist metadata, and charter strings are sanitized to strip directory traversal sequences (`..`, `/`, `\`) before being used as filenames or injected into `notes.chart` / `song.ini` text files.
+- **Subprocess Execution Hardening**: Subprocess calls avoid shell interpretation (`shell=False`) and invoke sanitized argument arrays directly.
+- **Periodic Disk TTL Sweeps**: Background tasks systematically purge temporary directories and stems after task expiration (`TASK_TTL_SECONDS`), preventing disk starvation.

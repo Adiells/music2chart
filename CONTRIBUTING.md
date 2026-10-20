@@ -35,7 +35,7 @@ All contributors and maintainers are expected to follow our [Code of Conduct](CO
   - `ini_writer.py`: `song.ini` metadata container.
   - `sng_packer.py`: Little-Endian `.sng` v1 binary container with 16-byte XOR stream masking.
 - **`src/api/`**: Asynchronous FastAPI endpoints, Server-Sent Events (SSE) telemetry, and background workers.
-- **`frontend/`**: Vite + React 18 + TypeScript + Three.js industrial audio workstation and 3D Clone Hero highway visualizer.
+- **`frontend/`**: Vite + React 19 + TypeScript + Three.js industrial audio workstation, tactile rack modules, and 3D Clone Hero highway visualizer.
 
 ---
 
