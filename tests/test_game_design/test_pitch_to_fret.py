@@ -678,3 +678,245 @@ def test_high_creativity_allows_varied_expressions() -> None:
     s2 = [n.fret for n in res if n.tick >= 3840]
     # With sliding window percentiles shifted by surrounding high notes, occ2 has varied frets
     assert s1 != s2
+
+
+# ---------------------------------------------------------------------------
+# 12. Motif Lock High Fidelity & Fuzzy Sequence Alignment Tests
+# ---------------------------------------------------------------------------
+
+
+def test_motif_matching_with_vibrato_at_default_creativity() -> None:
+    """Verify 8-note riff with +-1 semitone vibrato maps to identical frets at default creativity=0.50 (Balanced)."""
+    canonical_pitches = [60, 62, 64, 65, 67, 65, 64, 62]
+    # Occurrence 1 at tick 0..336
+    occ1 = [_make_qnote(tick=i * 48, pitch=p) for i, p in enumerate(canonical_pitches)]
+
+    # Surrounding high-pitch context at tick 1500..1800 that shifts sliding window percentiles
+    surrounding = [
+        _make_qnote(tick=1500 + i * 48, pitch=p)
+        for i, p in enumerate([84, 86, 88, 91, 88, 86])
+    ]
+
+    # Occurrence 2 at tick 3000..3336 with +/- 1 semitone vibrato on selected notes
+    vibrato_pitches = [60, 63, 64, 64, 67, 65, 65, 62]
+    occ2 = [_make_qnote(tick=3000 + i * 48, pitch=p) for i, p in enumerate(vibrato_pitches)]
+
+    # Default Balanced preset (creativity=0.50, consistent_patterns=True)
+    mapper = PitchToFretMapper(creativity=0.50, consistent_patterns=True)
+    result = mapper.map_notes(occ1 + surrounding + occ2)
+
+    frets_occ1 = [n.fret for n in result if n.tick < 500]
+    frets_occ2 = [n.fret for n in result if n.tick >= 3000]
+
+    assert len(frets_occ1) == 8
+    assert len(frets_occ2) == 8
+    assert frets_occ1 == frets_occ2, (
+        f"Vibrato riff at creativity=0.50 should map to identical frets. Got {frets_occ1} vs {frets_occ2}"
+    )
+
+
+def test_motif_matching_with_ghost_note_insertion() -> None:
+    """Verify riff with 1 inserted ghost note / extra pick strike preserves color sequence of aligned notes."""
+    canonical_pitches = [60, 62, 64, 65, 67, 65, 64, 62]
+    occ1 = [_make_qnote(tick=i * 96, pitch=p) for i, p in enumerate(canonical_pitches)]
+
+    # Surrounding high notes placed close to occ2 to distort local sliding window percentiles
+    surrounding = [
+        _make_qnote(tick=2400 + i * 48, pitch=p)
+        for i, p in enumerate([85, 88, 90, 93, 90, 88])
+    ]
+
+    # Occurrence 2: same 8 notes, but with 1 extra ghost note inserted between note 2 (64) and note 3 (65)
+    # Ticks: 3000, 3096, 3192, 3240 (ghost!), 3288, 3384, 3480, 3576, 3672
+    occ2 = [
+        _make_qnote(tick=3000, pitch=60),
+        _make_qnote(tick=3096, pitch=62),
+        _make_qnote(tick=3192, pitch=64),
+        _make_qnote(tick=3240, pitch=64),  # Ghost note / extra pick stroke on same pitch
+        _make_qnote(tick=3288, pitch=65),
+        _make_qnote(tick=3384, pitch=67),
+        _make_qnote(tick=3480, pitch=65),
+        _make_qnote(tick=3576, pitch=64),
+        _make_qnote(tick=3672, pitch=62),
+    ]
+
+    mapper = PitchToFretMapper(creativity=0.50, consistent_patterns=True)
+    result = mapper.map_notes(occ1 + surrounding + occ2)
+
+    occ1_res = [n for n in result if n.tick < 1000]
+    occ2_res = [n for n in result if n.tick >= 3000]
+
+    assert len(occ1_res) == 8
+    assert len(occ2_res) == 9
+
+    # The 8 aligned notes in occ2 (excluding the inserted ghost note at tick 3240)
+    aligned_occ2_frets = [n.fret for n in occ2_res if n.tick != 3240]
+    frets_occ1 = [n.fret for n in occ1_res]
+    assert aligned_occ2_frets == frets_occ1, (
+        f"Aligned notes in riff with ghost note insertion must preserve canonical frets: {aligned_occ2_frets} != {frets_occ1}"
+    )
+
+    # Ghost note at 3240 should have an ergonomic fret (within max_jump)
+    ghost_note = next(n for n in occ2_res if n.tick == 3240)
+    prev_fret = next(n.fret.value for n in occ2_res if n.tick == 3192)
+    assert abs(ghost_note.fret.value - prev_fret) <= mapper.max_jump
+
+
+def test_motif_matching_with_turnaround_variation() -> None:
+    """Verify riff with turnaround variation (Option A) preserves canonical sequence in body and transitions smoothly."""
+    canonical_pitches = [55, 57, 59, 60, 62, 60, 59, 57]
+    occ1 = [_make_qnote(tick=i * 96, pitch=p) for i, p in enumerate(canonical_pitches)]
+
+    # Surrounding high notes placed close to occ2 to distort local sliding window percentiles
+    surrounding = [
+        _make_qnote(tick=2400 + i * 48, pitch=p)
+        for i, p in enumerate([85, 88, 90, 93])
+    ]
+
+    # Occurrence 2: First 6 notes are the identical body [55, 57, 59, 60, 62, 60],
+    # last 2 notes are a turnaround fill [60, 62] (variation of [59, 57])
+    turnaround_pitches = [55, 57, 59, 60, 62, 60, 60, 62]
+    occ2 = [_make_qnote(tick=3000 + i * 96, pitch=p) for i, p in enumerate(turnaround_pitches)]
+
+    mapper = PitchToFretMapper(creativity=0.50, consistent_patterns=True)
+    result = mapper.map_notes(occ1 + surrounding + occ2)
+
+    occ1_res = [n for n in result if n.tick < 1000]
+    occ2_res = [n for n in result if n.tick >= 3000]
+
+    assert len(occ1_res) == 8
+    assert len(occ2_res) == 8
+
+    # Option A: Body (first 6 notes) must match canonical frets exactly
+    frets_body_occ1 = [n.fret for n in occ1_res[:6]]
+    frets_body_occ2 = [n.fret for n in occ2_res[:6]]
+    assert frets_body_occ2 == frets_body_occ1, (
+        f"Turnaround body must preserve canonical frets: {frets_body_occ2} != {frets_body_occ1}"
+    )
+
+    # Transition from body to turnaround ending must be physically playable (within max_jump)
+    assert abs(occ2_res[6].fret.value - occ2_res[5].fret.value) <= mapper.max_jump
+
+
+def test_motif_contrasting_background_tessitura() -> None:
+    """Verify riff in quiet vs loud/high-tessitura background preserves identical colors with consistent_patterns=True."""
+    riff_pitches = [55, 57, 59, 60, 62, 60, 59, 57]
+    occ1 = [_make_qnote(tick=i * 96, pitch=p) for i, p in enumerate(riff_pitches)]
+
+    # Quiet/low background surrounding section 1
+    quiet_surrounding = [
+        _make_qnote(tick=1000 + i * 96, pitch=p)
+        for i, p in enumerate([42, 44, 42, 45])
+    ]
+
+    # Loud/high background with cymbals/high vocals surrounding section 2 (ticks 2500..4000)
+    high_cymbals_before = [
+        _make_qnote(tick=2500 + i * 48, pitch=p)
+        for i, p in enumerate([88, 91, 93, 95, 96, 98])
+    ]
+    occ2 = [_make_qnote(tick=3000 + i * 96, pitch=p) for i, p in enumerate(riff_pitches)]
+    high_cymbals_after = [
+        _make_qnote(tick=3800 + i * 48, pitch=p)
+        for i, p in enumerate([90, 92, 95, 97, 99])
+    ]
+
+    all_notes = occ1 + quiet_surrounding + high_cymbals_before + occ2 + high_cymbals_after
+
+    # 1. Without pattern consistency, background tessitura shifts the frets
+    inconsistent_mapper = PitchToFretMapper(consistent_patterns=False)
+    inc_res = inconsistent_mapper.map_notes(all_notes)
+    frets_occ1_inc = [n.fret for n in inc_res if n.tick < 1000]
+    frets_occ2_inc = [n.fret for n in inc_res if 3000 <= n.tick < 3800]
+    assert frets_occ1_inc != frets_occ2_inc, "Without consistent_patterns, tessitura shift must alter frets"
+
+    # 2. With consistent_patterns=True, Motif Lock guarantees identical fret sequence
+    consistent_mapper = PitchToFretMapper(consistent_patterns=True)
+    con_res = consistent_mapper.map_notes(all_notes)
+    frets_occ1_con = [n.fret for n in con_res if n.tick < 1000]
+    frets_occ2_con = [n.fret for n in con_res if 3000 <= n.tick < 3800]
+    assert frets_occ1_con == frets_occ2_con, (
+        f"With consistent_patterns=True, riff must map identically regardless of background tessitura. "
+        f"Got {frets_occ1_con} vs {frets_occ2_con}"
+    )
+
+
+def test_unrelated_phrases_not_falsely_matched() -> None:
+    """Verify genuinely different musical phrases are not falsely matched or forced into identical frets."""
+    # Phrase 1: Low pentatonic riff [50, 53, 55, 56, 57, 60, 57, 55]
+    p1_pitches = [50, 53, 55, 56, 57, 60, 57, 55]
+    phrase1 = [_make_qnote(tick=i * 96, pitch=p) for i, p in enumerate(p1_pitches)]
+
+    # Phrase 2: High arpeggiated solo licking [72, 76, 79, 84, 88, 84, 79, 76]
+    p2_pitches = [72, 76, 79, 84, 88, 84, 79, 76]
+    phrase2 = [_make_qnote(tick=2000 + i * 96, pitch=p) for i, p in enumerate(p2_pitches)]
+
+    mapper = PitchToFretMapper(creativity=0.50, consistent_patterns=True)
+    res = mapper.map_notes(phrase1 + phrase2)
+
+    frets_p1 = [n.fret for n in res if n.tick < 1000]
+    frets_p2 = [n.fret for n in res if n.tick >= 2000]
+
+    assert len(frets_p1) == 8
+    assert len(frets_p2) == 8
+    assert frets_p1 != frets_p2, "Unrelated phrases must not falsely match to identical frets"
+    # Phrase 2 is in much higher octave, so average fret should reflect higher register
+    avg_fret_p1 = sum(f.value for f in frets_p1) / len(frets_p1)
+    avg_fret_p2 = sum(f.value for f in frets_p2) / len(frets_p2)
+    assert avg_fret_p2 > avg_fret_p1, (
+        f"High solo phrase should map higher on the highway than low pentatonic riff. "
+        f"Got avg {avg_fret_p2} vs {avg_fret_p1}"
+    )
+
+
+def test_fuzzy_similarity_and_alignment_engine(default_mapper: PitchToFretMapper) -> None:
+    """Directly verify _compute_phrase_similarity substitution penalties and _align_phrase_frets."""
+    # 1. Exact match (cost 0.0)
+    sim, align = default_mapper._compute_phrase_similarity([60, 64, 67], [60, 64, 67])
+    assert sim == 1.0
+    assert align == [(0, 0), (1, 1), (2, 2)]
+
+    # 2. Vibrato +-1 semitone (cost 0.15 on 1 of 4 notes -> similarity 1.0 - 0.15/4 = 0.9625)
+    sim_vib, align_vib = default_mapper._compute_phrase_similarity([60, 64, 67, 72], [60, 65, 67, 72])
+    assert abs(sim_vib - (1.0 - 0.15 / 4)) < 1e-6
+    assert align_vib == [(0, 0), (1, 1), (2, 2), (3, 3)]
+
+    # 3. Bend +-2 semitones (cost 0.35 on 1 of 4 notes -> similarity 1.0 - 0.35/4 = 0.9125)
+    sim_bend, align_bend = default_mapper._compute_phrase_similarity([60, 64, 67, 72], [60, 66, 67, 72])
+    assert abs(sim_bend - (1.0 - 0.35 / 4)) < 1e-6
+
+    # 4. Octave harmonic +-12 semitones (cost 0.40 on 1 of 4 notes -> similarity 1.0 - 0.40/4 = 0.90)
+    sim_oct, align_oct = default_mapper._compute_phrase_similarity([60, 64, 67, 72], [60, 76, 67, 72])
+    assert abs(sim_oct - (1.0 - 0.40 / 4)) < 1e-6
+
+    # 5. Insertion / Ghost note (cost 1.0 on 1 extra note -> max_len 5 -> similarity 1.0 - 1.0/5 = 0.80)
+    sim_ins, align_ins = default_mapper._compute_phrase_similarity([60, 64, 67, 72], [60, 64, 64, 67, 72])
+    assert abs(sim_ins - (1.0 - 1.0 / 5)) < 1e-6
+    assert (None, 2) in align_ins
+
+    # 6. Test _align_phrase_frets interpolation with max_jump clamping
+    canonical_frets = [0, 2, 3, 4]
+    canonical_pitches = [60, 64, 67, 72]
+    target_pitches = [60, 64, 64, 67, 72]
+    target_base = [0, 2, 2, 3, 4]
+    aligned = default_mapper._align_phrase_frets(
+        canonical_frets=canonical_frets,
+        canonical_pitches=canonical_pitches,
+        target_pitches=target_pitches,
+        target_base_frets=target_base,
+        alignment=align_ins,
+    )
+    assert aligned == [0, 2, 2, 3, 4]
+
+
+def test_motif_similarity_threshold_parameter() -> None:
+    """Verify motif_similarity_threshold parameter validation and customization."""
+    with pytest.raises(ValueError, match="motif_similarity_threshold must be between 0.0 and 1.0"):
+        PitchToFretMapper(motif_similarity_threshold=-0.1)
+
+    with pytest.raises(ValueError, match="motif_similarity_threshold must be between 0.0 and 1.0"):
+        PitchToFretMapper(motif_similarity_threshold=1.5)
+
+    custom_mapper = PitchToFretMapper(motif_similarity_threshold=0.88)
+    assert custom_mapper.motif_similarity_threshold == 0.88
+
+

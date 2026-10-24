@@ -81,6 +81,7 @@ class Music2ChartPipeline:
         )
         self.pitch_mapper = pitch_mapper or PitchToFretMapper(
             disable_open_notes=True,
+            motif_similarity_threshold=0.75,
         )
         self.chord_builder = chord_builder or ChordBuilder(
             max_frets=2,
@@ -169,6 +170,7 @@ class Music2ChartPipeline:
         disable_open_notes: bool = True,
         collapse_fast_runs: bool | None = None,
         consistent_patterns: bool | None = None,
+        motif_similarity_threshold: float | None = None,
         difficulty: int = 6,
         genre: str = "rock",
         preset: str | None = None,
@@ -195,6 +197,7 @@ class Music2ChartPipeline:
             disable_open_notes: Suppress open notes on lead guitar, mapping to Green (default True).
             collapse_fast_runs: Collapse simultaneous notes in fast sixteenth-note runs.
             consistent_patterns: Enforce consistent motif anchoring on repeating musical riffs.
+            motif_similarity_threshold: Fuzzy motif sequence alignment similarity threshold (0.5 to 1.0, default 0.75).
             difficulty: Guitar track difficulty rating scalar (1-6, default 6).
             genre: Musical genre string (default 'rock').
             preset: Optional preset configuration profile name ('the_best', 'standard', 'strict_rhythm', 'dynamic_solo').
@@ -266,6 +269,11 @@ class Music2ChartPipeline:
             consistent_patterns
             if consistent_patterns is not None
             else preset_cfg.get("consistent_patterns", True)
+        )
+        eff_motif_similarity_threshold = (
+            motif_similarity_threshold
+            if motif_similarity_threshold is not None
+            else preset_cfg.get("motif_similarity_threshold", 0.75)
         )
         eff_auto_calibrate_bpm = (
             auto_calibrate_bpm
@@ -366,6 +374,7 @@ class Music2ChartPipeline:
             consistent_patterns=eff_consistent_patterns,
             min_pattern_len=self.pitch_mapper.min_pattern_len,
             creativity=eff_creativity,
+            motif_similarity_threshold=eff_motif_similarity_threshold,
         )
         fret_mapped_notes = pitch_mapper.map_notes(quantized_notes)
 

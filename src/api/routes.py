@@ -260,6 +260,7 @@ def run_pipeline_task(
     disable_open_notes: bool = True,
     collapse_fast_runs: bool | None = None,
     consistent_patterns: bool | None = None,
+    motif_similarity_threshold: float | None = None,
     difficulty: int = 6,
     genre: str = "rock",
     preset: str | None = None,
@@ -306,6 +307,7 @@ def run_pipeline_task(
                 disable_open_notes=disable_open_notes,
                 collapse_fast_runs=collapse_fast_runs,
                 consistent_patterns=consistent_patterns,
+                motif_similarity_threshold=motif_similarity_threshold,
                 difficulty=difficulty,
                 genre=genre,
                 preset=preset,
@@ -366,6 +368,12 @@ async def generate_chart(
     ),
     consistent_patterns: bool | None = Form(
         default=None, description="Enforce identical fret sequences on repeating musical riffs"
+    ),
+    motif_similarity_threshold: float | None = Form(
+        default=None,
+        ge=0.5,
+        le=1.0,
+        description="Fuzzy motif sequence alignment similarity threshold (0.5 to 1.0, default 0.75)",
     ),
     difficulty: int = Form(
         default=6, ge=1, le=6, description="Guitar track difficulty level (1-6)"
@@ -613,6 +621,7 @@ async def generate_chart(
         disable_open_notes=disable_open_notes,
         collapse_fast_runs=collapse_fast_runs,
         consistent_patterns=consistent_patterns,
+        motif_similarity_threshold=motif_similarity_threshold,
         difficulty=difficulty,
         genre=clean_genre,
         preset=clean_preset,

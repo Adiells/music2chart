@@ -347,9 +347,9 @@ const SWITCH_DOCS_EN: readonly SwitchDoc[] = [
     defaultVal: 'LOCKED (TRUE)',
     apiParam: 'consistent_patterns',
     led: 'blue',
-    purpose: 'Ensures repeating verse and chorus guitar riffs map to identical fret color sequences throughout the song.',
+    purpose: 'Guarantees that recurring verse and chorus guitar riffs map to identical, muscle-memory fret color sequences across song sections.',
     mechanics:
-      'Applies pattern hashing so slight pitch vibrato or transcription confidence variations never shift a recurring signature riff onto different frets across song sections.',
+      'Employs dynamic-programming fuzzy sequence alignment with soft substitution penalties (vibrato ±1 semitone, bends ±2 st, octave harmonics ±12 st) and ghost-note interpolation. Even if transcription noise or turnaround variations alter endings, the riff body locks onto the canonical fret pattern while modified fills transition smoothly (Option A).',
   },
   {
     channel: 'SW-04',
@@ -416,9 +416,9 @@ const SWITCH_DOCS_PT: readonly SwitchDoc[] = [
     defaultVal: 'TRAVADO (ATIVADO)',
     apiParam: 'consistent_patterns',
     led: 'blue',
-    purpose: 'Garante que riffs repetidos de verso e refrão mantenham sempre a mesma sequência visual de botões coloridos.',
+    purpose: 'Garante que riffs repetidos de verso e refrão mantenham sempre a mesma sequência visual de botões coloridos para fixar a memória muscular.',
     mechanics:
-      'Aplica ancoragem por hashing de padrão para que pequenas variações de vibrato ou volume nunca alterem o dedilhado de um riff clássico quando ele se repete na música.',
+      'Utiliza motor de alinhamento difuso de sequências (programação dinâmica) com custos suaves para vibrato (±1 semitom), bends (±2 st), harmônicos de oitava (±12 st) e interpolação ergonômica de ghost notes. Mesmo com flutuações de áudio ou variações melódicas de final de riff (fills/turnarounds), o corpo do riff preserva os trastes canônicos enquanto a virada transiciona com fluidez (Opção A).',
   },
   {
     channel: 'SW-04',
