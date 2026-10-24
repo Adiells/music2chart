@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 — Track Not Found | Music2Chart</title>
+    <meta name="robots" content="noindex, follow" />
+    <meta name="theme-color" content="#0D0E11" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --chassis: #0d0e11;
+        --panel: #14161b;
+        --module: #1a1d24;
+        --hw-border: #2a2e39;
+        --hw-screw: #434958;
+        --silk: #e6e8ee;
+        --silk-dim: #8e95a5;
+        --silk-neutral: #a1a7b5;
+
+        --fret-green: #00e676;
+        --fret-red: #ff1744;
+        --fret-yellow: #ffea00;
+        --fret-blue: #2979ff;
+        --fret-orange: #ff9100;
+        --starpower: #00e5ff;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+      }
+
+      body {
+        min-height: 100vh;
+        background-color: var(--chassis);
+        color: var(--silk);
+        font-family: 'JetBrains Mono', monospace;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background-image: 
+          radial-gradient(circle at 50% 50%, rgba(20, 22, 27, 0.8) 0%, rgba(13, 14, 17, 1) 100%),
+          linear-gradient(rgba(42, 46, 57, 0.15) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(42, 46, 57, 0.15) 1px, transparent 1px);
+        background-size: 100% 100%, 24px 24px, 24px 24px;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .rack-chassis {
+        width: 100%;
+        max-width: 640px;
+        background: var(--panel);
+        border: 2px solid var(--hw-border);
+        box-shadow: 
+          0 20px 50px rgba(0, 0, 0, 0.8),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Corner Machined Screws */
+      .screw {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: #252830;
+        border: 1px solid var(--hw-screw);
+        border-radius: 50% !important;
+      }
+      .screw::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 6px;
+        height: 1px;
+        background: #646b7d;
+        transform: translate(-50%, -50%) rotate(35deg);
+      }
+      .screw-tl { top: 10px; left: 10px; }
+      .screw-tr { top: 10px; right: 10px; }
+      .screw-bl { bottom: 10px; left: 10px; }
+      .screw-br { bottom: 10px; right: 10px; }
+
+      /* Rack Header */
+      .rack-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.75rem;
+        background: var(--module);
+        border-bottom: 2px solid var(--hw-border);
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--silk-dim);
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--fret-red);
+        font-weight: 700;
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--fret-red);
+        border-radius: 50% !important;
+        box-shadow: 0 0 8px var(--fret-red);
+        animation: pulse 1.5s infinite ease-in-out;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.35; transform: scale(0.85); }
+      }
+
+      /* Rack Body */
+      .rack-body {
+        padding: 2.5rem 2rem 2rem;
+        text-align: center;
+      }
+
+      .error-code {
+        font-size: clamp(3.5rem, 12vw, 5.5rem);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.04em;
+        background: linear-gradient(180deg, #ffffff 20%, var(--silk-dim) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .error-tag {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: rgba(255, 23, 68, 0.12);
+        border: 1px solid rgba(255, 23, 68, 0.35);
+        color: var(--fret-red);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 1.5rem;
+      }
+
+      .error-desc {
+        color: var(--silk-neutral);
+        font-size: 0.9rem;
+        line-height: 1.6;
+        max-width: 460px;
+        margin: 0 auto 2rem;
+      }
+
+      /* Highway Fret Buttons */
+      .fret-strip {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 2.5rem;
+        padding: 1rem;
+        background: rgba(13, 14, 17, 0.6);
+        border: 1px solid var(--hw-border);
+      }
+
+      .fret-btn {
+        width: 38px;
+        height: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.2), 0 3px 6px rgba(0, 0, 0, 0.6);
+        transition: transform 0.1s, opacity 0.2s;
+        opacity: 0.6;
+      }
+      .fret-btn:hover {
+        transform: translateY(2px);
+        opacity: 1;
+      }
+      .fret-green  { background: var(--fret-green);  box-shadow: 0 0 10px rgba(0, 230, 118, 0.4); }
+      .fret-red    { background: var(--fret-red);    box-shadow: 0 0 10px rgba(255, 23, 68, 0.6); opacity: 1; }
+      .fret-yellow { background: var(--fret-yellow); box-shadow: 0 0 10px rgba(255, 234, 0, 0.4); }
+      .fret-blue   { background: var(--fret-blue);   box-shadow: 0 0 10px rgba(41, 121, 255, 0.4); }
+      .fret-orange { background: var(--fret-orange); box-shadow: 0 0 10px rgba(255, 145, 0, 0.4); }
+
+      /* Action Buttons */
+      .actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0.85rem 1.4rem;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+      }
+
+      .btn-primary {
+        background: var(--starpower);
+        color: #000000;
+        border: 1px solid var(--starpower);
+        box-shadow: 0 0 14px rgba(0, 229, 255, 0.25);
+      }
+      .btn-primary:hover {
+        background: #33ebff;
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+        transform: translateY(-1px);
+      }
+
+      .btn-secondary {
+        background: var(--module);
+        color: var(--silk);
+        border: 1px solid var(--hw-border);
+      }
+      .btn-secondary:hover {
+        background: #232732;
+        border-color: var(--silk-dim);
+        transform: translateY(-1px);
+      }
+
+      /* Rack Footer */
+      .rack-footer {
+        padding: 0.75rem 1.75rem;
+        background: #090a0c;
+        border-top: 1px solid var(--hw-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.7rem;
+        color: var(--silk-dim);
+        letter-spacing: 0.06em;
+      }
+      .rack-footer a {
+        color: var(--silk-neutral);
+        text-decoration: none;
+      }
+      .rack-footer a:hover {
+        color: var(--starpower);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="rack-chassis">
+      <div class="screw screw-tl"></div>
+      <div class="screw screw-tr"></div>
+      <div class="screw screw-bl"></div>
+      <div class="screw screw-br"></div>
+
+      <header class="rack-header">
+        <span>AUDIO_RACK // CH-404</span>
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span>SIGNAL_LOST</span>
+        </div>
+      </header>
+
+      <main class="rack-body">
+        <div class="error-code">404</div>
+        <div class="error-tag">TRACK NOT FOUND / NOTE_DESYNC</div>
+
+        <p class="error-desc">
+          The requested song track or route does not exist on this audio console.
+          The 3D highway has been paused and no notes were found at this frequency.
+        </p>
+
+        <!-- Fret Bar Visualizer -->
+        <div class="fret-strip" title="Fret Bar Highway Preview">
+          <div class="fret-btn fret-green" title="Green Fret"></div>
+          <div class="fret-btn fret-red" title="Red Fret (Missed)"></div>
+          <div class="fret-btn fret-yellow" title="Yellow Fret"></div>
+          <div class="fret-btn fret-blue" title="Blue Fret"></div>
+          <div class="fret-btn fret-orange" title="Orange Fret"></div>
+        </div>
+
+        <div class="actions">
+          <a href="/" class="btn btn-primary">
+            <span>&#9654;</span> Return to Studio
+          </a>
+          <a
+            href="https://github.com/Adiells/music2chart/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-secondary"
+          >
+            Report Issue
+          </a>
+        </div>
+      </main>
+
+      <footer class="rack-footer">
+        <span>MUSIC2CHART AI STUDIO</span>
+        <a href="https://music2chart.adiels.me/">music2chart.adiels.me</a>
+      </footer>
+    </div>
+  </body>
+</html>
