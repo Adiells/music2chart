@@ -1,0 +1,26 @@
+# Music2Chart
+
+> Automated high-fidelity audio-to-chart workstation for Clone Hero and YARG (Yet Another Rhythm Game). Translates any audio track into tournament-grade `.chart` and `.sng` packages with real-time 3D Highway preview.
+
+- **Live Application**: https://music2chart.adiels.me/
+- **Creator**: Adiel Emilson (https://adiels.me/)
+- **Repository**: https://github.com/Adiells/music2chart
+- **License**: MIT
+
+## System Overview
+
+Music2Chart is an AI-powered workstation designed to eliminate the manual, multi-hour charting process for rhythm game enthusiasts. It accepts MP3, WAV, FLAC, and OGG audio files and automatically maps audio stems into playable guitar charts.
+
+## Key Technical Features
+
+- **Neural Stem Separation & Spectral Audio DSP**: Extracts melodic and rhythmic features via deep neural networks and STFT.
+- **Dynamic Beat Grid (192 PPQ)**: Calibrated tempo maps and note placements honoring authentic Guitar Hero chart mechanics.
+- **Interactive Three.js 3D Highway**: Real-time perspective highway directly in the web browser with synchronized audio playback and note seeking.
+- **Export Deliverables**: Generates standalone `notes.chart`, SongBinary v1 `.sng` containers, or full `.zip` bundles ready for `Clone Hero/Songs/`.
+- **Live Pipeline Telemetry**: Real-time stage monitoring powered by Server-Sent Events (SSE).
+
+## Tech Stack
+
+- **Machine Learning & Signal Processing**: Python 3.11+, PyTorch 2.2+, Librosa, SciPy
+- **Backend**: FastAPI, Docker, Google Cloud Run
+- **Frontend**: React 19, TypeScript, Three.js, Vite, Tailwind CSS, GitHub Pages
