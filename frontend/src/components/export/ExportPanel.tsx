@@ -5,9 +5,8 @@ import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
 import type { Language } from '../../lib/language';
 
-export type ExportFormat = 'sng' | 'chart' | 'zip';
+export type ExportFormat = 'chart' | 'zip';
 
-const IDLE_STATUS_NOTE = 'READY FOR PACKAGE DISPATCH';
 /** Delay before the status readout reverts to idle after a download action. */
 const STATUS_RESET_MS = 3500;
 
@@ -33,7 +32,7 @@ function triggerBrowserDownload(url: string, filename?: string): void {
 
 /**
  * Hardware export bay featuring tactile PushButtons to download the generated
- * Clone Hero artifacts in `.sng` (SongBinary v1), `.chart` (notes.chart), or `.zip` archive formats.
+ * Clone Hero artifacts in `.zip` archive or `.chart` (notes.chart) format.
  */
 export function ExportPanel({
   completedTaskId,
@@ -44,9 +43,13 @@ export function ExportPanel({
   language = 'en',
 }: ExportPanelProps) {
   const portuguese = language === 'pt-BR';
+  const defaultIdleStatus = portuguese ? 'PRONTO PARA BAIXAR ARQUIVOS' : 'READY FOR PACKAGE DISPATCH';
+
   const [activeFormat, setActiveFormat] = useState<ExportFormat | null>(null);
-  const [statusNote, setStatusNote] = useState<string>(IDLE_STATUS_NOTE);
+  const [statusNote, setStatusNote] = useState<string | null>(null);
   const statusResetRef = useRef<number | null>(null);
+
+  const displayStatusNote = statusNote ?? defaultIdleStatus;
 
   useEffect(
     () => () => {
@@ -62,7 +65,7 @@ export function ExportPanel({
     if (statusResetRef.current !== null) window.clearTimeout(statusResetRef.current);
     statusResetRef.current = window.setTimeout(() => {
       statusResetRef.current = null;
-      setStatusNote(IDLE_STATUS_NOTE);
+      setStatusNote(null);
     }, STATUS_RESET_MS);
   };
 
@@ -72,7 +75,11 @@ export function ExportPanel({
 
     if (hasBackendPackage && completedTaskId) {
       const url = getApiUrl(`/api/v1/chart/download/${encodeURIComponent(completedTaskId)}?format=${format}`);
-      setStatusNote(`DISPATCHING .${format.toUpperCase()} STREAM // TASK ${completedTaskId.slice(0, 8).toUpperCase()}`);
+      setStatusNote(
+        portuguese
+          ? `BAIXANDO PACOTE .${format.toUpperCase()} // TAREFA ${completedTaskId.slice(0, 8).toUpperCase()}`
+          : `DISPATCHING .${format.toUpperCase()} STREAM // TASK ${completedTaskId.slice(0, 8).toUpperCase()}`
+      );
       triggerBrowserDownload(url);
       window.setTimeout(() => setActiveFormat(null), 900);
       return;
@@ -84,12 +91,20 @@ export function ExportPanel({
       const safeStem = `${artist || 'Artist'} - ${songName || 'Track'}`.replace(/[\\/*?:"<>|]/g, '_');
       triggerBrowserDownload(blobUrl, `${safeStem} (notes).chart`);
       window.setTimeout(() => URL.revokeObjectURL(blobUrl), 2500);
-      setStatusNote('EXPORTED REFERENCE NOTES.CHART FROM MEMORY BUFFER');
+      setStatusNote(
+        portuguese
+          ? 'ARQUIVO .CHART EXPORTADO DO BUFFER DE MEMÓRIA'
+          : 'EXPORTED REFERENCE NOTES.CHART FROM MEMORY BUFFER'
+      );
       window.setTimeout(() => setActiveFormat(null), 900);
       return;
     }
 
-    setStatusNote(`GENERATE AN AUDIO TASK FIRST TO PACK BINARY .${format.toUpperCase()}`);
+    setStatusNote(
+      portuguese
+        ? `GERE UMA CHART PRIMEIRO PARA EMPACOTAR O .${format.toUpperCase()}`
+        : `GENERATE AN AUDIO TASK FIRST TO PACK .${format.toUpperCase()}`
+    );
     window.setTimeout(() => setActiveFormat(null), 900);
   };
 
@@ -104,28 +119,28 @@ export function ExportPanel({
         <div className="flex items-center gap-3">
           <span className="silk-wide">{portuguese ? 'Baixar arquivos para o jogo' : 'Download game files'}</span>
           <span className="h-3 w-px bg-hw-border" aria-hidden="true" />
-          <span className="silk-wide text-[9px] text-silk-neutral">{statusNote}</span>
+          <span className="silk-wide text-[9px] text-silk-neutral">{displayStatusNote}</span>
         </div>
 
         <LedIndicator
           color={hasBackendPackage ? 'green' : 'yellow'}
           on
           size="xs"
-          label={hasBackendPackage ? 'PKG LOCKED' : 'REF BUFFER'}
+          label={hasBackendPackage ? (portuguese ? 'PACOTE PRONTO' : 'PKG LOCKED') : (portuguese ? 'BUFFER REF' : 'REF BUFFER')}
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <PushButton
           size="md"
           variant="master"
-          label={portuguese ? 'Baixar .SNG' : 'Download .SNG'}
-          sublabel={portuguese ? 'Pacote Clone Hero' : 'Clone Hero package'}
+          label={portuguese ? 'Baixar .ZIP' : 'Download .ZIP'}
+          sublabel={portuguese ? 'Pacote completo para Clone Hero' : 'Full Clone Hero package'}
           led="green"
           ledOn={hasBackendPackage}
-          latched={activeFormat === 'sng'}
+          latched={activeFormat === 'zip'}
           disabled={!hasBackendPackage}
-          onClick={() => handleDownload('sng')}
+          onClick={() => handleDownload('zip')}
           className="w-full"
         />
 
@@ -133,24 +148,11 @@ export function ExportPanel({
           size="md"
           variant="standard"
           label={portuguese ? 'Baixar .CHART' : 'Download .CHART'}
-          sublabel={portuguese ? 'Arquivo de notas' : 'Notes file'}
+          sublabel={portuguese ? 'Arquivo de notas puro' : 'Pure notes file'}
           led="blue"
           ledOn
           latched={activeFormat === 'chart'}
           onClick={() => handleDownload('chart')}
-          className="w-full"
-        />
-
-        <PushButton
-          size="md"
-          variant="standard"
-          label={portuguese ? 'Baixar .ZIP' : 'Download .ZIP'}
-          sublabel={portuguese ? 'Pacote completo' : 'Complete package'}
-          led="orange"
-          ledOn={hasBackendPackage}
-          latched={activeFormat === 'zip'}
-          disabled={!hasBackendPackage}
-          onClick={() => handleDownload('zip')}
           className="w-full"
         />
       </div>
@@ -162,7 +164,7 @@ export function ExportPanel({
         <span className="font-mono uppercase tracking-silk text-silk-dim">
           {hasBackendPackage && completedTaskId
             ? `TASK ID: ${completedTaskId}`
-            : 'UPLOAD & GENERATE AUDIO FOR .SNG / .ZIP'}
+            : (portuguese ? 'ENVIE E GERE O ÁUDIO PARA BAIXAR O .ZIP' : 'UPLOAD & GENERATE AUDIO FOR .ZIP')}
         </span>
       </div>
     </div>
