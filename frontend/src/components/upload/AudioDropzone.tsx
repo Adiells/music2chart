@@ -90,7 +90,9 @@ export function AudioDropzone({
     const ext = getExtension(candidate.name);
     if (!ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])) {
       setErrorMsg(
-        `INVALID EXTENSION (${ext || 'UNKNOWN'}) — ALLOWED AUDIO FORMATS: .MP3, .WAV, .FLAC, .OGG`
+        portuguese
+          ? `FORMATO INVÁLIDO (${ext || 'DESCONHECIDO'}) — FORMATOS PERMITIDOS: .MP3, .WAV, .FLAC, .OGG`
+          : `INVALID EXTENSION (${ext || 'UNKNOWN'}) — ALLOWED AUDIO FORMATS: .MP3, .WAV, .FLAC, .OGG`
       );
       if (inputRef.current) inputRef.current.value = '';
       onFileSelect(null);
@@ -101,7 +103,9 @@ export function AudioDropzone({
     const cleanMime = candidate.type.split(';')[0].trim().toLowerCase();
     if (cleanMime && !ALLOWED_MIME_TYPES.includes(cleanMime as (typeof ALLOWED_MIME_TYPES)[number])) {
       setErrorMsg(
-        `UNSUPPORTED MIME TYPE (${cleanMime}) — ONLY MP3, WAV, FLAC, AND OGG AUDIO ARE ACCEPTED`
+        portuguese
+          ? `TIPO MIME NÃO SUPORTADO (${cleanMime}) — APENAS ÁUDIOS MP3, WAV, FLAC E OGG SÃO ACEITOS`
+          : `UNSUPPORTED MIME TYPE (${cleanMime}) — ONLY MP3, WAV, FLAC, AND OGG AUDIO ARE ACCEPTED`
       );
       if (inputRef.current) inputRef.current.value = '';
       onFileSelect(null);
@@ -110,7 +114,11 @@ export function AudioDropzone({
     }
 
     if (candidate.size === 0) {
-      setErrorMsg('EMPTY AUDIO STREAM (0 BYTES) — PLEASE SELECT A VALID AUDIO FILE');
+      setErrorMsg(
+        portuguese
+          ? 'FLUXO DE ÁUDIO VAZIO (0 BYTES) — SELECIONE UM ARQUIVO DE ÁUDIO VÁLIDO'
+          : 'EMPTY AUDIO STREAM (0 BYTES) — PLEASE SELECT A VALID AUDIO FILE'
+      );
       if (inputRef.current) inputRef.current.value = '';
       onFileSelect(null);
       playMechanicalClick(1400, 0.28);
@@ -119,7 +127,9 @@ export function AudioDropzone({
 
     if (candidate.size > MAX_FILE_SIZE_BYTES) {
       setErrorMsg(
-        `FILE SIZE (${formatByteSize(candidate.size)}) EXCEEDS 50 MB LIMIT — MAXIMUM ALLOWED IS 50 MB`
+        portuguese
+          ? `TAMANHO DO ARQUIVO (${formatByteSize(candidate.size)}) EXCEDE O LIMITE DE 50 MB — O MÁXIMO PERMITIDO É 50 MB`
+          : `FILE SIZE (${formatByteSize(candidate.size)}) EXCEEDS 50 MB LIMIT — MAXIMUM ALLOWED IS 50 MB`
       );
       if (inputRef.current) inputRef.current.value = '';
       onFileSelect(null);
@@ -171,7 +181,7 @@ export function AudioDropzone({
     onFileSelect(null);
   };
 
-  const extBadge = file ? getExtension(file.name).replace('.', '').toUpperCase() : 'NO MEDIA';
+  const extBadge = file ? getExtension(file.name).replace('.', '').toUpperCase() : (portuguese ? 'SEM MÍDIA' : 'NO MEDIA');
 
   return (
     <div className={cn('flex flex-col gap-2.5', className)}>
@@ -186,7 +196,15 @@ export function AudioDropzone({
             on={Boolean(errorMsg || file || dragActive)}
             blink={errorMsg ? 'fast' : dragActive ? 'fast' : false}
             size="xs"
-            label={errorMsg ? 'FAULT' : file ? 'MOUNTED' : dragActive ? 'DROP READY' : 'STANDBY'}
+            label={
+              errorMsg
+                ? (portuguese ? 'ERRO' : 'FAULT')
+                : file
+                  ? (portuguese ? 'MONTADO' : 'MOUNTED')
+                  : dragActive
+                    ? (portuguese ? 'SOLTE' : 'DROP READY')
+                    : (portuguese ? 'AGUARDANDO' : 'STANDBY')
+            }
           />
         </div>
       </div>

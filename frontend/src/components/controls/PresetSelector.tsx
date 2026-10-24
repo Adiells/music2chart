@@ -3,6 +3,7 @@ import type { KeyboardEvent } from 'react';
 import { cn } from '../../lib/utils';
 import { playMechanicalClick } from '../../lib/mechanicalClick';
 import { LedIndicator } from '../rack/LedIndicator';
+import type { Language } from '../../lib/language';
 
 export interface PresetItem<T extends string> {
   value: T;
@@ -18,6 +19,7 @@ export interface PresetSelectorProps<T extends string> {
   label?: string;
   disabled?: boolean;
   className?: string;
+  language?: Language;
 }
 
 /**
@@ -28,10 +30,13 @@ export function PresetSelector<T extends string>({
   options,
   value,
   onChange,
-  label = 'MAPPING PROFILE',
+  label,
   disabled = false,
   className,
+  language = 'en',
 }: PresetSelectorProps<T>) {
+  const portuguese = language === 'pt-BR';
+  const effectiveLabel = label ?? (portuguese ? 'PERFIL DE MAPEAMENTO' : 'MAPPING PROFILE');
   const groupId = useId();
 
   const handleSelect = (nextVal: T): void => {
@@ -61,15 +66,15 @@ export function PresetSelector<T extends string>({
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-center justify-between">
-        <span className="silk">{label}</span>
+        <span className="silk">{effectiveLabel}</span>
         <span className="silk-wide text-[9px]">
-          {options.find((o) => o.value === value)?.tag ?? 'PROFILE SELECTED'}
+          {options.find((o) => o.value === value)?.tag ?? (portuguese ? 'PERFIL SELECIONADO' : 'PROFILE SELECTED')}
         </span>
       </div>
 
       <div
         role="radiogroup"
-        aria-label={label}
+        aria-label={effectiveLabel}
         className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
       >
         {options.map((opt, idx) => {
@@ -120,7 +125,7 @@ export function PresetSelector<T extends string>({
                   <span className="silk-wide text-[8px]">{opt.tag}</span>
                   {isSelected ? (
                     <span className="font-mono text-[8px] uppercase tracking-silk text-fret-orange">
-                      ACTIVE
+                      {portuguese ? 'ATIVO' : 'ACTIVE'}
                     </span>
                   ) : null}
                 </div>
