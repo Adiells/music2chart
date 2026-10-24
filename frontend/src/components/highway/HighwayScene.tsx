@@ -9,6 +9,7 @@ import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
 import { NoteRenderer } from './NoteRenderer';
 import { LANE_HEX_COLORS, LANE_X_POSITIONS, StrikeBar } from './StrikeBar';
+import type { Language } from '../../lib/language';
 
 export interface HighwaySceneProps {
   chart: ParsedChart;
@@ -22,6 +23,7 @@ export interface HighwaySceneProps {
   onChangeSpeed: (rate: PlaybackSpeed) => void;
   isDemoChart?: boolean;
   className?: string;
+  language?: Language;
 }
 
 const SPEED_OPTIONS: readonly PlaybackSpeed[] = [0.5, 0.75, 1.0];
@@ -46,7 +48,9 @@ export function HighwayScene({
   onChangeSpeed,
   isDemoChart = false,
   className,
+  language = 'en',
 }: HighwaySceneProps) {
+  const portuguese = language === 'pt-BR';
   const mountRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ParsedChart>(chart);
   const getTimeRef = useRef<() => number>(getCurrentTime);
@@ -259,25 +263,29 @@ export function HighwayScene({
       {/* Top Viewport Bezel: Active Track, Section, Receptor Telemetry & View Mode Toggle */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hw-border bg-panel px-4 py-2">
         <div className="flex items-center gap-3">
-          <span className="silk-wide tabular-nums">V-01 // 3D HIGHWAY DECK</span>
+          <span className="silk-wide tabular-nums">
+            {portuguese ? 'V-01 // VISUALIZADOR 3D HIGHWAY' : 'V-01 // 3D HIGHWAY DECK'}
+          </span>
           <span className="h-3 w-px bg-hw-border" aria-hidden="true" />
           <span className="font-mono text-[11px] font-semibold uppercase tracking-silk text-silk">
             {chart.artist} — {chart.songName}
           </span>
           {isDemoChart ? (
             <span className="border border-hw-screw bg-chassis px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-silk text-starpower">
-              STUDIO REF CHART
+              {portuguese ? 'CHART DE REFERÊNCIA' : 'STUDIO REF CHART'}
             </span>
           ) : (
             <span className="border border-fret-green/50 bg-[#0D1914] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-silk text-fret-green">
-              GENERATED .CHART
+              {portuguese ? '.CHART GERADA' : 'GENERATED .CHART'}
             </span>
           )}
         </div>
 
         {/* Live Strike Receptor LED Mirror & Compact/Focus Toggle */}
         <div className="flex flex-wrap items-center gap-3">
-          <span className="silk-wide text-[9px]">SECTION: {tempoSnap.activeSection.toUpperCase()}</span>
+          <span className="silk-wide text-[9px]">
+            {portuguese ? 'SEÇÃO' : 'SECTION'}: {tempoSnap.activeSection.toUpperCase()}
+          </span>
           <span className="h-3 w-px bg-hw-border" aria-hidden="true" />
           <div className="flex items-center gap-2" aria-label="Active Strike Line Receptors">
             {FRET_LANES.map((lane, idx) => (
@@ -289,17 +297,21 @@ export function HighwayScene({
                 label={String(idx)}
               />
             ))}
-            <LedIndicator color="open" on={openHit} size="xs" label="OPEN" />
+            <LedIndicator color="open" on={openHit} size="xs" label={portuguese ? 'ABERTA' : 'OPEN'} />
           </div>
           <span className="h-3 w-px bg-hw-border" aria-hidden="true" />
           <div className="hidden xl:flex items-center gap-1.5 border border-hw-border bg-chassis px-2 py-0.5 font-mono text-[9px] uppercase tracking-silk text-starpower">
             <span className="inline-block h-1.5 w-1.5 bg-starpower" aria-hidden="true" />
-            <span>STUDIO FOCUS VIEW</span>
+            <span>{portuguese ? 'MODO FOCO DE ESTÚDIO' : 'STUDIO FOCUS VIEW'}</span>
           </div>
           <div className="xl:hidden">
             <PushButton
               size="sm"
-              label={viewMode === 'focus' ? 'Compact View' : 'Focus View'}
+              label={
+                viewMode === 'focus'
+                  ? (portuguese ? 'Visão Compacta' : 'Compact View')
+                  : (portuguese ? 'Visão Expandida' : 'Focus View')
+              }
               sublabel={viewMode === 'focus' ? '220px' : '320px'}
               led="blue"
               ledOn={viewMode === 'focus'}
@@ -337,7 +349,9 @@ export function HighwayScene({
         {isDemoChart ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-2.5 flex justify-center px-4">
             <div className="border border-fret-orange/80 bg-[#120F0A]/95 px-3 py-1 font-mono text-[9px] font-semibold uppercase tracking-silk text-fret-orange shadow-lg backdrop-blur-sm">
-              DEMO MODE // CLICK "GENERATE CHART" TO PROCESS AND RENDER YOUR CUSTOM AUDIO
+              {portuguese
+                ? 'MODO DEMONSTRAÇÃO // CLIQUE EM "CRIAR CHART" PARA PROCESSAR SEU PRÓPRIO ÁUDIO'
+                : 'DEMO MODE // CLICK "GENERATE CHART" TO PROCESS AND RENDER YOUR CUSTOM AUDIO'}
             </div>
           </div>
         ) : null}
@@ -349,7 +363,11 @@ export function HighwayScene({
           <PushButton
             size="sm"
             variant="master"
-            label={isPlaying ? 'Pause' : 'Play'}
+            label={
+              isPlaying
+                ? (portuguese ? 'Pausar' : 'Pause')
+                : (portuguese ? 'Tocar' : 'Play')
+            }
             led={isPlaying ? 'green' : 'yellow'}
             ledOn
             latched={isPlaying}
@@ -358,7 +376,7 @@ export function HighwayScene({
           <PushButton
             size="sm"
             variant="standard"
-            label="Stop / Zero"
+            label={portuguese ? 'Parar / Início' : 'Stop / Zero'}
             led="red"
             ledOn={false}
             onClick={onStop}
@@ -370,7 +388,7 @@ export function HighwayScene({
 
         {/* Speed Selector (0.5x, 0.75x, 1.0x) */}
         <div className="flex items-center gap-2">
-          <span className="silk">Speed</span>
+          <span className="silk">{portuguese ? 'Velocidade' : 'Speed'}</span>
           <div className="flex items-center gap-1" role="radiogroup" aria-label="Playback Speed">
             {SPEED_OPTIONS.map((spd) => (
               <PushButton

@@ -38,7 +38,7 @@ type ActiveView = 'workstation' | 'about';
 
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024;
 
-const PRESET_OPTIONS: readonly PresetItem<PresetId>[] = [
+const PRESET_OPTIONS_EN: readonly PresetItem<PresetId>[] = [
   {
     value: 'the_best',
     label: 'The Best',
@@ -74,6 +74,45 @@ const PRESET_OPTIONS: readonly PresetItem<PresetId>[] = [
     label: 'Chord Heavy',
     description: 'Full polyphonic triad support, 45ms fusion, and authentic power chord voicings.',
     tag: 'POLYPHONIC',
+  },
+];
+
+const PRESET_OPTIONS_PT: readonly PresetItem<PresetId>[] = [
+  {
+    value: 'the_best',
+    label: 'The Best',
+    description: 'Recomendado pelo desenvolvedor: ritmo rigoroso com noise gate 0.41 e escala BPM 0.65.',
+    tag: 'RECOMENDADO',
+  },
+  {
+    value: 'standard',
+    label: 'Padrão',
+    description: 'Mapeamento balanceado em 5 fretes com fusão de acordes de 35ms e regras clássicas de HOPO.',
+    tag: 'BALANCEADO',
+  },
+  {
+    value: 'strict_rhythm',
+    label: 'Ritmo Rigoroso',
+    description: 'Quantização rígida de 40ms, menor tolerância à criatividade e base sólida de acordes.',
+    tag: 'RITMO',
+  },
+  {
+    value: 'dynamic_solo',
+    label: 'Solo Dinâmico',
+    description: 'Mapeamento expressivo para guitarra solo, limite HOPO expandido e escalas rápidas.',
+    tag: 'EXPRESSIVO',
+  },
+  {
+    value: 'melodic',
+    label: 'Melódico',
+    description: 'Reconhecimento de motivos melódicos com tessitura deslizante adaptativa e sustentações equilibradas.',
+    tag: 'MOTIVO',
+  },
+  {
+    value: 'chord_heavy',
+    label: 'Foco em Acordes',
+    description: 'Suporte completo a tríades polifônicas, fusão de 45ms e voicings autênticos de power chords.',
+    tag: 'POLIFÔNICO',
   },
 ];
 
@@ -164,11 +203,18 @@ const PRESET_CALIBRATION_MAP: Record<PresetId, CalibrationState> = {
   },
 };
 
-const DIFFICULTY_TIERS: readonly { level: number; label: string; tag: string }[] = [
+const DIFFICULTY_TIERS_EN: readonly { level: number; label: string; tag: string }[] = [
   { level: 6, label: 'Expert', tag: 'TIER 6' },
   { level: 5, label: 'Hard', tag: 'TIER 5' },
   { level: 3, label: 'Medium', tag: 'TIER 3' },
   { level: 1, label: 'Easy', tag: 'TIER 1' },
+];
+
+const DIFFICULTY_TIERS_PT: readonly { level: number; label: string; tag: string }[] = [
+  { level: 6, label: 'Especialista', tag: 'NÍVEL 6' },
+  { level: 5, label: 'Difícil', tag: 'NÍVEL 5' },
+  { level: 3, label: 'Médio', tag: 'NÍVEL 3' },
+  { level: 1, label: 'Fácil', tag: 'NÍVEL 1' },
 ];
 
 interface GenerateApiResponse {
@@ -179,6 +225,8 @@ interface GenerateApiResponse {
 
 export default function App() {
   const [language, setLanguage] = useLanguage();
+  const presetOptions = language === 'pt-BR' ? PRESET_OPTIONS_PT : PRESET_OPTIONS_EN;
+  const difficultyTiers = language === 'pt-BR' ? DIFFICULTY_TIERS_PT : DIFFICULTY_TIERS_EN;
   /* Navigation View & 4-Step Linear Workflow State */
   const [activeView, setActiveView] = useState<ActiveView>('workstation');
   const [activeStep, setActiveStep] = useState<WorkflowStepId>(1);
@@ -424,7 +472,7 @@ export default function App() {
       }
     >
       {activeView === 'about' ? (
-        <AboutPage onReturnToWorkstation={() => setActiveView('workstation')} />
+        <AboutPage language={language} onReturnToWorkstation={() => setActiveView('workstation')} />
       ) : (
         <div className="flex flex-col gap-3.5 pb-28 sm:pb-32">
           {/* 4-Step Guided Linear Workflow Navigation */}
@@ -460,7 +508,11 @@ export default function App() {
                     color={hasAudio ? 'green' : 'yellow'}
                     on
                     size="xs"
-                    label={hasAudio ? 'Song ready' : 'Choose an audio file'}
+                    label={
+                      hasAudio
+                        ? (language === 'pt-BR' ? 'MÚSICA PRONTA' : 'Song ready')
+                        : (language === 'pt-BR' ? 'ESCOLHA UM ÁUDIO' : 'Choose an audio file')
+                    }
                   />
                 }
                 footer={language === 'pt-BR' ? 'MP3, WAV, FLAC ou OGG · até 50 MB' : 'MP3, WAV, FLAC or OGG · up to 50 MB'}
@@ -516,16 +568,18 @@ export default function App() {
                     <summary className="cursor-pointer font-mono text-xs font-semibold text-silk">{language === 'pt-BR' ? 'Ajustes avançados' : 'Advanced settings'}</summary>
                     <p className="mt-2 font-mono text-xs text-silk-neutral">{language === 'pt-BR' ? 'Para a maioria das músicas, as opções recomendadas funcionam bem.' : 'The recommended options work well for most songs.'}</p>
                     <PresetSelector
-                      options={PRESET_OPTIONS}
+                      options={presetOptions}
                       value={preset}
                       onChange={handlePresetChange}
                       disabled={isBusy}
+                      language={language}
                     />
                     <CalibrationBay
                       value={calibration}
                       onChange={handleCalibrationChange}
                       defaultExpanded={false}
                       disabled={isBusy}
+                      language={language}
                     />
                   </details>
 
@@ -534,11 +588,12 @@ export default function App() {
                     <div className="flex items-center justify-between mb-2">
                       <span className="silk">{language === 'pt-BR' ? 'Dificuldade' : 'Chart difficulty'}</span>
                       <span className="silk-wide text-[9px]">
-                        SELECTED: {DIFFICULTY_TIERS.find((d) => d.level === metadata.difficulty)?.label.toUpperCase()}
+                        {language === 'pt-BR' ? 'SELECIONADO: ' : 'SELECTED: '}
+                        {difficultyTiers.find((d) => d.level === metadata.difficulty)?.label.toUpperCase()}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Difficulty Tiers">
-                      {DIFFICULTY_TIERS.map((d) => (
+                      {difficultyTiers.map((d) => (
                         <PushButton
                           key={d.level}
                           size="md"
@@ -696,6 +751,7 @@ export default function App() {
                 onStop={player.stop}
                 onChangeSpeed={player.setPlaybackRate}
                 isDemoChart={isDemoChart}
+                language={language}
               />
 
               <WaveformBar
@@ -714,21 +770,36 @@ export default function App() {
                     color={hasChart ? 'green' : 'yellow'}
                     on
                     size="xs"
-                    label={hasChart ? 'CHART LOADED' : 'WAITING FOR DATA'}
+                    label={
+                      hasChart
+                        ? (language === 'pt-BR' ? 'CHART CARREGADA' : 'CHART LOADED')
+                        : (language === 'pt-BR' ? 'AGUARDANDO DADOS' : 'WAITING FOR DATA')
+                    }
                   />
                   <span className="silk-wide text-[9px]">
                     {completedTaskId
-                      ? `${chart.notes.length} NOTES // ${chart.starPower.length} STAR POWER PHRASES`
-                      : 'SHOWING REFERENCE DEMO // RUN "GENERATE CHART" FOR YOUR CUSTOM AUDIO'}
+                      ? `${chart.notes.length} ${language === 'pt-BR' ? 'NOTAS' : 'NOTES'} // ${chart.starPower.length} ${language === 'pt-BR' ? 'FRASES DE STAR POWER' : 'STAR POWER PHRASES'}`
+                      : (language === 'pt-BR'
+                          ? 'EXIBINDO DEMO DE REFERÊNCIA // CLIQUE EM "CRIAR CHART" PARA SEU PRÓPRIO ÁUDIO'
+                          : 'SHOWING REFERENCE DEMO // RUN "GENERATE CHART" FOR YOUR CUSTOM AUDIO')}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveStep(4)}
-                  className="border border-hw-border bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-silk hover:bg-panel transition-colors"
-                >
-                  {language === 'pt-BR' ? 'Ir para downloads >' : 'Go to downloads >'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(1)}
+                    className="border border-hw-border bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-fret-orange hover:text-fret-orange transition-colors"
+                  >
+                    {language === 'pt-BR' ? 'Ajustar Parâmetros' : 'Adjust Parameters'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(4)}
+                    className="border border-hw-border bg-module px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-silk text-silk hover:border-silk hover:bg-panel transition-colors"
+                  >
+                    {language === 'pt-BR' ? 'Ir para downloads >' : 'Go to downloads >'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -747,23 +818,31 @@ export default function App() {
               />
 
               <details className="border border-hw-border bg-panel p-3">
-                <summary className="cursor-pointer font-mono text-xs text-silk-neutral">Chart details and processing log</summary>
+                <summary className="cursor-pointer font-mono text-xs text-silk-neutral">
+                  {language === 'pt-BR' ? 'Detalhes da chart e log de processamento' : 'Chart details and processing log'}
+                </summary>
                 <div className="mt-3 grid grid-cols-1 items-stretch gap-3.5 lg:grid-cols-12">
-                  <TempoDisplay chart={chart} currentTime={player.currentTime} isPlaying={player.isPlaying} className="h-full lg:col-span-5" />
-                  <StatsCard stats={chart.stats} className="h-full lg:col-span-7" />
+                  <TempoDisplay
+                    chart={chart}
+                    currentTime={player.currentTime}
+                    isPlaying={player.isPlaying}
+                    language={language}
+                    className="h-full lg:col-span-5"
+                  />
+                  <StatsCard stats={chart.stats} language={language} className="h-full lg:col-span-7" />
                 </div>
                 <NpsGraph buckets={chart.npsBuckets} peakNps={chart.stats.peakNps} avgNps={chart.stats.avgNps} currentTime={player.currentTime} duration={player.duration} onSeek={player.seek} />
                 <PipelineTelemetry
-                taskId={activeTaskId}
-                completedTaskId={completedTaskId}
-                submitting={submitting}
-                canGenerate={hasAudio}
-                onGenerate={() => {
-                  void handleGenerate();
-                }}
-                onRunDemo={handleRunDemo}
-                onAbort={handleAbort}
-                onCompleted={handleTelemetryCompleted}
+                  taskId={activeTaskId}
+                  completedTaskId={completedTaskId}
+                  submitting={submitting}
+                  canGenerate={hasAudio}
+                  onGenerate={() => {
+                    void handleGenerate();
+                  }}
+                  onRunDemo={handleRunDemo}
+                  onAbort={handleAbort}
+                  onCompleted={handleTelemetryCompleted}
                 />
               </details>
             </div>
@@ -773,6 +852,8 @@ export default function App() {
           <FloatingActionDock
             language={language}
             canGenerate={hasAudio}
+            hasChart={hasChart}
+            currentStep={activeStep}
             isProcessing={isBusy}
             submitting={submitting}
             onGenerate={() => {
@@ -780,12 +861,14 @@ export default function App() {
             }}
             onAbort={handleAbort}
             onRunDemo={handleRunDemo}
+            onAdjustParameters={() => setActiveStep(1)}
+            onGoToDownload={() => setActiveStep(4)}
           />
         </div>
       )}
 
       {/* Cloud GPU Infrastructure & GitHub Support Modal */}
-      <SupportModal isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
+      <SupportModal isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} language={language} />
     </RackChassis>
   );
 }
