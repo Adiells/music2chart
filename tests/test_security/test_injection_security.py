@@ -107,7 +107,7 @@ def test_string_sanitizer_edge_cases():
     exploit = 'Track Name "with quotes" and } closing brace'
     sanitized = sanitize_string(exploit)
     assert "}" not in sanitized
-    assert r'\"with quotes\"' in sanitized
+    assert r"\"with quotes\"" in sanitized
 
 
 def test_ini_sanitizers():

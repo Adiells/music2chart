@@ -14,7 +14,9 @@ DEFAULT_WINDOW_TICKS: Final[int] = 1536  # ~2 measures in 4/4 at 192 PPQ
 DEFAULT_MAX_JUMP: Final[int] = 3  # Maximum allowed fret jump in rapid passages
 DEFAULT_RAPID_INTERVAL: Final[int] = 48  # Sixteenth-note tick interval at 192 PPQ
 DEFAULT_OPEN_THRESHOLD: Final[int] = 40  # Pitches < 40 are sub-bass open notes
-DEFAULT_MOTIF_SIMILARITY_THRESHOLD: Final[float] = 0.70  # Fuzzy motif alignment similarity threshold
+DEFAULT_MOTIF_SIMILARITY_THRESHOLD: Final[float] = (
+    0.70  # Fuzzy motif alignment similarity threshold
+)
 
 
 class PitchToFretMapper:
@@ -515,7 +517,9 @@ class PitchToFretMapper:
                     else:
                         diff = base - neighbor_fret
                         if abs(diff) > self.max_jump:
-                            clamped = neighbor_fret + (self.max_jump if diff > 0 else -self.max_jump)
+                            clamped = neighbor_fret + (
+                                self.max_jump if diff > 0 else -self.max_jump
+                            )
                             result_frets[j] = max(0, min(4, clamped))
                         else:
                             result_frets[j] = base
@@ -593,7 +597,9 @@ class PitchToFretMapper:
         def get_max_phrase_len(start_idx: int) -> int:
             """Maximum consecutive notes before a silence gap (rest > 768 ticks)."""
             idx = start_idx
-            while idx + 1 < n_notes and (sorted_notes[idx + 1].tick - sorted_notes[idx].tick <= 768):
+            while idx + 1 < n_notes and (
+                sorted_notes[idx + 1].tick - sorted_notes[idx].tick <= 768
+            ):
                 idx += 1
             return idx - start_idx + 1
 
@@ -691,9 +697,15 @@ class PitchToFretMapper:
                 # Fast prefix filter: at least first note must be in range
                 d0 = abs(pitches[i] - pitches[j])
                 if d0 > 2 and d0 != 12:
-                    if j + 1 < n_notes and (abs(pitches[i] - pitches[j + 1]) <= 2 or abs(pitches[i] - pitches[j + 1]) == 12):
+                    if j + 1 < n_notes and (
+                        abs(pitches[i] - pitches[j + 1]) <= 2
+                        or abs(pitches[i] - pitches[j + 1]) == 12
+                    ):
                         pass
-                    elif i + 1 < n_notes and (abs(pitches[i + 1] - pitches[j]) <= 2 or abs(pitches[i + 1] - pitches[j]) == 12):
+                    elif i + 1 < n_notes and (
+                        abs(pitches[i + 1] - pitches[j]) <= 2
+                        or abs(pitches[i + 1] - pitches[j]) == 12
+                    ):
                         pass
                     else:
                         continue
@@ -806,9 +818,15 @@ class PitchToFretMapper:
                 # Fast prefix filter
                 d0 = abs(pitches[j] - pitches[i])
                 if d0 > 2 and d0 != 12:
-                    if j + 1 < n_notes and (abs(pitches[j + 1] - pitches[i]) <= 2 or abs(pitches[j + 1] - pitches[i]) == 12):
+                    if j + 1 < n_notes and (
+                        abs(pitches[j + 1] - pitches[i]) <= 2
+                        or abs(pitches[j + 1] - pitches[i]) == 12
+                    ):
                         pass
-                    elif i + 1 < n_notes and (abs(pitches[j] - pitches[i + 1]) <= 2 or abs(pitches[j] - pitches[i + 1]) == 12):
+                    elif i + 1 < n_notes and (
+                        abs(pitches[j] - pitches[i + 1]) <= 2
+                        or abs(pitches[j] - pitches[i + 1]) == 12
+                    ):
                         pass
                     else:
                         continue

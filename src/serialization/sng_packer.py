@@ -528,9 +528,7 @@ class SngPacker:
             # Check presence of essential files: notes.chart, song.ini, and audio file
             has_chart = any(fn.endswith("notes.chart") or fn == "notes.chart" for fn in file_names)
             has_ini = any(fn.endswith("song.ini") or fn == "song.ini" for fn in file_names)
-            has_audio = any(
-                fn.endswith((".ogg", ".wav", ".mp3", ".opus")) for fn in file_names
-            )
+            has_audio = any(fn.endswith((".ogg", ".wav", ".mp3", ".opus")) for fn in file_names)
 
             return has_chart and has_ini and has_audio
         except Exception:

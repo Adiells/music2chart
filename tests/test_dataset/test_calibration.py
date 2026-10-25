@@ -133,9 +133,7 @@ def test_motif_lock_repairs_occurrences_above_threshold() -> None:
     assert repaired[-1].frets == frozenset({2})
     assert repaired[-1].fret_mask == compute_fret_mask({2})
 
-    untouched, locked_high, _ = apply_motif_lock(
-        pred_events, gt_events, groups, threshold=0.90
-    )
+    untouched, locked_high, _ = apply_motif_lock(pred_events, gt_events, groups, threshold=0.90)
     assert locked_high == 1  # only the anchor occurrence matches itself
     assert untouched[-1].frets == frozenset({3})
 
@@ -240,7 +238,7 @@ def test_evaluate_chart_alignment_without_repeats_scores_zero_consistency() -> N
 def _create_fake_project(root: Path) -> None:
     files = {
         "src/game_design/pitch_to_fret.py": (
-            'DEFAULT_MOTIF_SIMILARITY_THRESHOLD: Final[float] = 0.75  # x\n'
+            "DEFAULT_MOTIF_SIMILARITY_THRESHOLD: Final[float] = 0.75  # x\n"
             "            creativity: factor in [0.0, 1.0] (default 0.5).\n"
             "            motif_similarity_threshold: Minimum fuzzy threshold\n"
             "                in [0.0, 1.0] (default 0.75) for matching repeating motifs.\n"
@@ -396,7 +394,9 @@ def test_cli_apply_requires_self_calibration_opt_in(tmp_path: Path) -> None:
     assert "self-calibration" in report["apply_skipped_reason"]
 
 
-def test_cli_reports_missing_instrument_track(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_reports_missing_instrument_track(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Invalid inputs produce a clean error message and exit code 2."""
     chart_path = _write_chart(tmp_path / "gt.chart", [(0, 0), (96, 1)])
 

@@ -167,6 +167,26 @@ class GenerateResponse(BaseModel):
     )
 
 
+class ChartFeedbackRequest(BaseModel):
+    """User feedback for a generated chart."""
+
+    task_id: str = Field(description="UUID of the generated chart task")
+    rating: int = Field(ge=1, le=5, description="Star rating from 1 to 5")
+    tags: list[str] = Field(default_factory=list, description="Categorical feedback tags")
+    comment: str | None = Field(default=None, max_length=1000, description="User commentary")
+    song_name: str | None = None
+    artist: str | None = None
+    preset_used: str | None = None
+
+
+class ChartFeedbackResponse(BaseModel):
+    """Acknowledgement returned after recording chart feedback."""
+
+    status: str = "ok"
+    feedback_id: str
+    message: str
+
+
 class TaskStatusResponse(BaseModel):
     """Response returned when polling task status."""
 

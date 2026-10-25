@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AboutPage,
   AudioDropzone,
@@ -6,6 +6,7 @@ import {
   ExportPanel,
   FloatingActionDock,
   HighwayScene,
+  LandingPage,
   LedIndicator,
   MetadataInputs,
   ModulePanel,
@@ -223,7 +224,7 @@ interface GenerateApiResponse {
   message: string;
 }
 
-export default function App() {
+function StudioWorkstation({ onBackHome }: { onBackHome: () => void }) {
   const [language, setLanguage] = useLanguage();
   const presetOptions = language === 'pt-BR' ? PRESET_OPTIONS_PT : PRESET_OPTIONS_EN;
   const difficultyTiers = language === 'pt-BR' ? DIFFICULTY_TIERS_PT : DIFFICULTY_TIERS_EN;
@@ -425,6 +426,13 @@ export default function App() {
       onOpenSupport={() => setIsSupportOpen(true)}
       headerRight={
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={onBackHome}
+            className="border border-hw-border bg-module px-2 py-1 font-mono text-[10px] uppercase tracking-silk text-silk hover:border-silk"
+          >
+            {language === 'pt-BR' ? '← Voltar para Início' : '← Back to Home'}
+          </button>
           <label className="sr-only" htmlFor="language-picker">Language</label>
           <select id="language-picker" value={language} onChange={(event) => setLanguage(event.target.value as 'en' | 'pt-BR')} className="border border-hw-border bg-module px-2 py-1 text-xs text-silk">
             <option value="en">English</option>
@@ -871,4 +879,46 @@ export default function App() {
       <SupportModal isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} language={language} />
     </RackChassis>
   );
+}
+
+type Route = 'landing' | 'studio';
+
+function resolveRoute(pathname: string): Route {
+  const clean = pathname.replace(/\/+$/, '');
+  return clean === '/studio' || clean === '/app' ? 'studio' : 'landing';
+}
+
+function consumeRedirectPath(): void {
+  try {
+    const saved = sessionStorage.getItem('m2c_redirect_path');
+    if (!saved) return;
+    sessionStorage.removeItem('m2c_redirect_path');
+    window.history.replaceState(null, '', saved);
+  } catch {
+    // sessionStorage unavailable: stay on the current path.
+  }
+}
+
+export default function App() {
+  const [route, setRoute] = useState<Route>(() => {
+    consumeRedirectPath();
+    return resolveRoute(window.location.pathname);
+  });
+
+  useEffect(() => {
+    const onPopState = (): void => setRoute(resolveRoute(window.location.pathname));
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const navigate = useCallback((path: '/' | '/studio'): void => {
+    if (window.location.pathname !== path) window.history.pushState(null, '', path);
+    setRoute(resolveRoute(path));
+    window.scrollTo(0, 0);
+  }, []);
+
+  if (route === 'studio') {
+    return <StudioWorkstation onBackHome={() => navigate('/')} />;
+  }
+  return <LandingPage onOpenStudio={() => navigate('/studio')} />;
 }

@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import io
+import json
+import uuid
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -582,9 +585,7 @@ async def test_preview_audio_file_missing_when_completed(tmp_path: Path):
     """Verify 404 is returned when task is completed but audio file is missing on disk."""
     task_id = "task-missing-audio-file"
     task_manager.create_task(task_id, song_name="Track", artist="Artist")
-    task_manager.set_completed(
-        task_id, output_files={"audio": tmp_path / "does_not_exist.ogg"}
-    )
+    task_manager.set_completed(task_id, output_files={"audio": tmp_path / "does_not_exist.ogg"})
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         res = await client.get(f"/preview/{task_id}/audio")
@@ -597,7 +598,9 @@ async def test_serve_web_ui_fallback_when_dist_missing(tmp_path: Path):
     """Verify root / falls back to src/api/static/index.html when frontend/dist is absent."""
     non_existent_dist = tmp_path / "non_existent_dist"
     custom_app = create_app(frontend_dist=non_existent_dist)
-    async with AsyncClient(transport=ASGITransport(app=custom_app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=custom_app), base_url="http://test"
+    ) as client:
         res = await client.get("/")
         assert res.status_code == 200
         assert "text/html" in res.headers["content-type"]
@@ -611,13 +614,17 @@ async def test_serve_web_ui_compiled_frontend(tmp_path: Path):
     """Verify root / and static assets are served from compiled frontend/dist."""
     custom_dist = tmp_path / "custom_frontend_dist"
     custom_dist.mkdir()
-    (custom_dist / "index.html").write_text("<!doctype html><html><body><div id=\"root\">CUSTOM SPA</div></body></html>")
+    (custom_dist / "index.html").write_text(
+        '<!doctype html><html><body><div id="root">CUSTOM SPA</div></body></html>'
+    )
     assets_dir = custom_dist / "assets"
     assets_dir.mkdir()
     (assets_dir / "bundle.js").write_text("console.log('spa bundle');")
 
     custom_app = create_app(frontend_dist=custom_dist)
-    async with AsyncClient(transport=ASGITransport(app=custom_app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=custom_app), base_url="http://test"
+    ) as client:
         res_root = await client.get("/")
         assert res_root.status_code == 200
         assert "CUSTOM SPA" in res_root.text
@@ -625,3 +632,115 @@ async def test_serve_web_ui_compiled_frontend(tmp_path: Path):
         res_asset = await client.get("/assets/bundle.js")
         assert res_asset.status_code == 200
         assert "console.log('spa bundle');" in res_asset.text
+
+
+@pytest.mark.asyncio
+async def test_submit_chart_feedback_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Verify valid feedback is accepted, acknowledged, and persisted as JSONL."""
+    monkeypatch.chdir(tmp_path)
+    task_id = "feedback-task-001"
+    task_manager.create_task(task_id, song_name="Feedback Song", artist="Feedback Artist")
+
+    payload = {
+        "task_id": task_id,
+        "rating": 5,
+        "tags": ["great_charting", "fun_to_play"],
+        "comment": "Excelente mapeamento das notas!",
+        "song_name": "Feedback Song",
+        "artist": "Feedback Artist",
+        "preset_used": "the_best",
+    }
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/api/v1/chart/feedback", json=payload)
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["message"] == "Feedback recorded successfully"
+    feedback_uuid = uuid.UUID(body["feedback_id"])  # raises ValueError if malformed
+
+    feedback_file = tmp_path / "tmp" / "feedback" / "ratings.jsonl"
+    assert feedback_file.is_file()
+
+    lines = [
+        line for line in feedback_file.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+    assert len(lines) == 1
+    record = json.loads(lines[0])
+    assert record["feedback_id"] == str(feedback_uuid)
+    assert record["task_id"] == task_id
+    assert record["rating"] == 5
+    assert record["tags"] == payload["tags"]
+    assert record["comment"] == payload["comment"]
+    assert record["song_name"] == "Feedback Song"
+    assert record["artist"] == "Feedback Artist"
+    assert record["preset_used"] == "the_best"
+    assert record["task_metadata"]["song_name"] == "Feedback Song"
+    assert record["task_metadata"]["artist"] == "Feedback Artist"
+    assert record["task_metadata"]["status"] == "PENDING"
+
+    timestamp = datetime.fromisoformat(record["timestamp"])
+    assert timestamp.tzinfo is not None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("invalid_rating", [0, -1, 6, 10])
+async def test_submit_chart_feedback_rejects_invalid_rating(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, invalid_rating: int
+) -> None:
+    """Verify out-of-range ratings are rejected with HTTP 422 and nothing is written."""
+    monkeypatch.chdir(tmp_path)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/chart/feedback",
+            json={
+                "task_id": "feedback-task-invalid",
+                "rating": invalid_rating,
+                "tags": ["buggy"],
+                "comment": "out of range",
+            },
+        )
+
+    assert response.status_code == 422
+    details = response.json()["detail"]
+    assert any(error["loc"][-1] == "rating" for error in details)
+    assert not (tmp_path / "tmp" / "feedback" / "ratings.jsonl").exists()
+
+
+@pytest.mark.asyncio
+async def test_submit_chart_feedback_appends_records(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Verify successive submissions append JSONL records with unique ids and timestamps."""
+    monkeypatch.chdir(tmp_path)
+    feedback_ids: list[str] = []
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        for rating in (1, 3, 5):
+            response = await client.post(
+                "/api/v1/chart/feedback",
+                json={
+                    "task_id": f"feedback-task-{rating}",
+                    "rating": rating,
+                    "tags": ["rating_boundary"],
+                },
+            )
+            assert response.status_code == 201
+            feedback_ids.append(response.json()["feedback_id"])
+
+    feedback_file = tmp_path / "tmp" / "feedback" / "ratings.jsonl"
+    records = [
+        json.loads(line)
+        for line in feedback_file.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert len(records) == 3
+    assert [record["rating"] for record in records] == [1, 3, 5]
+    assert [record["feedback_id"] for record in records] == feedback_ids
+    assert len(set(feedback_ids)) == 3
+    for record in records:
+        assert datetime.fromisoformat(record["timestamp"]).tzinfo is not None

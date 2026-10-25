@@ -3,6 +3,7 @@ import { getApiUrl } from '../../lib/api';
 import { cn } from '../../lib/utils';
 import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
+import { ChartRatingBay } from './ChartRatingBay';
 import type { Language } from '../../lib/language';
 
 export type ExportFormat = 'chart' | 'zip';
@@ -156,6 +157,13 @@ export function ExportPanel({
           className="w-full"
         />
       </div>
+
+      <ChartRatingBay
+        taskId={hasBackendPackage ? completedTaskId : null}
+        songName={songName}
+        artist={artist}
+        language={language}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hw-border pt-1.5 text-[8px]">
         <span className="silk-wide">

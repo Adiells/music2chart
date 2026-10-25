@@ -5,13 +5,16 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import re
 import shutil
 import threading
 import time
+import uuid
 import zipfile
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -31,6 +34,8 @@ from slowapi import Limiter
 
 from config.settings import get_settings
 from src.api.schemas import (
+    ChartFeedbackRequest,
+    ChartFeedbackResponse,
     DownloadFormat,
     GenerateResponse,
     OutputFormat,
@@ -207,6 +212,8 @@ class TaskManager:
 task_manager = TaskManager()
 limiter = Limiter(key_func=get_client_ip)
 
+_feedback_write_lock = threading.Lock()
+
 _semaphore_lock = threading.Lock()
 _pipeline_semaphore: threading.Semaphore | None = None
 _current_max_concurrent: int = 0
@@ -342,6 +349,53 @@ preview_router = APIRouter(tags=["Chart Preview"])
 
 
 @router.post(
+    "/feedback",
+    response_model=ChartFeedbackResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def submit_chart_feedback(request: ChartFeedbackRequest) -> ChartFeedbackResponse:
+    """Append chart feedback as one JSONL record."""
+    feedback_id = str(uuid.uuid4())
+    payload = {
+        "timestamp": datetime.now(UTC).isoformat(),
+        "feedback_id": feedback_id,
+        "task_id": request.task_id,
+        "rating": request.rating,
+        "tags": request.tags,
+        "comment": request.comment,
+        "song_name": request.song_name,
+        "artist": request.artist,
+        "preset_used": request.preset_used,
+    }
+    record = task_manager.get_task(request.task_id)
+    if record is not None:
+        payload["task_metadata"] = {
+            "song_name": record.song_name,
+            "artist": record.artist,
+            "status": record.status.value,
+            "stage": record.stage,
+        }
+
+    feedback_dir = Path("tmp/feedback")
+    feedback_dir.mkdir(parents=True, exist_ok=True)
+    line = (json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
+    with _feedback_write_lock:
+        fd = os.open(feedback_dir / "ratings.jsonl", os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        try:
+            written = os.write(fd, line)
+            if written != len(line):
+                raise OSError("Incomplete feedback record write")
+        finally:
+            os.close(fd)
+
+    return ChartFeedbackResponse(
+        status="ok",
+        feedback_id=feedback_id,
+        message="Feedback recorded successfully",
+    )
+
+
+@router.post(
     "/generate",
     response_model=GenerateResponse,
     status_code=status.HTTP_202_ACCEPTED,
@@ -414,9 +468,7 @@ async def generate_chart(
 
     client_ip = get_client_ip(request)
     settings = get_settings()
-    if task_manager.has_active_task_for_ip(
-        client_ip, max_active=settings.MAX_ACTIVE_TASKS_PER_IP
-    ):
+    if task_manager.has_active_task_for_ip(client_ip, max_active=settings.MAX_ACTIVE_TASKS_PER_IP):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=(
@@ -713,7 +765,9 @@ async def stream_task_progress(task_id: str) -> StreamingResponse:
 
                 err_msg = current.error
                 if err_msg and settings.APP_ENV.lower() == "production":
-                    err_msg = "Pipeline processing failed. Please check your audio file or try again."
+                    err_msg = (
+                        "Pipeline processing failed. Please check your audio file or try again."
+                    )
 
                 payload = {
                     "task_id": current.task_id,

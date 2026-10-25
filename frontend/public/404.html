@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>404 — Track Not Found | Music2Chart</title>
+    <script>
+      // Single Page App redirect for known client routes on static hosting (GitHub Pages)
+      var path = window.location.pathname;
+      if (path === '/studio' || path === '/app' || path === '/about' || path.startsWith('/studio/') || path.startsWith('/app/')) {
+        sessionStorage.setItem('m2c_redirect_path', path + window.location.search + window.location.hash);
+        window.location.replace('/');
+      }
+    </script>
     <meta name="robots" content="noindex, follow" />
     <meta name="theme-color" content="#0D0E11" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

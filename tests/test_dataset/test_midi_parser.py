@@ -214,6 +214,7 @@ def test_real_notes_mid_file() -> None:
 
     # Breakdown validation
     from collections import Counter
+
     counts = Counter(n.fret for n in expert_fret_notes)
     assert counts[FretType.GREEN] == 160
     assert counts[FretType.RED] == 287

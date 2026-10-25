@@ -168,6 +168,7 @@ def test_magic_bytes_detection():
 
 def test_get_client_ip_uses_forwarded_header_precedence():
     """Use the first forwarded address, then supported proxy headers, then the peer."""
+
     def request(headers: list[tuple[bytes, bytes]]) -> Request:
         return Request(
             {
@@ -184,9 +185,9 @@ def test_get_client_ip_uses_forwarded_header_precedence():
             }
         )
 
-    assert get_client_ip(
-        request([(b"x-forwarded-for", b"198.51.100.3, 10.0.0.1")])
-    ) == "198.51.100.3"
+    assert (
+        get_client_ip(request([(b"x-forwarded-for", b"198.51.100.3, 10.0.0.1")])) == "198.51.100.3"
+    )
     assert get_client_ip(request([(b"cf-connecting-ip", b"198.51.100.4")])) == "198.51.100.4"
     assert get_client_ip(request([(b"x-real-ip", b"198.51.100.5")])) == "198.51.100.5"
     assert get_client_ip(request([])) == "127.0.0.1"

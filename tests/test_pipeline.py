@@ -551,4 +551,3 @@ def test_pipeline_preset_the_best(
     assert any(n.tick > 0 for n in expert_track.notes)
     # Verify tempo map has bpm changes
     assert len(tempo_map.bpm_changes) >= 1
-

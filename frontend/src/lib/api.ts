@@ -31,3 +31,24 @@ export function getApiUrl(path: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   return `${API_BASE_URL}${cleanPath}`;
 }
+
+export interface ChartFeedbackPayload {
+  task_id: string | null;
+  rating: number;
+  tags: string[];
+  comment?: string;
+  song_name?: string;
+  artist?: string;
+}
+
+/** POST /api/v1/chart/feedback: sends a user rating for a generated chart. */
+export async function submitChartFeedback(payload: ChartFeedbackPayload): Promise<void> {
+  const response = await fetch(getApiUrl('/api/v1/chart/feedback'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(`Feedback request failed with status ${response.status}`);
+  }
+}

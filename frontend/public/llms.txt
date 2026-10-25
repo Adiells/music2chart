@@ -3,6 +3,7 @@
 > **Music2Chart** (https://music2chart.adiels.me/) is a free, web-based AI tool to **convert audio tracks (MP3, WAV, FLAC, OGG) into playable Clone Hero and YARG charts** (.chart and .sng), complete with an interactive real-time 3D Highway preview directly in the browser.
 
 - **Live Application**: https://music2chart.adiels.me/
+- **Studio Workstation**: https://music2chart.adiels.me/studio
 - **Creator**: Adiel Emilson (https://adiels.me/) — Data Science & AI Researcher at UFPB
 - **Open Source / GitHub**: https://github.com/Adiells/music2chart
 - **License**: MIT
@@ -25,7 +26,7 @@ Music2Chart solves the bottleneck of manual chart creation for rhythm games, whi
 ## Common Questions & Direct Answers (Q&A)
 
 ### How to convert an MP3 or song into a Clone Hero chart online?
-1. Visit https://music2chart.adiels.me/.
+1. Visit https://music2chart.adiels.me/ and click "Launch Studio" (or go directly to https://music2chart.adiels.me/studio).
 2. Drag and drop your audio track (MP3, WAV, FLAC, or OGG).
 3. Choose a calibration preset (e.g., "The Best", "Standard", or "Dynamic Solo").
 4. Review the generated notes in real time on the interactive 3D Highway.

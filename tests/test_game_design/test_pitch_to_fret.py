@@ -693,8 +693,7 @@ def test_motif_matching_with_vibrato_at_default_creativity() -> None:
 
     # Surrounding high-pitch context at tick 1500..1800 that shifts sliding window percentiles
     surrounding = [
-        _make_qnote(tick=1500 + i * 48, pitch=p)
-        for i, p in enumerate([84, 86, 88, 91, 88, 86])
+        _make_qnote(tick=1500 + i * 48, pitch=p) for i, p in enumerate([84, 86, 88, 91, 88, 86])
     ]
 
     # Occurrence 2 at tick 3000..3336 with +/- 1 semitone vibrato on selected notes
@@ -722,8 +721,7 @@ def test_motif_matching_with_ghost_note_insertion() -> None:
 
     # Surrounding high notes placed close to occ2 to distort local sliding window percentiles
     surrounding = [
-        _make_qnote(tick=2400 + i * 48, pitch=p)
-        for i, p in enumerate([85, 88, 90, 93, 90, 88])
+        _make_qnote(tick=2400 + i * 48, pitch=p) for i, p in enumerate([85, 88, 90, 93, 90, 88])
     ]
 
     # Occurrence 2: same 8 notes, but with 1 extra ghost note inserted between note 2 (64) and note 3 (65)
@@ -768,10 +766,7 @@ def test_motif_matching_with_turnaround_variation() -> None:
     occ1 = [_make_qnote(tick=i * 96, pitch=p) for i, p in enumerate(canonical_pitches)]
 
     # Surrounding high notes placed close to occ2 to distort local sliding window percentiles
-    surrounding = [
-        _make_qnote(tick=2400 + i * 48, pitch=p)
-        for i, p in enumerate([85, 88, 90, 93])
-    ]
+    surrounding = [_make_qnote(tick=2400 + i * 48, pitch=p) for i, p in enumerate([85, 88, 90, 93])]
 
     # Occurrence 2: First 6 notes are the identical body [55, 57, 59, 60, 62, 60],
     # last 2 notes are a turnaround fill [60, 62] (variation of [59, 57])
@@ -805,19 +800,16 @@ def test_motif_contrasting_background_tessitura() -> None:
 
     # Quiet/low background surrounding section 1
     quiet_surrounding = [
-        _make_qnote(tick=1000 + i * 96, pitch=p)
-        for i, p in enumerate([42, 44, 42, 45])
+        _make_qnote(tick=1000 + i * 96, pitch=p) for i, p in enumerate([42, 44, 42, 45])
     ]
 
     # Loud/high background with cymbals/high vocals surrounding section 2 (ticks 2500..4000)
     high_cymbals_before = [
-        _make_qnote(tick=2500 + i * 48, pitch=p)
-        for i, p in enumerate([88, 91, 93, 95, 96, 98])
+        _make_qnote(tick=2500 + i * 48, pitch=p) for i, p in enumerate([88, 91, 93, 95, 96, 98])
     ]
     occ2 = [_make_qnote(tick=3000 + i * 96, pitch=p) for i, p in enumerate(riff_pitches)]
     high_cymbals_after = [
-        _make_qnote(tick=3800 + i * 48, pitch=p)
-        for i, p in enumerate([90, 92, 95, 97, 99])
+        _make_qnote(tick=3800 + i * 48, pitch=p) for i, p in enumerate([90, 92, 95, 97, 99])
     ]
 
     all_notes = occ1 + quiet_surrounding + high_cymbals_before + occ2 + high_cymbals_after
@@ -827,7 +819,9 @@ def test_motif_contrasting_background_tessitura() -> None:
     inc_res = inconsistent_mapper.map_notes(all_notes)
     frets_occ1_inc = [n.fret for n in inc_res if n.tick < 1000]
     frets_occ2_inc = [n.fret for n in inc_res if 3000 <= n.tick < 3800]
-    assert frets_occ1_inc != frets_occ2_inc, "Without consistent_patterns, tessitura shift must alter frets"
+    assert frets_occ1_inc != frets_occ2_inc, (
+        "Without consistent_patterns, tessitura shift must alter frets"
+    )
 
     # 2. With consistent_patterns=True, Motif Lock guarantees identical fret sequence
     consistent_mapper = PitchToFretMapper(consistent_patterns=True)
@@ -876,20 +870,28 @@ def test_fuzzy_similarity_and_alignment_engine(default_mapper: PitchToFretMapper
     assert align == [(0, 0), (1, 1), (2, 2)]
 
     # 2. Vibrato +-1 semitone (cost 0.15 on 1 of 4 notes -> similarity 1.0 - 0.15/4 = 0.9625)
-    sim_vib, align_vib = default_mapper._compute_phrase_similarity([60, 64, 67, 72], [60, 65, 67, 72])
+    sim_vib, align_vib = default_mapper._compute_phrase_similarity(
+        [60, 64, 67, 72], [60, 65, 67, 72]
+    )
     assert abs(sim_vib - (1.0 - 0.15 / 4)) < 1e-6
     assert align_vib == [(0, 0), (1, 1), (2, 2), (3, 3)]
 
     # 3. Bend +-2 semitones (cost 0.35 on 1 of 4 notes -> similarity 1.0 - 0.35/4 = 0.9125)
-    sim_bend, align_bend = default_mapper._compute_phrase_similarity([60, 64, 67, 72], [60, 66, 67, 72])
+    sim_bend, align_bend = default_mapper._compute_phrase_similarity(
+        [60, 64, 67, 72], [60, 66, 67, 72]
+    )
     assert abs(sim_bend - (1.0 - 0.35 / 4)) < 1e-6
 
     # 4. Octave harmonic +-12 semitones (cost 0.40 on 1 of 4 notes -> similarity 1.0 - 0.40/4 = 0.90)
-    sim_oct, align_oct = default_mapper._compute_phrase_similarity([60, 64, 67, 72], [60, 76, 67, 72])
+    sim_oct, align_oct = default_mapper._compute_phrase_similarity(
+        [60, 64, 67, 72], [60, 76, 67, 72]
+    )
     assert abs(sim_oct - (1.0 - 0.40 / 4)) < 1e-6
 
     # 5. Insertion / Ghost note (cost 1.0 on 1 extra note -> max_len 5 -> similarity 1.0 - 1.0/5 = 0.80)
-    sim_ins, align_ins = default_mapper._compute_phrase_similarity([60, 64, 67, 72], [60, 64, 64, 67, 72])
+    sim_ins, align_ins = default_mapper._compute_phrase_similarity(
+        [60, 64, 67, 72], [60, 64, 64, 67, 72]
+    )
     assert abs(sim_ins - (1.0 - 1.0 / 5)) < 1e-6
     assert (None, 2) in align_ins
 
@@ -918,5 +920,3 @@ def test_motif_similarity_threshold_parameter() -> None:
 
     custom_mapper = PitchToFretMapper(motif_similarity_threshold=0.88)
     assert custom_mapper.motif_similarity_threshold == 0.88
-
-

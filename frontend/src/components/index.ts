@@ -47,6 +47,16 @@ export type { StatsCardProps } from './audit/StatsCard';
 
 export { ExportPanel } from './export/ExportPanel';
 export type { ExportPanelProps, ExportFormat } from './export/ExportPanel';
+export { ChartRatingBay } from './export/ChartRatingBay';
+export type { ChartRatingBayProps } from './export/ChartRatingBay';
+
+export { LandingPage } from './landing/LandingPage';
+export type { LandingPageProps } from './landing/LandingPage';
+export { LandingHeroHighway } from './landing/LandingHeroHighway';
+export { LandingPipeline } from './landing/LandingPipeline';
+export { LandingEngine } from './landing/LandingEngine';
+export { LandingPresets } from './landing/LandingPresets';
+export { LandingFooter } from './landing/LandingFooter';
 
 export { AboutPage } from './about/AboutPage';
 export type { AboutPageProps } from './about/AboutPage';

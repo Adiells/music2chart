@@ -205,7 +205,7 @@ def sanitize_string(
 
     if escape_quotes:
         # Escape any quote that is not already preceded by a backslash
-        cleaned = re.sub(r'(?<!\\)"', r'\"', cleaned)
+        cleaned = re.sub(r'(?<!\\)"', r"\"", cleaned)
 
     return cleaned[:max_length].strip()
 
