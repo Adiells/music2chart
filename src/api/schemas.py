@@ -27,7 +27,7 @@ PRESET_CONFIGS: dict[str, dict[str, Any]] = {
         "chord_fusion_window_s": 0.040,
         "collapse_fast_runs": True,
         "consistent_patterns": True,
-        "motif_similarity_threshold": 0.75,
+        "motif_similarity_threshold": 0.70,
         "auto_calibrate_bpm": True,
         "bpm_scale": 0.65,
         "merge_sustained_notes": True,
@@ -41,7 +41,7 @@ PRESET_CONFIGS: dict[str, dict[str, Any]] = {
         "chord_fusion_window_s": 0.035,
         "collapse_fast_runs": True,
         "consistent_patterns": True,
-        "motif_similarity_threshold": 0.75,
+        "motif_similarity_threshold": 0.70,
         "auto_calibrate_bpm": True,
         "bpm_scale": 1.0,
         "merge_sustained_notes": True,
@@ -55,7 +55,7 @@ PRESET_CONFIGS: dict[str, dict[str, Any]] = {
         "chord_fusion_window_s": 0.040,
         "collapse_fast_runs": True,
         "consistent_patterns": True,
-        "motif_similarity_threshold": 0.75,
+        "motif_similarity_threshold": 0.70,
         "auto_calibrate_bpm": True,
         "bpm_scale": 1.0,
         "merge_sustained_notes": True,
@@ -69,7 +69,7 @@ PRESET_CONFIGS: dict[str, dict[str, Any]] = {
         "chord_fusion_window_s": 0.030,
         "collapse_fast_runs": False,
         "consistent_patterns": False,
-        "motif_similarity_threshold": 0.75,
+        "motif_similarity_threshold": 0.70,
         "auto_calibrate_bpm": True,
         "bpm_scale": 1.0,
         "merge_sustained_notes": True,
@@ -142,10 +142,10 @@ class ChartFittingParams(BaseModel):
         default=True, description="Enforce identical fret sequences on repeating musical riffs"
     )
     motif_similarity_threshold: float = Field(
-        default=0.75,
+        default=0.70,
         ge=0.5,
         le=1.0,
-        description="Fuzzy motif alignment similarity threshold (0.5 to 1.0, default 0.75)",
+        description="Fuzzy motif alignment similarity threshold (0.5 to 1.0, default 0.70)",
     )
     difficulty: int = Field(
         default=6, ge=1, le=6, description="Guitar track difficulty level (1-6)"

@@ -81,7 +81,7 @@ class Music2ChartPipeline:
         )
         self.pitch_mapper = pitch_mapper or PitchToFretMapper(
             disable_open_notes=True,
-            motif_similarity_threshold=0.75,
+            motif_similarity_threshold=0.70,
         )
         self.chord_builder = chord_builder or ChordBuilder(
             max_frets=2,
@@ -197,7 +197,7 @@ class Music2ChartPipeline:
             disable_open_notes: Suppress open notes on lead guitar, mapping to Green (default True).
             collapse_fast_runs: Collapse simultaneous notes in fast sixteenth-note runs.
             consistent_patterns: Enforce consistent motif anchoring on repeating musical riffs.
-            motif_similarity_threshold: Fuzzy motif sequence alignment similarity threshold (0.5 to 1.0, default 0.75).
+            motif_similarity_threshold: Fuzzy motif sequence alignment similarity threshold (0.5 to 1.0, default 0.70).
             difficulty: Guitar track difficulty rating scalar (1-6, default 6).
             genre: Musical genre string (default 'rock').
             preset: Optional preset configuration profile name ('the_best', 'standard', 'strict_rhythm', 'dynamic_solo').
@@ -273,7 +273,7 @@ class Music2ChartPipeline:
         eff_motif_similarity_threshold = (
             motif_similarity_threshold
             if motif_similarity_threshold is not None
-            else preset_cfg.get("motif_similarity_threshold", 0.75)
+            else preset_cfg.get("motif_similarity_threshold", 0.70)
         )
         eff_auto_calibrate_bpm = (
             auto_calibrate_bpm

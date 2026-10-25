@@ -28,6 +28,7 @@ dependencies = [
     "tqdm>=4.66.0",
     "python-multipart>=0.0.9",
     "slowapi>=0.1.9",
+    "mido>=1.3.0",
 ]
 
 [project.optional-dependencies]
@@ -93,5 +94,7 @@ module = [
     "basic_pitch.*",
     "demucs.*",
     "tensorflow.*",
+    "mido",
+    "mido.*",
 ]
 ignore_missing_imports = true

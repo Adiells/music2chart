@@ -14,7 +14,7 @@ DEFAULT_WINDOW_TICKS: Final[int] = 1536  # ~2 measures in 4/4 at 192 PPQ
 DEFAULT_MAX_JUMP: Final[int] = 3  # Maximum allowed fret jump in rapid passages
 DEFAULT_RAPID_INTERVAL: Final[int] = 48  # Sixteenth-note tick interval at 192 PPQ
 DEFAULT_OPEN_THRESHOLD: Final[int] = 40  # Pitches < 40 are sub-bass open notes
-DEFAULT_MOTIF_SIMILARITY_THRESHOLD: Final[float] = 0.75  # Fuzzy motif alignment similarity threshold
+DEFAULT_MOTIF_SIMILARITY_THRESHOLD: Final[float] = 0.70  # Fuzzy motif alignment similarity threshold
 
 
 class PitchToFretMapper:
@@ -59,7 +59,7 @@ class PitchToFretMapper:
             creativity: Creativity / temperature parameter in [0.0, 1.0] (default 0.5).
                 Controls high-register solo freedom and variance.
             motif_similarity_threshold: Minimum fuzzy sequence alignment similarity threshold
-                in [0.0, 1.0] (default 0.75) for matching repeating motifs.
+                in [0.0, 1.0] (default 0.70) for matching repeating motifs.
 
         Raises:
             ValueError: If any parameter is outside valid physical or musical bounds.
