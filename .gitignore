@@ -78,3 +78,8 @@ CLAUDE.md
 # Local deployment scripts
 deploy.sh
 *.local.sh
+
+# Jupyter notebooks (uploaded directly to Google Colab)
+*.ipynb
+notebooks/
+
