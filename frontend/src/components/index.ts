@@ -57,10 +57,6 @@ export { LandingPipeline } from './landing/LandingPipeline';
 export { LandingEngine } from './landing/LandingEngine';
 export { LandingPresets } from './landing/LandingPresets';
 export { LandingFooter } from './landing/LandingFooter';
-export { LandingTicker } from './landing/LandingTicker';
-export { LandingWorkflow } from './landing/LandingWorkflow';
-export { LandingSelfHost } from './landing/LandingSelfHost';
-export { LandingFinal } from './landing/LandingFinal';
 
 export { AboutPage } from './about/AboutPage';
 export type { AboutPageProps } from './about/AboutPage';
