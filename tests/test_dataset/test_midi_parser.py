@@ -191,7 +191,8 @@ def test_real_notes_mid_file() -> None:
     if not real_midi_path.is_file():
         real_midi_path = Path(__file__).resolve().parents[2] / "notes.mid"
 
-    assert real_midi_path.is_file(), f"notes.mid not found at {real_midi_path}"
+    if not real_midi_path.is_file():
+        pytest.skip("notes.mid not present at project root")
 
     parser = MidiChartParser()
     tempo_map, tracks, metadata = parser.parse_file(real_midi_path)
