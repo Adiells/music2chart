@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import * as THREE from 'three';
 import { DEMO_CHART_TEXT, getInstantTempoAtTime, parseChartText } from '../../hooks/useChartParser';
 import type { Language } from '../../lib/language';
@@ -21,7 +22,14 @@ export function LandingHeroHighway({ language = 'en', className }: LandingHeroHi
   const frameRef = useRef<HTMLDivElement>(null);
   const chart = useMemo(() => parseChartText(DEMO_CHART_TEXT), []);
   const chartRef = useRef(chart);
-  const [hud, setHud] = useState({ bpm: 120, nps: 0, progress: 0 });
+  const [hud, setHud] = useState({
+    bpm: 120,
+    nps: 0,
+    progress: 0,
+    time: 0,
+    total: 0,
+    lanes: [false, false, false, false, false] as boolean[],
+  });
 
   useEffect(() => {
     const container = mountRef.current;
@@ -139,6 +147,9 @@ export function LandingHeroHighway({ language = 'en', className }: LandingHeroHi
           bpm: Math.round(snap.bpm),
           nps: bucket ? bucket.nps : 0,
           progress: virtualTime / loopLen,
+          time: virtualTime,
+          total: loopLen,
+          lanes: hit.activeLanes.map(Boolean),
         });
       }
     };
@@ -184,35 +195,98 @@ export function LandingHeroHighway({ language = 'en', className }: LandingHeroHi
     };
   }, []);
 
+  const fmt = (s: number): string => {
+    const m = Math.floor(s / 60);
+    const sec = s - m * 60;
+    return `${String(m).padStart(2, '0')}:${sec.toFixed(2).padStart(5, '0')}`;
+  };
+  const FRET_VARS = ['--green', '--red', '--yellow', '--blue', '--orange'];
+  const FRET_LABELS = ['G', 'R', 'Y', 'B', 'O'];
+  const levelOn = Math.min(5, Math.max(1, Math.round(hud.nps / 2) + 3));
+
   return (
     <div
       ref={frameRef}
-      className={cn('border border-hw-border bg-module shadow-bevel', className)}
-      aria-label={pt ? 'Prévia 3D da highway' : '3D highway preview'}
+      className={cn('rig reveal', className)}
+      style={{ '--delay': '.12s' } as CSSProperties}
     >
-      <div className="flex items-center justify-between gap-3 border-b border-hw-border bg-panel px-4 py-2">
-        <span className="silk-wide">{pt ? 'V-01 // PRÉVIA 3D HIGHWAY' : 'V-01 // 3D HIGHWAY DECK'}</span>
-        <span className="border border-fret-green/50 bg-[#0D1914] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-silk text-fret-green">
-          {pt ? 'DIFICULDADE: EXPERT' : 'DIFFICULTY: EXPERT'}
-        </span>
-      </div>
+      <span className="screw tl" style={{ '--a': '24deg' } as CSSProperties} />
+      <span className="screw tr" style={{ '--a': '67deg' } as CSSProperties} />
+      <span className="screw bl" style={{ '--a': '108deg' } as CSSProperties} />
+      <span className="screw br" style={{ '--a': '41deg' } as CSSProperties} />
 
-      <div className="relative h-[320px] w-full overflow-hidden bg-[#090A0D] sm:h-[400px]">
-        <div ref={mountRef} className="h-full w-full" />
-        <div className="pointer-events-none absolute left-2.5 top-2 flex gap-3 border border-hw-border bg-chassis/85 px-2 py-1 font-mono text-[9px] tabular-nums uppercase tracking-silk text-silk">
-          <span><span className="text-silk-dim">BPM </span>{hud.bpm}</span>
-          <span><span className="text-silk-dim">NPS </span>{hud.nps.toFixed(1)}</span>
+      <div className="rig-head">
+        <div className="rig-title">
+          <span className="led on" style={{ color: 'var(--green)' }} />
+          {pt ? 'Rig de prévia ao vivo' : 'Live preview rig'} <span className="sep">/</span>{' '}
+          <span className="muted">Highway-3D</span>
+        </div>
+        <div className="rig-meta">
+          <span>192 PPQ</span>
+          <span className="dot" />
+          <span>{pt ? 'Sync travado' : 'Sync locked'}</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 border-t border-hw-border bg-panel px-4 py-2.5">
-        <span className="silk">PLAYHEAD</span>
-        <div className="relative h-1.5 flex-1 border border-hw-border bg-chassis">
-          <div className="absolute inset-y-0 left-0 bg-fret-green" style={{ width: `${(hud.progress * 100).toFixed(1)}%` }} />
+      <div className="stage" role="img" aria-label={pt ? 'Prévia 3D da highway' : '3D highway preview'}>
+        <div ref={mountRef} className="absolute inset-0" />
+
+        <div className="hud hud-tl">
+          <div className="hud-k">{pt ? 'Charteando agora' : 'Now charting'}</div>
+          <div className="hud-v">
+            {chart.songName || 'Demo'} <small>/ {chart.artist || 'Music2Chart'}</small>
+          </div>
         </div>
-        <span className="font-mono text-[10px] tabular-nums tracking-silk text-silk-dim">
-          {(hud.progress * 100).toFixed(0).padStart(3, '0')}%
-        </span>
+        <div className="hud hud-tr">
+          <div className="hud-duo">
+            <div>
+              <div className="hud-k">Tempo</div>
+              <div className="hud-v">
+                {hud.bpm} <small>BPM</small>
+              </div>
+            </div>
+            <div>
+              <div className="hud-k">{pt ? 'Densidade' : 'Density'}</div>
+              <div className="hud-v">
+                {hud.nps.toFixed(1)} <small>NPS</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="hud hud-bl">
+          <div className="hud-k">Playhead</div>
+          <div className="hud-v">
+            {fmt(hud.time)} <small>/ {fmt(hud.total)}</small>
+          </div>
+        </div>
+        <div className="hud hud-br">
+          <div className="hud-k">{pt ? 'Dificuldade' : 'Difficulty'}</div>
+          <div className="hud-v">Expert</div>
+          <div className="level" aria-hidden="true">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <i key={i} style={{ opacity: i < levelOn ? 1 : 0.25 }} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="rig-foot">
+        <div className="fret-leds">
+          {FRET_VARS.map((v, i) => (
+            <span key={v}>
+              <i
+                style={
+                  {
+                    '--c': `var(${v})`,
+                    opacity: hud.lanes[i] ? 1 : 0.55,
+                  } as CSSProperties
+                }
+              />
+              {FRET_LABELS[i]}
+            </span>
+          ))}
+        </div>
+        <span style={{ color: 'var(--power)' }}>◈ {pt ? 'Star power pronto' : 'Star power ready'}</span>
       </div>
     </div>
   );
