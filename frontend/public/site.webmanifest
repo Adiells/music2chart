@@ -1,0 +1,21 @@
+{
+  "name": "Music2Chart",
+  "short_name": "Music2Chart",
+  "description": "AI Clone Hero & YARG Chart Generator with 3D Highway Preview",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0E11",
+  "theme_color": "#0D0E11",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -205,6 +205,21 @@ def create_app(frontend_dist: Path | str | None = None) -> FastAPI:
                 detail=f"Asset '{file_path}' not found.",
             )
 
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def serve_favicon() -> FileResponse:
+        ico_file = frontend_dist_dir / "favicon.ico"
+        if frontend_dist_dir.is_dir() and ico_file.is_file():
+            return FileResponse(ico_file)
+        public_ico = (
+            Path(__file__).resolve().parent.parent.parent / "frontend" / "public" / "favicon.ico"
+        )
+        if public_ico.is_file():
+            return FileResponse(public_ico)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Favicon not found.",
+        )
+
     @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     async def serve_index() -> HTMLResponse:
         """Serve the interactive web interface with live progress tracking."""
