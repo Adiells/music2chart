@@ -309,7 +309,6 @@ All settings can be configured via environment variables or a `.env` file in the
 | `SUPABASE_URL` | `string` | unset | Supabase project URL for chart feedback storage. |
 | `SUPABASE_API_KEY` | `string` | unset | Server-only Supabase key. Required with `SUPABASE_URL`; never expose it in frontend variables. |
 
-Chart ratings are stored in Supabase when both settings are configured. Create the `chart_feedback` table by running [`supabase/chart_feedback.sql`](supabase/chart_feedback.sql) in the Supabase SQL Editor. Keep the API key in the backend environment or a server secret manager.
 
 ---
 

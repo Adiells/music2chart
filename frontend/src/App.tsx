@@ -30,7 +30,8 @@ import type {
 } from './components';
 import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { useChartParser } from './hooks/useChartParser';
-import { getApiUrl } from './lib/api';
+import { getApiUrl, storeChartGenerationMetadata } from './lib/api';
+import type { ChartGenerationParameters } from './lib/api';
 import { useLanguage } from './lib/language';
 import { cn } from './lib/utils';
 
@@ -314,31 +315,47 @@ function StudioWorkstation({ onBackHome }: { onBackHome: () => void }) {
 
     try {
       const form = new FormData();
-      form.append('file', audioFile);
-      if (metadata.songName.trim()) form.append('song_name', metadata.songName.trim());
-      if (metadata.artist.trim()) form.append('artist', metadata.artist.trim());
-      form.append('output_format', metadata.outputFormat);
-      form.append('max_frets', String(calibration.allowTriads ? 3 : 2));
-      form.append('difficulty', String(metadata.difficulty));
-      form.append('genre', metadata.genre);
-
       const backendPreset =
         preset === 'the_best' || preset === 'strict_rhythm' || preset === 'dynamic_solo'
           ? preset
           : 'standard';
-      form.append('preset', backendPreset);
-
-      form.append('chord_fusion_window_s', (calibration.fusionMs / 1000).toFixed(3));
-      form.append('min_amplitude', calibration.noiseGateSensitivity.toFixed(2));
-      form.append('creativity', (calibration.creativity / 100).toFixed(2));
-      form.append('hopo_threshold', String(calibration.hopoThreshold));
-      form.append('min_sustain_ticks', String(calibration.minSustainTicks));
-      form.append('bpm_scale', calibration.bpmScale.toFixed(2));
-      form.append('disable_open_notes', String(calibration.disableOpenNotes));
-      form.append('collapse_fast_runs', String(calibration.collapseFastRuns));
-      form.append('consistent_patterns', String(calibration.consistentPatterns));
-      form.append('auto_calibrate_bpm', String(calibration.autoCalibrateBpm));
-      form.append('merge_sustained_notes', String(calibration.mergeSustainedNotes));
+      const generationParameters: ChartGenerationParameters = {
+        selected_preset: preset,
+        backend_preset: backendPreset,
+        output_format: metadata.outputFormat,
+        max_frets: calibration.allowTriads ? 3 : 2,
+        difficulty: metadata.difficulty,
+        hopo_threshold: calibration.hopoThreshold,
+        disable_open_notes: calibration.disableOpenNotes,
+        collapse_fast_runs: calibration.collapseFastRuns,
+        consistent_patterns: calibration.consistentPatterns,
+        creativity: Number((calibration.creativity / 100).toFixed(2)),
+        min_amplitude: Number(calibration.noiseGateSensitivity.toFixed(2)),
+        min_sustain_ticks: calibration.minSustainTicks,
+        chord_fusion_window_s: Number((calibration.fusionMs / 1000).toFixed(3)),
+        bpm_scale: Number(calibration.bpmScale.toFixed(2)),
+        auto_calibrate_bpm: calibration.autoCalibrateBpm,
+        merge_sustained_notes: calibration.mergeSustainedNotes,
+      };
+      form.append('file', audioFile);
+      if (metadata.songName.trim()) form.append('song_name', metadata.songName.trim());
+      if (metadata.artist.trim()) form.append('artist', metadata.artist.trim());
+      form.append('output_format', generationParameters.output_format);
+      form.append('max_frets', String(generationParameters.max_frets));
+      form.append('difficulty', String(generationParameters.difficulty));
+      form.append('genre', metadata.genre);
+      form.append('preset', generationParameters.backend_preset);
+      form.append('chord_fusion_window_s', String(generationParameters.chord_fusion_window_s));
+      form.append('min_amplitude', String(generationParameters.min_amplitude));
+      form.append('creativity', String(generationParameters.creativity));
+      form.append('hopo_threshold', String(generationParameters.hopo_threshold));
+      form.append('min_sustain_ticks', String(generationParameters.min_sustain_ticks));
+      form.append('bpm_scale', String(generationParameters.bpm_scale));
+      form.append('disable_open_notes', String(generationParameters.disable_open_notes));
+      form.append('collapse_fast_runs', String(generationParameters.collapse_fast_runs));
+      form.append('consistent_patterns', String(generationParameters.consistent_patterns));
+      form.append('auto_calibrate_bpm', String(generationParameters.auto_calibrate_bpm));
+      form.append('merge_sustained_notes', String(generationParameters.merge_sustained_notes));
 
       const response = await fetch(getApiUrl('/api/v1/chart/generate'), {
         method: 'POST',
@@ -380,6 +397,10 @@ function StudioWorkstation({ onBackHome }: { onBackHome: () => void }) {
       }
 
       const data = (await response.json()) as GenerateApiResponse;
+      storeChartGenerationMetadata(data.task_id, {
+        genre: metadata.genre,
+        generation_parameters: generationParameters,
+      });
       setActiveTaskId(data.task_id);
       setActiveStep(2);
     } catch (err) {

@@ -656,6 +656,25 @@ async def test_submit_chart_feedback_success(
         "song_name": "Feedback Song",
         "artist": "Feedback Artist",
         "preset_used": "the_best",
+        "genre": "rock",
+        "generation_parameters": {
+            "selected_preset": "the_best",
+            "backend_preset": "the_best",
+            "output_format": "both",
+            "max_frets": 2,
+            "difficulty": 6,
+            "hopo_threshold": 64,
+            "disable_open_notes": True,
+            "collapse_fast_runs": True,
+            "consistent_patterns": True,
+            "creativity": 0.15,
+            "min_amplitude": 0.41,
+            "min_sustain_ticks": 120,
+            "chord_fusion_window_s": 0.04,
+            "bpm_scale": 0.65,
+            "auto_calibrate_bpm": True,
+            "merge_sustained_notes": True,
+        },
     }
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -676,6 +695,8 @@ async def test_submit_chart_feedback_success(
     assert record["song_name"] == "Feedback Song"
     assert record["artist"] == "Feedback Artist"
     assert record["preset_used"] == "the_best"
+    assert record["genre"] == "rock"
+    assert record["generation_parameters"] == payload["generation_parameters"]
     assert record["task_metadata"]["song_name"] == "Feedback Song"
     assert record["task_metadata"]["artist"] == "Feedback Artist"
     assert record["task_metadata"]["status"] == "PENDING"

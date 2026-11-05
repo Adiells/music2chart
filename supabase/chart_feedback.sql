@@ -8,9 +8,14 @@ create table if not exists public.chart_feedback (
     song_name text,
     artist text,
     preset_used text,
+    genre text,
+    generation_parameters jsonb,
     task_metadata jsonb
 );
 
+alter table public.chart_feedback add column if not exists genre text;
+alter table public.chart_feedback
+    add column if not exists generation_parameters jsonb;
 alter table public.chart_feedback enable row level security;
 grant usage on schema public to service_role;
 grant insert on table public.chart_feedback to service_role;

@@ -167,6 +167,27 @@ class GenerateResponse(BaseModel):
     )
 
 
+class ChartGenerationParameters(BaseModel):
+    """Validated generation options attached to chart feedback."""
+
+    selected_preset: str = Field(max_length=40)
+    backend_preset: str = Field(max_length=40)
+    output_format: str = Field(max_length=16)
+    max_frets: int = Field(ge=1, le=3)
+    difficulty: int = Field(ge=1, le=6)
+    hopo_threshold: int = Field(ge=0, le=192)
+    disable_open_notes: bool
+    collapse_fast_runs: bool
+    consistent_patterns: bool
+    creativity: float = Field(ge=0.0, le=1.0)
+    min_amplitude: float = Field(ge=0.0, le=1.0)
+    min_sustain_ticks: int = Field(ge=0, le=768)
+    chord_fusion_window_s: float = Field(ge=0.005, le=0.1)
+    bpm_scale: float = Field(gt=0.0, le=2.0)
+    auto_calibrate_bpm: bool
+    merge_sustained_notes: bool
+
+
 class ChartFeedbackRequest(BaseModel):
     """User feedback for a generated chart."""
 
@@ -177,6 +198,8 @@ class ChartFeedbackRequest(BaseModel):
     song_name: str | None = None
     artist: str | None = None
     preset_used: str | None = None
+    genre: str | None = Field(default=None, max_length=80)
+    generation_parameters: ChartGenerationParameters | None = None
 
 
 class ChartFeedbackResponse(BaseModel):

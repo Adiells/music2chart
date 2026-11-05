@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { submitChartFeedback } from '../../lib/api';
+import { loadChartGenerationMetadata, submitChartFeedback } from '../../lib/api';
 import type { Language } from '../../lib/language';
 import { cn } from '../../lib/utils';
 import { PushButton } from '../controls/PushButton';
@@ -61,6 +61,7 @@ export function ChartRatingBay({ taskId, songName, artist, language = 'en', clas
     setSending(true);
     setError(null);
     try {
+      const generationMetadata = loadChartGenerationMetadata(taskId);
       await submitChartFeedback({
         task_id: taskId,
         rating,
@@ -68,6 +69,9 @@ export function ChartRatingBay({ taskId, songName, artist, language = 'en', clas
         comment: comment.trim() || undefined,
         song_name: songName,
         artist,
+        preset_used: generationMetadata?.generation_parameters.selected_preset,
+        genre: generationMetadata?.genre,
+        generation_parameters: generationMetadata?.generation_parameters,
       });
       const record: StoredRating = { rating, tags, comment: comment.trim() };
       try {

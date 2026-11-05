@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 import re
 import shutil
 import threading
@@ -368,6 +367,12 @@ async def submit_chart_feedback(
         "song_name": feedback.song_name,
         "artist": feedback.artist,
         "preset_used": feedback.preset_used,
+        "genre": feedback.genre,
+        "generation_parameters": (
+            feedback.generation_parameters.model_dump(mode="json")
+            if feedback.generation_parameters
+            else None
+        ),
     }
     record = task_manager.get_task(feedback.task_id) if feedback.task_id else None
     if record is not None:
