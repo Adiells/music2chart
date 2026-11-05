@@ -252,7 +252,7 @@ function StudioWorkstation({ onBackHome }: { onBackHome: () => void }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   /* Chart Parser & Synchronized Audio Player */
-  const { chart, isDemoChart } = useChartParser(completedTaskId);
+  const { chart, isDemoChart, loading: chartLoading, error: chartError } = useChartParser(completedTaskId);
 
   const player = useAudioPlayer({
     taskId: completedTaskId,
@@ -652,6 +652,15 @@ function StudioWorkstation({ onBackHome }: { onBackHome: () => void }) {
           {/* ========================================================================= */}
           {activeStep === 3 && (
             <div className="flex flex-col gap-3.5">
+              {(chartLoading || chartError) && (
+                <div role="status" className="border border-fret-orange/70 bg-[#17130E] p-3 font-mono text-xs text-fret-orange">
+                  {chartLoading
+                    ? (language === 'pt-BR' ? 'Carregando a trilha gerada…' : 'Loading generated chart…')
+                    : (language === 'pt-BR'
+                      ? `Não foi possível carregar a trilha gerada: ${chartError}`
+                      : `Could not load the generated chart: ${chartError}`)}
+                </div>
+              )}
               {/* Notice when chart has not been generated yet */}
               {!completedTaskId && (
                 <div
