@@ -249,28 +249,33 @@ export function useAudioPlayer({
       // 1. Completed backend task -> stream `/api/v1/chart/preview/{task_id}/audio`
       if (taskId && !taskId.startsWith('demo-')) {
         const previewUrl = getApiUrl(`/api/v1/chart/preview/${encodeURIComponent(taskId)}/audio`);
-        try {
-          const response = await fetch(previewUrl);
-          if (response.ok && !cancelled) {
-            const arrayBuf = await response.arrayBuffer();
-            if (cancelled) return;
-            const blob = new Blob([arrayBuf], {
-              type: response.headers.get('content-type') || 'audio/ogg',
-            });
-            objectUrlToRevoke = URL.createObjectURL(blob);
-            audio.src = objectUrlToRevoke;
-            audio.playbackRate = playbackRate;
-            audio.load();
-            setAudioSourceLabel(`PREVIEW STREAM // ${taskId.slice(0, 8).toUpperCase()}`);
+        for (let attempt = 0; attempt < 4 && !cancelled; attempt += 1) {
+          try {
+            const response = await fetch(previewUrl);
+            if (response.ok) {
+              const arrayBuf = await response.arrayBuffer();
+              if (cancelled) return;
+              const blob = new Blob([arrayBuf], {
+                type: response.headers.get('content-type') || 'audio/ogg',
+              });
+              objectUrlToRevoke = URL.createObjectURL(blob);
+              audio.src = objectUrlToRevoke;
+              audio.playbackRate = playbackRate;
+              audio.load();
+              setAudioSourceLabel(`PREVIEW STREAM // ${taskId.slice(0, 8).toUpperCase()}`);
 
-            const decodedPeaks = await extractPeaksFromArrayBuffer(arrayBuf);
-            if (!cancelled && decodedPeaks) {
-              setWaveformPeaks(decodedPeaks);
+              const decodedPeaks = await extractPeaksFromArrayBuffer(arrayBuf);
+              if (!cancelled && decodedPeaks) {
+                setWaveformPeaks(decodedPeaks);
+              }
+              return;
             }
-            return;
+          } catch {
+            // Retry transient network errors before falling back to the local file.
           }
-        } catch {
-          // Fall through to local file or synth fallback
+          if (attempt < 3) {
+            await new Promise((resolve) => window.setTimeout(resolve, 400 * (attempt + 1)));
+          }
         }
       }
 
