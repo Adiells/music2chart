@@ -306,6 +306,10 @@ All settings can be configured via environment variables or a `.env` file in the
 | `RATE_LIMIT_GENERATE` | `string` | `20/hour` | Rate limit per client IP for chart generation. |
 | `ENABLE_AUTO_STEM_CLEANUP` | `bool` | `true` | Automatically delete intermediate stems after packaging. |
 | `ALLOWED_ORIGINS` | `list[str]` | `localhost,adiels.me` | Permitted CORS origins (comma-separated). |
+| `SUPABASE_URL` | `string` | unset | Supabase project URL for chart feedback storage. |
+| `SUPABASE_API_KEY` | `string` | unset | Server-only Supabase key. Required with `SUPABASE_URL`; never expose it in frontend variables. |
+
+Chart ratings are stored in Supabase when both settings are configured. Create the `chart_feedback` table by running [`supabase/chart_feedback.sql`](supabase/chart_feedback.sql) in the Supabase SQL Editor. Keep the API key in the backend environment or a server secret manager.
 
 ---
 

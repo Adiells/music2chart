@@ -31,6 +31,9 @@ MANIFEST
 venv/
 ENV/
 env/
+.env
+.env.*
+!.env.example
 
 # Testing and coverage
 .pytest_cache/

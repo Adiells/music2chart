@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import io
-import json
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -638,8 +637,14 @@ async def test_serve_web_ui_compiled_frontend(tmp_path: Path):
 async def test_submit_chart_feedback_success(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Verify valid feedback is accepted, acknowledged, and persisted as JSONL."""
+    """Verify valid feedback is acknowledged after durable storage accepts it."""
     monkeypatch.chdir(tmp_path)
+    stored: list[dict] = []
+
+    async def fake_store(record: dict) -> None:
+        stored.append(record)
+
+    monkeypatch.setattr("src.api.routes.store_chart_feedback", fake_store)
     task_id = "feedback-task-001"
     task_manager.create_task(task_id, song_name="Feedback Song", artist="Feedback Artist")
 
@@ -661,15 +666,8 @@ async def test_submit_chart_feedback_success(
     assert body["status"] == "ok"
     assert body["message"] == "Feedback recorded successfully"
     feedback_uuid = uuid.UUID(body["feedback_id"])  # raises ValueError if malformed
-
-    feedback_file = tmp_path / "tmp" / "feedback" / "ratings.jsonl"
-    assert feedback_file.is_file()
-
-    lines = [
-        line for line in feedback_file.read_text(encoding="utf-8").splitlines() if line.strip()
-    ]
-    assert len(lines) == 1
-    record = json.loads(lines[0])
+    assert len(stored) == 1
+    record = stored[0]
     assert record["feedback_id"] == str(feedback_uuid)
     assert record["task_id"] == task_id
     assert record["rating"] == 5
@@ -682,7 +680,7 @@ async def test_submit_chart_feedback_success(
     assert record["task_metadata"]["artist"] == "Feedback Artist"
     assert record["task_metadata"]["status"] == "PENDING"
 
-    timestamp = datetime.fromisoformat(record["timestamp"])
+    timestamp = datetime.fromisoformat(record["created_at"])
     assert timestamp.tzinfo is not None
 
 
@@ -691,8 +689,14 @@ async def test_submit_chart_feedback_success(
 async def test_submit_chart_feedback_rejects_invalid_rating(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, invalid_rating: int
 ) -> None:
-    """Verify out-of-range ratings are rejected with HTTP 422 and nothing is written."""
+    """Verify out-of-range ratings are rejected before persistence."""
     monkeypatch.chdir(tmp_path)
+    stored: list[dict] = []
+
+    async def fake_store(record: dict) -> None:
+        stored.append(record)
+
+    monkeypatch.setattr("src.api.routes.store_chart_feedback", fake_store)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -708,16 +712,21 @@ async def test_submit_chart_feedback_rejects_invalid_rating(
     assert response.status_code == 422
     details = response.json()["detail"]
     assert any(error["loc"][-1] == "rating" for error in details)
-    assert not (tmp_path / "tmp" / "feedback" / "ratings.jsonl").exists()
+    assert stored == []
 
 
 @pytest.mark.asyncio
 async def test_submit_chart_feedback_appends_records(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Verify successive submissions append JSONL records with unique ids and timestamps."""
+    """Verify successive submissions persist independent records with unique ids."""
     monkeypatch.chdir(tmp_path)
-    feedback_ids: list[str] = []
+    stored: list[dict] = []
+
+    async def fake_store(record: dict) -> None:
+        stored.append(record)
+
+    monkeypatch.setattr("src.api.routes.store_chart_feedback", fake_store)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         for rating in (1, 3, 5):
@@ -730,17 +739,52 @@ async def test_submit_chart_feedback_appends_records(
                 },
             )
             assert response.status_code == 201
-            feedback_ids.append(response.json()["feedback_id"])
-
-    feedback_file = tmp_path / "tmp" / "feedback" / "ratings.jsonl"
-    records = [
-        json.loads(line)
-        for line in feedback_file.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
-    assert len(records) == 3
-    assert [record["rating"] for record in records] == [1, 3, 5]
-    assert [record["feedback_id"] for record in records] == feedback_ids
+    feedback_ids = [record["feedback_id"] for record in stored]
+    assert len(stored) == 3
+    assert [record["rating"] for record in stored] == [1, 3, 5]
     assert len(set(feedback_ids)) == 3
-    for record in records:
-        assert datetime.fromisoformat(record["timestamp"]).tzinfo is not None
+    assert all(uuid.UUID(feedback_id) for feedback_id in feedback_ids)
+
+
+@pytest.mark.asyncio
+async def test_submit_chart_feedback_returns_unavailable_when_storage_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failed Supabase insert is surfaced instead of acknowledged as saved."""
+    from src.api.feedback_store import FeedbackStorageError
+
+    async def fail_store(_record: dict) -> None:
+        raise FeedbackStorageError("Supabase returned 503")
+
+    monkeypatch.setattr("src.api.routes.store_chart_feedback", fail_store)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/chart/feedback",
+            json={"task_id": "feedback-task-unavailable", "rating": 4},
+        )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == (
+        "Feedback storage is unavailable; please try again later."
+    )
+
+
+@pytest.mark.asyncio
+async def test_submit_chart_feedback_accepts_reference_chart_without_task_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Reference chart ratings have no generated task identifier."""
+    stored: list[dict] = []
+
+    async def fake_store(record: dict) -> None:
+        stored.append(record)
+
+    monkeypatch.setattr("src.api.routes.store_chart_feedback", fake_store)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/chart/feedback",
+            json={"task_id": None, "rating": 4, "song_name": "Reference chart"},
+        )
+
+    assert response.status_code == 201
+    assert stored[0]["task_id"] is None

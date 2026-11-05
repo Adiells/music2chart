@@ -33,6 +33,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from slowapi import Limiter
 
 from config.settings import get_settings
+from src.api.feedback_store import FeedbackStorageError, store_chart_feedback
 from src.api.schemas import (
     ChartFeedbackRequest,
     ChartFeedbackResponse,
@@ -212,8 +213,6 @@ class TaskManager:
 task_manager = TaskManager()
 limiter = Limiter(key_func=get_client_ip)
 
-_feedback_write_lock = threading.Lock()
-
 _semaphore_lock = threading.Lock()
 _pipeline_semaphore: threading.Semaphore | None = None
 _current_max_concurrent: int = 0
@@ -353,21 +352,24 @@ preview_router = APIRouter(tags=["Chart Preview"])
     response_model=ChartFeedbackResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def submit_chart_feedback(request: ChartFeedbackRequest) -> ChartFeedbackResponse:
-    """Append chart feedback as one JSONL record."""
+@limiter.limit("30/hour")
+async def submit_chart_feedback(
+    request: Request, feedback: ChartFeedbackRequest
+) -> ChartFeedbackResponse:
+    """Persist chart feedback in Supabase."""
     feedback_id = str(uuid.uuid4())
     payload = {
-        "timestamp": datetime.now(UTC).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "feedback_id": feedback_id,
-        "task_id": request.task_id,
-        "rating": request.rating,
-        "tags": request.tags,
-        "comment": request.comment,
-        "song_name": request.song_name,
-        "artist": request.artist,
-        "preset_used": request.preset_used,
+        "task_id": feedback.task_id,
+        "rating": feedback.rating,
+        "tags": feedback.tags,
+        "comment": feedback.comment,
+        "song_name": feedback.song_name,
+        "artist": feedback.artist,
+        "preset_used": feedback.preset_used,
     }
-    record = task_manager.get_task(request.task_id)
+    record = task_manager.get_task(feedback.task_id) if feedback.task_id else None
     if record is not None:
         payload["task_metadata"] = {
             "song_name": record.song_name,
@@ -376,17 +378,14 @@ async def submit_chart_feedback(request: ChartFeedbackRequest) -> ChartFeedbackR
             "stage": record.stage,
         }
 
-    feedback_dir = Path("tmp/feedback")
-    feedback_dir.mkdir(parents=True, exist_ok=True)
-    line = (json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
-    with _feedback_write_lock:
-        fd = os.open(feedback_dir / "ratings.jsonl", os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
-        try:
-            written = os.write(fd, line)
-            if written != len(line):
-                raise OSError("Incomplete feedback record write")
-        finally:
-            os.close(fd)
+    try:
+        await store_chart_feedback(payload)
+    except FeedbackStorageError as exc:
+        logger.error("Could not persist chart feedback: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Feedback storage is unavailable; please try again later.",
+        ) from exc
 
     return ChartFeedbackResponse(
         status="ok",
