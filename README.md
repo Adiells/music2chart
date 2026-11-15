@@ -38,6 +38,8 @@ No local installation, Python environment, or GPU needed. Run songs through the 
 - **One-Click Deliverables**: Download `.sng` (SongBinary v1) files, standalone `notes.chart`, or complete `.zip` bundles ready to drop into your `Clone Hero/Songs/` directory.
 - **Live Pipeline Telemetry**: Real-time stage monitoring powered by Server-Sent Events (SSE).
 
+> **⚠️ Hosted backend temporarily offline.** To keep hosting costs down, the hosted API has been shut down. The static frontend stays online, but any generation, telemetry, preview, download, or feedback request is answered with an in-app notice. To use or test the chart generator, clone the repository and run it locally — see [Quickstart](#quickstart).
+
 ---
 
 <a id="studio-workstation-frontend"></a>
@@ -72,6 +74,15 @@ No local installation, Python environment, or GPU needed. Run songs through the 
 | **`standard`** | Balanced Baseline | `0.10` | `1.00` | `65 ticks` | `35 ms` | General rock and metal tracks with standard natural tempo tracking. |
 | **`strict_rhythm`** | Rhythm & Chords | `0.20` | `1.00` | `48 ticks` | `40 ms` | Heavy rhythm riffs, punk, and power-chord tracks requiring tight strum discipline. |
 | **`dynamic_solo`** | Lead & Shredding | `0.08` | `1.00` | `80 ticks` | `30 ms` | Fast guitar solos, sweep picking, and virtuosic runs without chord collapsing. |
+
+**Studio Workstation presets (frontend-only):**
+
+The Studio Workstation exposes two additional presets defined in `frontend/src/App.tsx`. Because the backend only knows the four profiles above, both send `preset=standard` together with explicit knob overrides:
+
+| Preset Profile | Focus | Noise Gate (`min_amplitude`) | BPM Scale | HOPO Distance | Chord Fusion | Creativity | Notes |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **`melodic`** | Lead Motif Recognition | `0.12` | `1.00` | `96 ticks` | `35 ms` | `0.65` | Adaptive sliding tessitura with balanced sustains; keeps open notes disabled and stable motifs enabled. |
+| **`chord_heavy`** | Full Polyphonic Triads | `0.15` | `1.00` | `64 ticks` | `45 ms` | `0.35` | `max_frets=3`, open notes enabled, and fast-run collapsing disabled for authentic power-chord voicings. |
 
 All presets automatically enforce **192 PPQ quantization**, **24-tick sustain release margins**, and **sliding tessitura projection**.
 
@@ -141,7 +152,7 @@ Open [https://music2chart.adiels.me/](https://music2chart.adiels.me/) in your br
 ---
 
 ### Tier 2: Docker Compose (Recommended for Self-Hosting)
-Run the complete containerized stack (FastAPI backend + Vite web frontend + PyTorch/Demucs):
+Build and run the containerized `music2chart-api` service (FastAPI backend + PyTorch/Demucs):
 
 ```bash
 # Clone the repository
@@ -154,7 +165,7 @@ docker compose up --build -d
 # Follow live server logs
 docker compose logs -f
 ```
-The application will be accessible at `http://localhost:8000` (or frontend dev server at `http://localhost:5173`).
+The API is accessible at `http://localhost:8000` (Swagger UI at `/docs`). The Docker image builds only the API; when a compiled `frontend/dist` is present, the API serves it at `/`. The production frontend is hosted statically on **GitHub Pages** — Docker Compose does **not** launch a separate Vite dev server on port `5173`.
 
 ---
 
