@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getApiUrl } from '../lib/api';
+import { BACKEND_OFFLINE, backendOfflineNotice, getApiUrl } from '../lib/api';
 import { clamp } from '../lib/utils';
 
 export const RELEASE_MARGIN_TICKS = 24;
@@ -982,6 +982,9 @@ export function useChartParser(completedTaskId: string | null): UseChartParserRe
 
     const fetchChart = async (): Promise<void> => {
       try {
+        if (BACKEND_OFFLINE) {
+          throw new Error(backendOfflineNotice());
+        }
         const url = getApiUrl(`/api/v1/chart/download/${encodeURIComponent(completedTaskId)}?format=chart`);
         const res = await fetch(url);
         if (!res.ok) {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getApiUrl } from '../../lib/api';
+import { BACKEND_OFFLINE, getApiUrl } from '../../lib/api';
 import { cn } from '../../lib/utils';
 import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
@@ -75,6 +75,15 @@ export function ExportPanel({
     scheduleStatusReset();
 
     if (hasBackendPackage && completedTaskId) {
+      if (BACKEND_OFFLINE) {
+        setStatusNote(
+          portuguese
+            ? 'BACKEND DESLIGADO // IMPORTE O REPOSITÓRIO E RODE LOCALMENTE'
+            : 'BACKEND OFFLINE // IMPORT THE REPO AND RUN LOCALLY'
+        );
+        window.setTimeout(() => setActiveFormat(null), 900);
+        return;
+      }
       const url = getApiUrl(`/api/v1/chart/download/${encodeURIComponent(completedTaskId)}?format=${format}`);
       setStatusNote(
         portuguese

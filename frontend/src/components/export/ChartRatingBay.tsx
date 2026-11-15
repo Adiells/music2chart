@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { loadChartGenerationMetadata, submitChartFeedback } from '../../lib/api';
+import { BACKEND_OFFLINE, backendOfflineNotice, loadChartGenerationMetadata, submitChartFeedback } from '../../lib/api';
 import type { Language } from '../../lib/language';
 import { cn } from '../../lib/utils';
 import { PushButton } from '../controls/PushButton';
@@ -81,7 +81,13 @@ export function ChartRatingBay({ taskId, songName, artist, language = 'en', clas
       }
       setStored(record);
     } catch {
-      setError(pt ? 'FALHA AO ENVIAR // TENTE NOVAMENTE' : 'SUBMIT FAILED // TRY AGAIN');
+      setError(
+        BACKEND_OFFLINE
+          ? backendOfflineNotice(language)
+          : pt
+            ? 'FALHA AO ENVIAR // TENTE NOVAMENTE'
+            : 'SUBMIT FAILED // TRY AGAIN',
+      );
     } finally {
       setSending(false);
     }
@@ -157,7 +163,7 @@ export function ChartRatingBay({ taskId, songName, artist, language = 'en', clas
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-mono text-[10px] uppercase tracking-silk text-fret-red">{error}</span>
+        <span className="max-w-[22rem] font-mono text-[10px] leading-snug tracking-silk text-fret-red">{error}</span>
         <PushButton
           size="sm"
           variant="master"

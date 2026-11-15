@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getApiUrl } from '../../lib/api';
+import { BACKEND_OFFLINE, backendOfflineNotice, getApiUrl } from '../../lib/api';
 import { clamp, cn } from '../../lib/utils';
 import { PushButton } from '../controls/PushButton';
 import { LedIndicator } from '../rack/LedIndicator';
@@ -306,6 +306,14 @@ export function PipelineTelemetry({
       };
     }
 
+    // The hosted backend is offline: report it immediately instead of opening a dead stream.
+    if (BACKEND_OFFLINE) {
+      window.clearInterval(timer);
+      return () => {
+        window.clearInterval(timer);
+      };
+    }
+
     // Live Backend SSE Stream: /api/v1/chart/stream/{task_id}
     let finished = false;
     let pollTimer: number | null = null;
@@ -411,6 +419,19 @@ export function PipelineTelemetry({
           formatLogEntry(0, 1.0, 'PIPELINE ARTIFACTS READY FOR DOWNLOAD'),
         ],
       }
+    : taskId && BACKEND_OFFLINE && !taskId.startsWith('demo-')
+      ? {
+          taskId,
+          status: 'FAILED' as TelemetryStatus,
+          progress: 0,
+          stageText: 'BACKEND OFFLINE',
+          errorMsg: backendOfflineNotice(),
+          elapsedSec: 0,
+          logEntries: [
+            formatLogEntry(0, 0.02, `TASK ${taskId.slice(0, 8)} MOUNTED ON SSE BUS`),
+            formatLogEntry(0, 0, 'BACKEND OFFLINE // IMPORT THE REPO AND RUN LOCALLY'),
+          ],
+        }
     : taskId && snapshot?.taskId === taskId
       ? snapshot
       : taskId

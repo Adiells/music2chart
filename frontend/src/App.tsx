@@ -30,7 +30,7 @@ import type {
 } from './components';
 import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { useChartParser } from './hooks/useChartParser';
-import { getApiUrl, storeChartGenerationMetadata } from './lib/api';
+import { BACKEND_OFFLINE, REPOSITORY_URL, backendOfflineNotice, getApiUrl, storeChartGenerationMetadata } from './lib/api';
 import type { ChartGenerationParameters } from './lib/api';
 import { useLanguage } from './lib/language';
 import { cn } from './lib/utils';
@@ -309,6 +309,12 @@ function StudioWorkstation({ onBackHome }: { onBackHome: () => void }) {
       return;
     }
 
+    // The hosted backend is offline: explain why instead of firing a doomed request.
+    if (BACKEND_OFFLINE) {
+      setSubmitError(backendOfflineNotice(language));
+      return;
+    }
+
     setSubmitting(true);
     setSubmitError(null);
     player.pause();
@@ -409,7 +415,7 @@ function StudioWorkstation({ onBackHome }: { onBackHome: () => void }) {
     } finally {
       setSubmitting(false);
     }
-  }, [audioFile, calibration, metadata, player, preset, submitting]);
+  }, [audioFile, calibration, language, metadata, player, preset, submitting]);
 
   const completedTasksRef = useRef<Set<string>>(new Set());
 
@@ -504,6 +510,31 @@ function StudioWorkstation({ onBackHome }: { onBackHome: () => void }) {
         <AboutPage language={language} onReturnToWorkstation={() => setActiveView('workstation')} />
       ) : (
         <div className="flex flex-col gap-3.5 pb-28 sm:pb-32">
+          {/* Backend offline notice */}
+          {BACKEND_OFFLINE ? (
+            <div
+              role="alert"
+              className="border border-fret-orange/70 bg-[#17130E] px-4 py-3"
+            >
+              <p className="font-mono text-[10px] uppercase tracking-silk text-fret-orange">
+                {language === 'pt-BR'
+                  ? 'Backend temporariamente desligado'
+                  : 'Backend temporarily offline'}
+              </p>
+              <p className="mt-1 text-sm leading-snug text-silk-neutral">
+                {backendOfflineNotice(language)}
+              </p>
+              <a
+                href={REPOSITORY_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-block border border-hw-border bg-module px-2 py-1 font-mono text-[10px] uppercase tracking-silk text-silk hover:border-silk"
+              >
+                {language === 'pt-BR' ? 'Importar repositório' : 'Import repository'} · github.com/Adiells/music2chart
+              </a>
+            </div>
+          ) : null}
+
           {/* 4-Step Guided Linear Workflow Navigation */}
           <WorkflowStepper
             currentStep={activeStep}
@@ -518,9 +549,10 @@ function StudioWorkstation({ onBackHome }: { onBackHome: () => void }) {
           {submitError ? (
             <div
               role="alert"
-              className="border border-fret-red bg-[#1B0F13] px-4 py-2.5 font-mono text-xs uppercase tracking-silk text-fret-red"
+              className="border border-fret-red bg-[#1B0F13] px-4 py-2.5 font-mono text-xs tracking-silk text-fret-red"
             >
-              PIPELINE ERROR // {submitError}
+              <span className="uppercase">PIPELINE ERROR // </span>
+              <span>{submitError}</span>
             </div>
           ) : null}
 

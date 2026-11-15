@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getApiUrl } from '../lib/api';
+import { BACKEND_OFFLINE, getApiUrl } from '../lib/api';
 import { clamp } from '../lib/utils';
 
 export type PlaybackSpeed = 0.5 | 0.75 | 1.0;
@@ -247,7 +247,7 @@ export function useAudioPlayer({
 
     const loadAudioSource = async (): Promise<void> => {
       // 1. Completed backend task -> stream `/api/v1/chart/preview/{task_id}/audio`
-      if (taskId && !taskId.startsWith('demo-')) {
+      if (!BACKEND_OFFLINE && taskId && !taskId.startsWith('demo-')) {
         const previewUrl = getApiUrl(`/api/v1/chart/preview/${encodeURIComponent(taskId)}/audio`);
         for (let attempt = 0; attempt < 4 && !cancelled; attempt += 1) {
           try {
